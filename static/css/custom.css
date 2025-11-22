@@ -1,0 +1,14 @@
+/* Make collapse animation smoother */
+.collapse {
+  transition: all 0.25s ease-in-out;
+}
+
+/* Better mobile spacing */
+@media (max-width: 576px) {
+  table {
+    font-size: 0.9rem;
+  }
+  .btn-sm {
+    padding: 4px 10px;
+  }
+}

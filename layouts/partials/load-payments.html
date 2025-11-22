@@ -1,14 +1,14 @@
 {{- $api := site.Params.apiBase -}}
-{{- $url := printf "%s?type=residents" $api -}}
+{{- $url := printf "%s?type=payments" $api -}}
 {{- $data := slice -}}
 
 {{- with try (resources.GetRemote $url) -}}
   {{- with .Err -}}
-    {{- errorf "GetRemote residents failed: %s" . -}}
+    {{- errorf "GetRemote flats failed: %s" . -}}
   {{- else with .Value -}}
     {{- $data = .Content | transform.Unmarshal -}}
   {{- else -}}
-    {{- errorf "Unable to get remote residents %q" $url -}}
+    {{- errorf "Unable to get remote payments %q" $url -}}
   {{- end -}}
 {{- end -}}
 

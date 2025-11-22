@@ -1,11 +1,17 @@
-# Hugo build output
-/public/
-/resources/
-/hugo_stats.json
+# Ignore Hugo output
+#docs/
 
-# OS / editor junk
+# Ignore Hugo cache
+resources/_gen/
+assets/_gen/
+public/
+
+# Ignore OS files
 .DS_Store
 Thumbs.db
+
+# Ignore VS Code
 .vscode/
-.idea/
-hugo.exe
+
+# Ignore Logs
+*.log

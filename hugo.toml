@@ -6,3 +6,5 @@ publishDir = "docs"
   [caches.getresource]
     dir    = ":cacheDir/:project"
     maxAge = 0
+[params]
+  apiBase ="https://script.google.com/macros/s/AKfycbzW9kAdpmnbEBrLjcqR4akCvSOu7tYigy_rbiW7JrfQ-pp4wwmEGwjs_-kpq4Se3KYagQ/exec"
