@@ -1,6 +1,6 @@
 baseURL = "https://knowwvana.github.io/SavitryGreen.T15.Residents/"
 languageCode = 'en-us'
-title = 'My New Hugo Site'
+title = 'Savitry Greens - Tower 15 Residents'
 publishDir = "docs"
 [caches]
   [caches.getresource]
