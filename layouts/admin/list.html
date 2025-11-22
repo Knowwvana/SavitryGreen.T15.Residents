@@ -2,139 +2,140 @@
 
 <h1 class="mb-4 text-center">Flats Directory</h1>
 
-{{ $flats := partial "load-flats.html" . }}
-{{ $residents := partial "load-residents.html" . }}
-{{ $payments := partial "load-payments.html" . }}
-
+<!-- ============================= -->
+<!-- MAIN FLATS TABLE -->
+<!-- ============================= -->
 <div class="table-responsive">
-  <table class="table table-hover align-middle">
+<table class="table table-hover align-middle">
     <thead class="table-dark">
-      <tr>
-        <th>Flat</th>
-        <th>Floor</th>
-        <th>Tower</th>
-        <th class="text-center">Actions</th>
-      </tr>
+        <tr>
+            <th>Flat</th>
+            <th>Floor</th>
+            <th>Tower</th>
+            <th class="text-center">Actions</th>
+        </tr>
     </thead>
 
-    <tbody>
-      {{ range $flat := $flats }}
-
-      {{ $flatNo := printf "%v" $flat.FlatNo }}
-      {{ $flatResidents := where $residents "FlatNo" $flatNo }}
-      {{ $flatPayments := where $payments "FlatNo" $flatNo }}
-
-      <!-- ROW -->
-      <tr>
-        <td><strong>{{ $flat.FlatNo }}</strong></td>
-        <td>{{ $flat.Floor }}</td>
-        <td>{{ $flat.Tower }}</td>
-        <td class="text-center">
-          <button class="btn btn-sm btn-primary" data-bs-toggle="collapse" data-bs-target="#flat{{ $flatNo }}">
-            View
-          </button>
-        </td>
-      </tr>
-
-      <!-- EXPANDABLE DETAILS ROW -->
-      <tr class="collapse bg-light" id="flat{{ $flatNo }}">
-        <td colspan="4">
-          <div class="p-3">
-
-            <h5 class="mb-3">Flat {{ $flat.FlatNo }} – Details</h5>
-
-            <p><strong>Floor:</strong> {{ $flat.Floor }}</p>
-            <p><strong>Tower:</strong> {{ $flat.Tower }}</p>
-
-            <hr>
-
-            <!-- RESIDENTS -->
-            <h6>Residents</h6>
-
-            {{ if gt (len $flatResidents) 0 }}
-            <ul class="list-group mb-3">
-              {{ range $r := $flatResidents }}
-              <li class="list-group-item">
-                <strong>{{ $r.ResidentType }}:</strong> {{ $r.Name }} <br>
-
-                {{ if $r.Phone }}
-                📞 <a href="tel:{{ $r.Phone }}">{{ $r.Phone }}</a><br>
-                {{ end }}
-
-                {{ if $r.Email }}
-                ✉️ <a href="mailto:{{ $r.Email }}">{{ $r.Email }}</a>
-                {{ end }}
-              </li>
-              {{ end }}
-            </ul>
-            {{ else }}
-            <p class="text-muted">No residents listed</p>
-            {{ end }}
-
-            <hr>
-
-            <!-- MAINTENANCE SECTION -->
-            <h6>Maintenance Payments (Last 6 Months)</h6>
-
-            {{ if gt (len $flatPayments) 0 }}
-
-            <div class="table-responsive">
-              <table class="table table-sm table-bordered">
-                <thead class="table-secondary">
-                  <tr>
-                    <th>Maintaince Month</th>
-                    <th>Status</th>
-                    <th>Paid On</th>
-                    <th>Amount</th>
-                    <th>Mode</th>
-                    <th>Payment Validation Status by Admin</th>
-                    <th>Remarks</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {{ range (first 6 $flatPayments) }}
-                  <tr>
-                    <td>{{ dateFormat "Jan-2006" (time .Month) }}</td>
-
-
-                    <td>
-                      {{ if eq .Status "Paid" }}
-                      <span class="badge bg-success">Paid</span>
-                      {{ else }}
-                      <span class="badge bg-danger">Unpaid</span>
-                      {{ end }}
-                    </td>
-
-                    <td>
-                      {{ if .PaymentDate }}
-                      {{ dateFormat "02-Jan-2006 03:04 PM" (time .PaymentDate) }}
-                      {{ else }}
-                      -
-                      {{ end }}
-                    </td>
-
-                    <td>{{ .Amount }}</td>
-                    <td>{{ .PaymentMethod }}</td>
-                    <td>{{ .Status }}</td>
-                    <td>{{ .Remarks }}</td>
-                  </tr>
-                  {{ end }}
-                </tbody>
-              </table>
-            </div>
-
-            {{ else }}
-            <p class="text-muted">No maintenance records available.</p>
-            {{ end }}
-
-          </div>
-        </td>
-      </tr>
-
-      {{ end }}
+    <tbody id="flats-body">
+        <tr><td colspan="4" class="p-4 text-center">Loading flats...</td></tr>
     </tbody>
-  </table>
+</table>
 </div>
+
+
+<!-- ============================= -->
+<!-- TEMPLATE: FLAT ROW -->
+<!-- ============================= -->
+<template id="tpl-flat-row">
+<tr>
+    <td class="col-flat-no fw-bold"></td>
+    <td class="col-floor"></td>
+    <td class="col-tower"></td>
+    <td class="text-center">
+        <button class="btn btn-sm btn-primary btn-view">View</button>
+    </td>
+</tr>
+</template>
+
+
+<!-- ============================= -->
+<!-- TEMPLATE: DETAILS ROW WRAPPER -->
+<!-- ============================= -->
+<template id="tpl-detail-row">
+<tr class="details-row bg-light d-none">
+    <td colspan="4">
+        <div class="p-3 detail-container">Loading...</div>
+    </td>
+</tr>
+</template>
+
+
+<!-- ============================= -->
+<!-- TEMPLATE: DETAILS BLOCK -->
+<!-- ============================= -->
+<template id="tpl-detail-container">
+<div class="detail-root">
+
+    <!-- Header -->
+    <h5 class="detail-flat-title"></h5>
+
+    <!-- Basic details -->
+    <p><strong>Floor:</strong> <span class="detail-floor"></span></p>
+    <p><strong>Tower:</strong> <span class="detail-tower"></span></p>
+
+    <hr>
+
+    <!-- Residents Section -->
+    <h6>Residents</h6>
+    <ul class="list-group mb-3 detail-residents"></ul>
+
+    <hr>
+
+    <!-- Payments Section -->
+    <h6>Maintenance (Last 6 Months)</h6>
+
+    <div class="table-responsive">
+    <table class="table table-sm table-bordered">
+        <thead class="table-secondary">
+            <tr>
+                <th>Month</th>
+                <th>Status</th>
+                <th>Paid On</th>
+                <th>Amount</th>
+                <th>Mode</th>
+            </tr>
+        </thead>
+        <tbody class="detail-payments"></tbody>
+    </table>
+    </div>
+
+</div>
+</template>
+
+
+<!-- ============================= -->
+<!-- TEMPLATE: RESIDENT ITEM -->
+<!-- ============================= -->
+<template id="tpl-resident-item">
+<li class="list-group-item">
+    <strong class="resident-type"></strong>:
+    <span class="resident-name"></span><br>
+    📞 <a class="resident-phone"></a><br>
+    ✉️ <a class="resident-email"></a>
+</li>
+</template>
+
+
+<!-- ============================= -->
+<!-- TEMPLATE: PAYMENT ROW -->
+<!-- ============================= -->
+<template id="tpl-payment-row">
+<tr>
+    <td class="pay-month"></td>
+    <td class="pay-status"></td>
+    <td class="pay-paidon"></td>
+    <td class="pay-amount"></td>
+    <td class="pay-mode"></td>
+</tr>
+</template>
+
+
+<!-- ============================= -->
+<!-- TEMPLATE: NO DATA -->
+<!-- ============================= -->
+<template id="tpl-no-data">
+<p class="text-muted">No data available</p>
+</template>
+
+
+<!-- ============================= -->
+<!-- Inject API from hugo.toml -->
+<!-- ============================= -->
+<script>
+  window.HUGO_API_BASE = "{{ .Site.Params.apiBase }}";
+</script>
+
+<!-- Load JS -->
+<script src="/js/data-loader.js"></script>
 
 {{ end }}

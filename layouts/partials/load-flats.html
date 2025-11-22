@@ -1,4 +1,5 @@
-{{- $url := "https://script.google.com/macros/s/AKfycbzW9kAdpmnbEBrLjcqR4akCvSOu7tYigy_rbiW7JrfQ-pp4wwmEGwjs_-kpq4Se3KYagQ/exec?type=flats" -}}
+{{- $api := site.Params.apiBase -}}
+{{- $url := printf "%s?type=flats" $api -}}
 {{- $data := slice -}}
 
 {{- with try (resources.GetRemote $url) -}}
