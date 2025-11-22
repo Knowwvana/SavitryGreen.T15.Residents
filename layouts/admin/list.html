@@ -1,0 +1,59 @@
+{{ define "main" }}
+
+<h1 class="mb-4">Flats & Residents</h1>
+
+{{ $flats := partial "load-flats.html" . }}
+{{ $residents := partial "load-residents.html" . }}
+
+<div class="row">
+
+  {{ range $flat := $flats }}
+
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+
+        <h5 class="card-title">
+          Flat <strong>{{ $flat.FlatNo }}</strong>
+        </h5>
+
+        <p class="card-text mb-1"><strong>Floor:</strong> {{ $flat.Floor }}</p>
+
+        <p class="card-text mb-1"><strong>Tower:</strong> {{ $flat.Tower }}</p>
+
+        <hr>
+
+        <h6>Residents</h6>
+
+        {{/* Filter residents where FlatNo matches */}}
+        {{ $flatNoStr := printf "%v" $flat.FlatNo }}
+        {{ $flatResidents := where $residents "FlatNo" $flatNoStr }}
+
+
+        {{ if gt (len $flatResidents) 0 }}
+
+          {{ range $r := $flatResidents }}
+
+          <div class="mb-2">
+            <strong>{{ $r.ResidentType }}:</strong> {{ $r.Name }}  
+            <br>
+            <small>{{ $r.Phone }} · {{ $r.Email }}</small>
+          </div>
+
+          {{ end }}
+
+        {{ else }}
+
+        <p class="text-muted">No residents listed</p>
+
+        {{ end }}
+
+      </div>
+    </div>
+  </div>
+
+  {{ end }}
+
+</div>
+
+{{ end }}

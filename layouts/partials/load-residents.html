@@ -1,0 +1,8 @@
+{{- $opts := dict "cache" false -}}
+{{- $base := "https://script.google.com/macros/s/AKfycbzW9kAdpmnbEBrLjcqR4akCvSOu7tYigy_rbiW7JrfQ-pp4wwmEGwjs_-kpq4Se3KYagQ/exec?type=residents" }}
+{{- $ts := now.Unix -}}
+{{- $url := printf "%s&ts=%d" $base $ts -}}
+
+{{- $remote := resources.GetRemote $url $opts -}}
+{{- $json := $remote | transform.Unmarshal -}}
+{{- return $json -}}
