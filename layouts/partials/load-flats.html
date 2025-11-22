@@ -1,9 +1,14 @@
-{{- $opts := dict "cache" false -}}
-{{- $base := "https://script.google.com/macros/s/AKfycbzW9kAdpmnbEBrLjcqR4akCvSOu7tYigy_rbiW7JrfQ-pp4wwmEGwjs_-kpq4Se3KYagQ/exec?type=flats" }}
+{{- $url := "https://script.google.com/macros/s/AKfycbzW9kAdpmnbEBrLjcqR4akCvSOu7tYigy_rbiW7JrfQ-pp4wwmEGwjs_-kpq4Se3KYagQ/exec?type=flats" -}}
+{{- $data := slice -}}
 
-{{- $ts := now.Unix -}}
-{{- $url := printf "%s&ts=%d" $base $ts -}}
+{{- with try (resources.GetRemote $url) -}}
+  {{- with .Err -}}
+    {{- errorf "GetRemote flats failed: %s" . -}}
+  {{- else with .Value -}}
+    {{- $data = .Content | transform.Unmarshal -}}
+  {{- else -}}
+    {{- errorf "Unable to get remote flats %q" $url -}}
+  {{- end -}}
+{{- end -}}
 
-{{- $remote := resources.GetRemote $url $opts -}}
-{{- $json := $remote | transform.Unmarshal -}}
-{{- return $json -}}
+{{- return $data -}}

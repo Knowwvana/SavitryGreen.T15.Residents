@@ -1,8 +1,14 @@
-{{- $opts := dict "cache" false -}}
-{{- $base := "https://script.google.com/macros/s/AKfycbzW9kAdpmnbEBrLjcqR4akCvSOu7tYigy_rbiW7JrfQ-pp4wwmEGwjs_-kpq4Se3KYagQ/exec?type=residents" }}
-{{- $ts := now.Unix -}}
-{{- $url := printf "%s&ts=%d" $base $ts -}}
+{{- $url := "https://script.google.com/macros/s/AKfycbzW9kAdpmnbEBrLjcqR4akCvSOu7tYigy_rbiW7JrfQ-pp4wwmEGwjs_-kpq4Se3KYagQ/exec?type=residents" -}}
+{{- $data := slice -}}
 
-{{- $remote := resources.GetRemote $url $opts -}}
-{{- $json := $remote | transform.Unmarshal -}}
-{{- return $json -}}
+{{- with try (resources.GetRemote $url) -}}
+  {{- with .Err -}}
+    {{- errorf "GetRemote residents failed: %s" . -}}
+  {{- else with .Value -}}
+    {{- $data = .Content | transform.Unmarshal -}}
+  {{- else -}}
+    {{- errorf "Unable to get remote residents %q" $url -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $data -}}

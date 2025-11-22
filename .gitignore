@@ -1,0 +1,11 @@
+# Hugo build output
+/public/
+/resources/
+/hugo_stats.json
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+hugo.exe
