@@ -1,4 +1,4 @@
-baseURL = 'https://example.org/'
+baseURL = "https://atulgithub.github.io/savitrygreens.T15.Residents/"
 languageCode = 'en-us'
 title = 'My New Hugo Site'
 publishDir = "docs"
