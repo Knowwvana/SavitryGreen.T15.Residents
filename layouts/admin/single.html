@@ -1,0 +1,39 @@
+{{/* Place this file in 'layouts/admin/maintenance-entry.html' */}}
+{{/* This page will be available at /admin/maintenance-entry/ */}}
+
+{{ define "main" }}
+<div class="container my-5" x-data="maintenanceApp">
+    <h2 class="mb-4">➕ New Maintenance Request</h2>
+    <p class="lead text-muted">Submit a new maintenance ticket for a flat in Tower-15.</p>
+
+    <div class="card p-4 shadow-sm">
+        <form @submit.prevent="submitMaintenanceEntry">
+            
+            <div class="mb-3">
+                <label for="apartmentInput" class="form-label">Apartment Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="apartmentInput" x-model="maintenanceFormData.apartment" required
+                       placeholder="e.g., 1001, 2505">
+                <div class="form-text">Enter the exact Flat No.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="issueTextarea" class="form-label">Detailed Issue Description <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="issueTextarea" rows="4" x-model="maintenanceFormData.issue" required
+                          placeholder="Please describe the issue, location (e.g., kitchen), and urgency."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label for="statusSelect" class="form-label">Initial Status</label>
+                <select class="form-select" id="statusSelect" x-model="maintenanceFormData.status" disabled>
+                    <option>Pending</option>
+                </select>
+                <div class="form-text">New entries are always automatically set to **Pending**.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" :disabled="!maintenanceFormData.apartment || !maintenanceFormData.issue">
+                <i class="bi bi-send me-2"></i>Submit Request
+            </button>
+        </form>
+    </div>
+</div>
+{{ end }}

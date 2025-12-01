@@ -1,0 +1,56 @@
+<!-- Navigation Header Partial -->
+<header class="app-header shadow-sm">
+    <div class="container d-flex justify-content-between align-items-center">
+        
+        <!-- Logo/Title and Navigation Link -->
+        <div class="d-flex align-items-center">
+            <!-- Title, clickable to go to dashboard -->
+            <h1 class="h4 mb-0 fw-bold me-4" style="cursor: pointer;" @click="goToPage('dashboard')">Tower 15 Dashboard</h1>
+            
+            <!-- Button to return to dashboard from any other view -->
+            <button x-show="currentPage !== 'dashboard'" @click="goToPage('dashboard')" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </button>
+        </div>
+        
+        <div class="d-flex align-items-center">
+            
+            <!-- Refresh Button -->
+            <button class="btn btn-light btn-sm fw-bold me-3" @click="fetchAndJoinData" :disabled="isLoading">
+                <i class="bi bi-arrow-clockwise" :class="{'spin': isLoading}"></i> 
+                <span x-text="isLoading ? 'Loading...' : 'Refresh'"></span>
+            </button>
+            
+            <!-- Admin Menu Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="adminMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-gear-fill"></i> Admin Menu
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
+                    
+                    <!-- Feature 1: Manual Data Entry -->
+                    <li>
+                        <a class="dropdown-item" href="#" @click.prevent="goToPage('addEntry')">
+                            <i class="bi bi-plus-circle"></i> Add Maintenance Entry
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    
+                    <!-- Feature 2: Gemini Financial Analysis -->
+                    <li>
+                        <a class="dropdown-item" href="#" @click.prevent="goToPage('financialAnalysis'); startGeminiAnalysis('financialSummary')">
+                            <i class="bi bi-currency-rupee"></i> AI Financial Insight
+                        </a>
+                    </li>
+                    
+                    <!-- Feature 3: Gemini Notice Drafting -->
+                    <li>
+                        <a class="dropdown-item" href="#" @click.prevent="goToPage('draftNotice')">
+                            <i class="bi bi-megaphone"></i> AI Draft Notice
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</header>

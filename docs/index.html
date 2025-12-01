@@ -7,29 +7,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tower 15 Manager</title>
 
-    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
-    
     <link rel="stylesheet" href="/SavitryGreen.T15.Residents/css/style.css">
     
-    
     <script>window.API_URL = "https:\/\/script.google.com\/macros\/s\/AKfycbzTsme-44gpz7guPHurfAitDxRKhYMcA9a0UfxfCPLcl_5X4fC4gE1L20bEf5KRaiBoTg\/exec";</script>
-    <script src="/SavitryGreen.T15.Residents/js/app.js"></script>
     
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    
+    <script src="/SavitryGreen.T15.Residents/js/app.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 
 <body>
     
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/SavitryGreen.T15.Residents">
+            <i class="bi bi-tools me-2"></i>Tower-15 Maintenance
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown"
+            aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="/">Home</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        Admin
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/SavitryGreen.T15.Residents/admin/maintenance-entry/">
+                                <i class="bi bi-file-earmark-plus me-2"></i>Maintenance Entry
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
     
-    
+    <main>
+        
 <div x-data="maintenanceApp">
-    
     
     <header class="app-header shadow-sm">
         <div class="container d-flex justify-content-between align-items-center">
@@ -43,10 +73,8 @@
 
     <div class="container pb-5">
         
-        
         <div x-show="error" class="alert alert-danger" x-text="error" style="display:none"></div>
 
-        
         <div class="card shadow-sm mb-4 border-0">
             <div class="card-body row g-3">
                 <div class="col-md-6">
@@ -63,7 +91,6 @@
             </div>
         </div>
 
-        
         <div class="card shadow-sm border-0 overflow-hidden">
             <div class="table-responsive">
                 <table class="table mb-0 align-middle table-hover">
@@ -76,40 +103,32 @@
                         </tr>
                     </thead>
                     
-                    
                     <tbody x-show="isLoading"><tr><td colspan="5" class="text-center py-5">Loading Society Data...</td></tr></tbody>
 
-                    
                     <template x-for="flat in filteredFlats" :key="flat.FlatNo">
                         <tbody class="border-bottom">
                             
-                            
-                            <tr class="summary-row" :class="{'active-row': expandedFlatId === flat.FlatNo}">
+                            <tr class="summary-row" :class="{'active-row': expandedFlatId === flat.FlatNo}" @click="toggleDetails(flat.FlatNo)">
                                 <td class="ps-4 fw-bold" x-text="flat.FlatNo"></td>
                                 <td><span class="badge border bg-light text-dark" x-text="flat.is_rented ? 'Tenanted' : 'Owner'"></span></td>
                                 <td>
-                                    
                                     <span x-show="hasPendingDues(flat)" class="badge bg-danger-subtle text-danger">Pending</span>
                                     
-                                    
                                     <span x-show="!hasPendingDues(flat) && hasAnyHistory(flat)" class="badge bg-success-subtle text-success">Clear</span>
-                                    
                                     
                                     <span x-show="!hasAnyHistory(flat)" class="badge bg-danger-subtle text-danger">Pending</span>
                                 </td>
                                 <td class="text-end pe-4">
-                                    <button class="btn btn-sm btn-outline-primary" @click="toggleDetails(flat.FlatNo)">
-                                        <span x-text="expandedFlatId === flat.FlatNo ? 'Close' : 'Details'"></span>
+                                    <button class="btn btn-sm btn-outline-primary" @click.stop="toggleDetails(flat.FlatNo)">
+                                         <span x-text="expandedFlatId === flat.FlatNo ? 'Close' : 'Details'"></span>
                                     </button>
                                 </td>
                             </tr>
 
-                            
                             <tr x-show="expandedFlatId === flat.FlatNo" x-transition>
                                 <td colspan="5" class="p-0 border-0">
                                     <div class="p-4 bg-light border-start border-4 border-primary">
                                         <div class="row g-4">
-                                            
                                             
                                             <div class="col-md-4">
                                                 <h6 class="fw-bold text-muted small mb-3">Residents</h6>
@@ -123,9 +142,7 @@
                                                 <div x-show="flat.residents.length === 0" class="text-muted small">No active residents.</div>
                                             </div>
 
-                                            
                                             <div class="col-md-8">
-                                                
                                                 
                                                 <h6 class="fw-bold text-muted small mb-2">Monthly History</h6>
                                                 <div class="bg-white border rounded mb-3">
@@ -145,7 +162,6 @@
                                                     </table>
                                                 </div>
 
-                                                
                                                 <div x-show="flat.adhoc_history.length > 0">
                                                     <div class="adhoc-separator"></div>
                                                     <h6 class="fw-bold text-muted small mb-2 text-warning-emphasis">Adhoc Payments</h6>
@@ -179,6 +195,7 @@
     </div>
 </div>
 
+    </main>
 </body>
 
 <footer class="text-center py-4 text-muted small mt-5">

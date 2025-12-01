@@ -1,7 +1,8 @@
+{{/* Place this file in 'layouts/index.html' */}}
+
 {{ define "main" }}
 <div x-data="maintenanceApp">
     
-    <!-- Header -->
     <header class="app-header shadow-sm">
         <div class="container d-flex justify-content-between align-items-center">
             <h1 class="h4 mb-0 fw-bold">Tower 15 Dashboard</h1>
@@ -14,10 +15,8 @@
 
     <div class="container pb-5">
         
-        <!-- Error Alert -->
         <div x-show="error" class="alert alert-danger" x-text="error" style="display:none"></div>
 
-        <!-- Filters -->
         <div class="card shadow-sm mb-4 border-0">
             <div class="card-body row g-3">
                 <div class="col-md-6">
@@ -34,7 +33,6 @@
             </div>
         </div>
 
-        <!-- Main Table -->
         <div class="card shadow-sm border-0 overflow-hidden">
             <div class="table-responsive">
                 <table class="table mb-0 align-middle table-hover">
@@ -47,41 +45,33 @@
                         </tr>
                     </thead>
                     
-                    <!-- Loading -->
                     <tbody x-show="isLoading"><tr><td colspan="5" class="text-center py-5">Loading Society Data...</td></tr></tbody>
 
-                    <!-- Data Loop -->
                     <template x-for="flat in filteredFlats" :key="flat.FlatNo">
                         <tbody class="border-bottom">
                             
-                            <!-- Summary Row -->
-                            <tr class="summary-row" :class="{'active-row': expandedFlatId === flat.FlatNo}">
+                            <tr class="summary-row" :class="{'active-row': expandedFlatId === flat.FlatNo}" @click="toggleDetails(flat.FlatNo)">
                                 <td class="ps-4 fw-bold" x-text="flat.FlatNo"></td>
                                 <td><span class="badge border bg-light text-dark" x-text="flat.is_rented ? 'Tenanted' : 'Owner'"></span></td>
                                 <td>
-                                    <!-- 1. Pending Status -->
                                     <span x-show="hasPendingDues(flat)" class="badge bg-danger-subtle text-danger">Pending</span>
                                     
-                                    <!-- 2. Clear Status (Only if no pending dues AND history exists) -->
                                     <span x-show="!hasPendingDues(flat) && hasAnyHistory(flat)" class="badge bg-success-subtle text-success">Clear</span>
                                     
-                                    <!-- 3. Untracked Status (If NO history exists at all) -->
                                     <span x-show="!hasAnyHistory(flat)" class="badge bg-danger-subtle text-danger">Pending</span>
                                 </td>
                                 <td class="text-end pe-4">
-                                    <button class="btn btn-sm btn-outline-primary" @click="toggleDetails(flat.FlatNo)">
-                                        <span x-text="expandedFlatId === flat.FlatNo ? 'Close' : 'Details'"></span>
+                                    <button class="btn btn-sm btn-outline-primary" @click.stop="toggleDetails(flat.FlatNo)">
+                                         <span x-text="expandedFlatId === flat.FlatNo ? 'Close' : 'Details'"></span>
                                     </button>
                                 </td>
                             </tr>
 
-                            <!-- Details Panel -->
                             <tr x-show="expandedFlatId === flat.FlatNo" x-transition>
                                 <td colspan="5" class="p-0 border-0">
                                     <div class="p-4 bg-light border-start border-4 border-primary">
                                         <div class="row g-4">
                                             
-                                            <!-- Residents -->
                                             <div class="col-md-4">
                                                 <h6 class="fw-bold text-muted small mb-3">Residents</h6>
                                                 <template x-for="person in flat.residents">
@@ -94,10 +84,8 @@
                                                 <div x-show="flat.residents.length === 0" class="text-muted small">No active residents.</div>
                                             </div>
 
-                                            <!-- Financials -->
                                             <div class="col-md-8">
                                                 
-                                                <!-- Monthly -->
                                                 <h6 class="fw-bold text-muted small mb-2">Monthly History</h6>
                                                 <div class="bg-white border rounded mb-3">
                                                     <table class="table table-sm mb-0 small text-center table-light">
@@ -116,7 +104,6 @@
                                                     </table>
                                                 </div>
 
-                                                <!-- Adhoc -->
                                                 <div x-show="flat.adhoc_history.length > 0">
                                                     <div class="adhoc-separator"></div>
                                                     <h6 class="fw-bold text-muted small mb-2 text-warning-emphasis">Adhoc Payments</h6>
