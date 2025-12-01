@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower 15 Manager</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ "css/style.css" | relURL }}">
+    <!-- Logic Scripts -->
+    <!-- app.js contains the fetching logic -->
+    <script>window.API_URL = "{{ .Site.Params.apiUrl }}";</script>
+    <script src="{{ "js/app.js" | relURL }}"></script>
+    <!-- Alpine.js handles the reactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+    <!-- Content Injection Point -->
+    <!-- This is where index.html content will be inserted -->
+    {{ block "main" . }}{{ end }}
+</body>
+
+<footer class="text-center py-4 text-muted small mt-5">
+    <p>&copy; {{ now.Format "2006" }} Tower 15 Association</p>
+</footer>
+
+</html>

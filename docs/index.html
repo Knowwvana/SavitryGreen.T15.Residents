@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta name="generator" content="Hugo 0.152.2"><script src="/SavitryGreen.T15.Residents/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=SavitryGreen.T15.Residents/livereload" data-no-instant defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower 15 Manager</title>
+
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+    
+    <link rel="stylesheet" href="/SavitryGreen.T15.Residents/css/style.css">
+    
+    
+    <script>window.API_URL = "https:\/\/script.google.com\/macros\/s\/AKfycbzTsme-44gpz7guPHurfAitDxRKhYMcA9a0UfxfCPLcl_5X4fC4gE1L20bEf5KRaiBoTg\/exec";</script>
+    <script src="/SavitryGreen.T15.Residents/js/app.js"></script>
+    
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+    
+    
+    
+<div x-data="maintenanceApp">
+    
+    
+    <header class="app-header shadow-sm">
+        <div class="container d-flex justify-content-between align-items-center">
+            <h1 class="h4 mb-0 fw-bold">Tower 15 Dashboard</h1>
+            <button class="btn btn-light btn-sm fw-bold" @click="fetchAndJoinData" :disabled="isLoading">
+                <i class="bi bi-arrow-clockwise" :class="{'spin': isLoading}"></i> 
+                <span x-text="isLoading ? 'Loading...' : 'Refresh'"></span>
+            </button>
+        </div>
+    </header>
+
+    <div class="container pb-5">
+        
+        
+        <div x-show="error" class="alert alert-danger" x-text="error" style="display:none"></div>
+
+        
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <input type="text" x-model="search" class="form-control" placeholder="Search Flat No or Name...">
+                </div>
+                <div class="col-md-3">
+                    <select x-model="filterStatus" class="form-select">
+                        <option value="">Status: All</option>
+                        <option value="Defaulter">Has Dues</option>
+                        <option value="Clear">No Dues</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end pt-2 text-muted">Showing <span x-text="filteredFlats.length"></span> Units</div>
+            </div>
+        </div>
+
+        
+        <div class="card shadow-sm border-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Flat No</th>
+                            <th>Occupancy</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    
+                    
+                    <tbody x-show="isLoading"><tr><td colspan="5" class="text-center py-5">Loading Society Data...</td></tr></tbody>
+
+                    
+                    <template x-for="flat in filteredFlats" :key="flat.FlatNo">
+                        <tbody class="border-bottom">
+                            
+                            
+                            <tr class="summary-row" :class="{'active-row': expandedFlatId === flat.FlatNo}">
+                                <td class="ps-4 fw-bold" x-text="flat.FlatNo"></td>
+                                <td><span class="badge border bg-light text-dark" x-text="flat.is_rented ? 'Tenanted' : 'Owner'"></span></td>
+                                <td>
+                                    
+                                    <span x-show="hasPendingDues(flat)" class="badge bg-danger-subtle text-danger">Pending</span>
+                                    
+                                    
+                                    <span x-show="!hasPendingDues(flat) && hasAnyHistory(flat)" class="badge bg-success-subtle text-success">Clear</span>
+                                    
+                                    
+                                    <span x-show="!hasAnyHistory(flat)" class="badge bg-danger-subtle text-danger">Pending</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-primary" @click="toggleDetails(flat.FlatNo)">
+                                        <span x-text="expandedFlatId === flat.FlatNo ? 'Close' : 'Details'"></span>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            
+                            <tr x-show="expandedFlatId === flat.FlatNo" x-transition>
+                                <td colspan="5" class="p-0 border-0">
+                                    <div class="p-4 bg-light border-start border-4 border-primary">
+                                        <div class="row g-4">
+                                            
+                                            
+                                            <div class="col-md-4">
+                                                <h6 class="fw-bold text-muted small mb-3">Residents</h6>
+                                                <template x-for="person in flat.residents">
+                                                    <div class="bg-white p-3 rounded shadow-sm mb-2 border">
+                                                        <div class="fw-bold" x-text="person.name"></div>
+                                                        <div class="badge mb-2" :class="person.type === 'Owner' ? 'bg-primary' : 'bg-warning text-dark'" x-text="person.type"></div>
+                                                        <div class="small text-muted"><i class="bi bi-telephone"></i> <span x-text="person.mobile"></span></div>
+                                                    </div>
+                                                </template>
+                                                <div x-show="flat.residents.length === 0" class="text-muted small">No active residents.</div>
+                                            </div>
+
+                                            
+                                            <div class="col-md-8">
+                                                
+                                                
+                                                <h6 class="fw-bold text-muted small mb-2">Monthly History</h6>
+                                                <div class="bg-white border rounded mb-3">
+                                                    <table class="table table-sm mb-0 small text-center table-light">
+                                                        <thead class="table-light"><tr><th>Month</th><th>Amount</th><th>Status</th><th>Mode</th></tr></thead>
+                                                        <tbody>
+                                                            <template x-for="p in flat.maintenance_history">
+                                                                <tr>
+                                                                    <td class="fw-bold" x-text="p.Title"></td>
+                                                                    <td x-text="formatCurrency(p.Amount)"></td>
+                                                                    <td><span class="badge" :class="p.Status === 'Paid' ? 'bg-success' : 'bg-danger'" x-text="p.Status"></span></td>
+                                                                    <td x-text="p.PaymentMethod || '-'"></td>
+                                                                </tr>
+                                                            </template>
+                                                            <tr x-show="flat.maintenance_history.length === 0"><td colspan="4" class="text-muted small">No history available</td></tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                
+                                                <div x-show="flat.adhoc_history.length > 0">
+                                                    <div class="adhoc-separator"></div>
+                                                    <h6 class="fw-bold text-muted small mb-2 text-warning-emphasis">Adhoc Payments</h6>
+                                                    <div class="bg-white border rounded">
+                                                        <table class="table table-sm mb-0 small text-center table-striped">
+                                                            <thead class="table-light"><tr><th class="text-start ps-3">Purpose</th><th>Amount</th><th>Status</th><th class="text-start">Comments</th></tr></thead>
+                                                            <tbody>
+                                                                <template x-for="p in flat.adhoc_history">
+                                                                    <tr>
+                                                                        <td class="text-start ps-3 fw-bold" x-text="p.Title"></td>
+                                                                        <td x-text="formatCurrency(p.Amount)"></td>
+                                                                        <td><span class="badge" :class="p.Status === 'Paid' ? 'bg-success' : 'bg-danger'" x-text="p.Status"></span></td>
+                                                                        <td class="text-start text-muted" x-text="p.Remarks || '-'"></td>
+                                                                    </tr>
+                                                                </template>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </template>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<footer class="text-center py-4 text-muted small mt-5">
+    <p>&copy; 2025 Tower 15 Association</p>
+</footer>
+
+</html>

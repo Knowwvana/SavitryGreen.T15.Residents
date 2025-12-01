@@ -1,0 +1,21 @@
+baseURL = 'https://knowwvana.github.io/SavitryGreen.T15.Residents/'
+languageCode = 'en-us'
+title = 'Savitry Greens - Tower 15 Residents'
+publishDir = "docs"
+enableRobotsTXT = true
+
+# Configuration for root-relative links to work correctly in a GitHub subfolder
+relativeURLs = false 
+uglyURLs = false
+
+# ===============================================
+# Custom Parameters Section (Used by app.js)
+# ===============================================
+[params]
+  # IMPORTANT: This API URL is read by app.js through baseof.html injection
+  apiUrl = "https://script.google.com/macros/s/AKfycbzTsme-44gpz7guPHurfAitDxRKhYMcA9a0UfxfCPLcl_5X4fC4gE1L20bEf5KRaiBoTg/exec"
+
+[caches]
+  [caches.getresource]
+    dir    = ":cacheDir/:project"
+    maxAge = "0"
