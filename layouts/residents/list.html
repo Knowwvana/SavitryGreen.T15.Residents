@@ -1,0 +1,181 @@
+{{ define "main" }}
+
+<div class="container-fluid px-0 page-animate">
+
+    <!-- Loading State -->
+    <div x-show="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Fetching society data...</p>
+    </div>
+
+    <!-- Error State -->
+    <div x-show="error" class="alert alert-danger" x-text="error" style="display: none;"></div>
+
+    <!-- Main Content (Only show when not loading) -->
+    <div x-show="!isLoading">
+        <!-- CONTROL BAR -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                    <!-- Filters -->
+                    <div class="d-flex gap-2 w-100 w-md-auto overflow-auto">
+                        <button class="btn btn-dark px-3" :class="filter === 'all' ? 'btn-dark' : 'btn-light text-muted border'" @click="filter = 'all'">All</button>
+                        <button class="btn btn-light text-success border px-3" :class="filter === 'paid' ? 'bg-success-subtle border-success fw-bold' : ''" @click="filter = 'paid'">Paid</button>
+                        <button class="btn btn-light text-danger border px-3" :class="filter === 'unpaid' ? 'bg-danger-subtle border-danger fw-bold' : ''" @click="filter = 'unpaid'">Unpaid</button>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="position-relative w-100" style="max-width: 300px;">
+                        <i class="bi bi-search position-absolute text-muted" style="top: 10px; left: 12px;"></i>
+                        <input type="text" x-model="search" class="form-control ps-5" placeholder="Search flat or name...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN RESIDENTS TABLE -->
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 mobile-table">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4 py-3 text-muted small fw-bold text-uppercase" style="width: 10%;">Flat No</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase" style="width: 25%;">Resident Name</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase" style="width: 10%;">Type</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase" style="width: 15%;">Area</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase" style="width: 10%;">Status</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase text-end" style="width: 15%;">Dues</th>
+                            <th class="pe-4 py-3 text-muted small fw-bold text-uppercase text-end" style="width: 15%;">Action</th>
+                        </tr>
+                    </thead>
+                    <template x-for="flat in filteredFlats" :key="flat.FlatNo">
+                        <tbody style="border-top: 1px solid #f0f0f0;">
+                            <!-- MASTER ROW -->
+                            <tr :class="expandedFlatId === flat.FlatNo ? 'bg-light' : ''">
+                                <td class="ps-4 fw-bold" data-label="Flat No" x-text="flat.FlatNo"></td>
+                                <td data-label="Resident">
+                                    <div class="d-flex align-items-center justify-content-end justify-content-md-start">
+                                        <div class="rounded-circle text-white d-flex align-items-center justify-content-center me-3 shadow-sm"
+                                                :class="flat.colorClass" 
+                                                style="width: 35px; height: 35px; font-size: 0.8rem;" 
+                                                x-text="flat.initials"></div>
+                                        <div class="text-end text-md-start">
+                                            <div class="fw-bold text-dark" x-text="flat.primaryName"></div>
+                                            <small class="text-muted" x-text="flat.primaryPhone"></small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td data-label="Type">
+                                    <span class="badge bg-light text-dark border fw-normal" x-text="flat.is_rented ? 'Tenant' : 'Owner'"></span>
+                                </td>
+                                <td class="text-muted" data-label="Area"><span x-text="flat.Area"></span> sqft</td>
+                                <td data-label="Status">
+                                    <span class="badge rounded-pill px-3 py-2"
+                                            :class="flat.status === 'Paid' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'"
+                                            x-text="flat.status"></span>
+                                </td>
+                                <td class="text-end fw-bold font-monospace" data-label="Dues" :class="flat.totalDues > 0 ? 'text-danger' : 'text-muted'">
+                                    <span x-text="formatCurrency(flat.totalDues)"></span>
+                                </td>
+                                <td class="pe-4 text-end" data-label="Action">
+                                    <button class="btn btn-sm btn-outline-primary" @click="toggleDetails(flat.FlatNo)">
+                                        <span x-text="expandedFlatId === flat.FlatNo ? 'Close' : 'View Details'"></span>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- DETAIL ROW -->
+                            <tr x-show="expandedFlatId === flat.FlatNo" x-transition.opacity.duration.300ms>
+                                <td colspan="7" class="p-0 border-0">
+                                    <div class="p-4 bg-light border-bottom">
+                                        <div class="row g-4">
+                                            <!-- LEFT: Resident Details -->
+                                            <div class="col-md-4 border-end">
+                                                <h6 class="text-uppercase text-muted fw-bold mb-3 small">Resident Details</h6>
+                                                <div class="card border-0 shadow-sm p-3 mb-3">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <span class="badge bg-primary me-2" x-text="flat.is_rented ? 'Tenant' : 'Owner'"></span>
+                                                        <h5 class="mb-0 fw-bold" x-text="flat.primaryName"></h5>
+                                                    </div>
+                                                    <div class="d-flex align-items-center text-muted mb-2">
+                                                        <i class="bi bi-telephone me-2"></i> <span x-text="flat.primaryPhone"></span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center text-muted">
+                                                        <i class="bi bi-envelope me-2"></i> <span x-text="flat.primaryEmail"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- RIGHT: Payment History -->
+                                            <div class="col-md-8">
+                                                <h6 class="text-uppercase text-muted fw-bold mb-3 small">Monthly Maintenance</h6>
+                                                <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                                                    <table class="table table-sm table-striped mb-0" style="font-size: 0.9rem;">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th class="ps-3">Month</th>
+                                                                <th>Amount</th>
+                                                                <th>Status</th>
+                                                                <th>Mode</th>
+                                                                <th>Date</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <!-- Show message if empty -->
+                                                            <tr x-show="flat.maintenance_history.length === 0">
+                                                                <td colspan="5" class="text-center text-muted py-3">No payment records found.</td>
+                                                            </tr>
+                                                            <template x-for="p in flat.maintenance_history" :key="p.PaymentID">
+                                                                <tr>
+                                                                    <td class="ps-3 fw-bold" x-text="p.Month"></td>
+                                                                    <td><span x-text="formatCurrency(p.Amount)"></span></td>
+                                                                    <td><span class="badge" :class="p.Status === 'Paid' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'" x-text="p.Status"></span></td>
+                                                                    <td x-text="p.PaymentMethod || '-'"></td>
+                                                                    <td x-text="p.PaymentDate ? new Date(p.PaymentDate).toLocaleDateString() : '-'"></td>
+                                                                </tr>
+                                                            </template>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                <!-- Adhoc Section -->
+                                                <div x-show="flat.adhoc_history.length > 0">
+                                                    <h6 class="text-uppercase text-muted fw-bold mb-3 small">Adhoc / Special Funds</h6>
+                                                    <div class="card border-0 shadow-sm overflow-hidden">
+                                                        <table class="table table-sm mb-0" style="font-size: 0.9rem;">
+                                                            <thead class="bg-warning-subtle text-warning-emphasis">
+                                                                <tr>
+                                                                    <th class="ps-3">Purpose</th>
+                                                                    <th>Amount</th>
+                                                                    <th>Status</th>
+                                                                    <th>Comments</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <template x-for="adhoc in flat.adhoc_history" :key="adhoc.PaymentID">
+                                                                    <tr>
+                                                                        <td class="ps-3 fw-bold" x-text="adhoc.Title"></td>
+                                                                        <td><span x-text="formatCurrency(adhoc.Amount)"></span></td>
+                                                                        <td><span class="badge" :class="adhoc.Status === 'Paid' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'" x-text="adhoc.Status"></span></td>
+                                                                        <td class="text-muted small" x-text="adhoc.Remarks || '-'"></td>
+                                                                    </tr>
+                                                                </template>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </template>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

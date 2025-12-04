@@ -1,0 +1,12 @@
+baseURL = 'http://localhost:1313/'
+languageCode = 'en-us'
+title = 'Tower-15 Society'
+theme = [] # This line is crucial. It tells Hugo "Don't look for a theme, use my layouts folder."
+[params]
+  society_name = "Tower-15 Society"
+  society_address = "Sector 42, Maintenance Drive"
+  secretary_name = "Atul Gupta"
+  secretary_title = "Developed by"
+  secretary_initials = "AG"
+  # IMPORTANT: This API URL is read by app.js through baseof.html injection
+  API_URL = "https://script.google.com/macros/s/AKfycbwvQvOSfTFF0hVkk3Q6m8ym2CSQNIWrL4IxoAAd-v9JSUjAlr8UhVUHjlTLzv_cgh6R0g/exec"

@@ -1,0 +1,68 @@
+<!-- BRAND SECTION -->
+<div class="brand-section border-bottom d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+        <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 brand-icon" style="width: 40px; height: 40px; flex-shrink: 0; font-size: 1.2rem; transition: margin 0.3s;">
+            <i class="bi bi-building"></i>
+        </div>
+        <div style="line-height: 1;" class="brand-text">
+            <h5 class="mb-0 fw-bold text-dark" style="font-size: 1.1rem; letter-spacing: -0.5px;">SocietyLink</h5>
+            <small class="text-muted" style="font-size: 0.75rem;">Maintenance Tracker</small>
+        </div>
+    </div>
+    
+    <!-- HAMBURGER TOGGLE (Visible on Desktop) -->
+    <button class="btn btn-link text-muted p-0 d-none d-md-block" @click="toggleSidebar()">
+        <i class="bi" :class="sidebarCollapsed ? 'bi-layout-sidebar-inset' : 'bi-list'" style="font-size: 1.5rem;"></i>
+    </button>
+</div>
+
+<!-- NAVIGATION SECTION -->
+<div class="nav-section">
+    <div class="section-label">Main</div>
+    
+    <a href="{{ "/" | relURL }}" class="nav-link {{ if .IsHome }}active{{ end }}" title="Dashboard">
+        <i class="bi bi-grid-fill"></i> 
+        <span>Dashboard</span>
+    </a>
+    
+    <a href="{{ "residents" | relURL }}" class="nav-link {{ if eq .Title "Residents" }}active{{ end }}" title="Residents">
+        <i class="bi bi-people-fill"></i> 
+        <span>Residents & Dues</span>
+    </a>
+    
+    <a href="{{ "expenses" | relURL }}" class="nav-link {{ if eq .Title "Expenses" }}active{{ end }}" title="Expenses">
+        <i class="bi bi-receipt"></i> 
+        <span>Expenses</span>
+    </a>
+    
+    <a href="{{ "reports" | relURL }}" class="nav-link {{ if eq .Title "Reports" }}active{{ end }}" title="Reports">
+        <i class="bi bi-bar-chart-fill"></i> 
+        <span>Reports</span>
+    </a>
+
+    <hr class="my-3 mx-3 text-secondary opacity-25">
+
+    <div class="section-label mt-0">Admin</div>
+    <a href="{{ "settings" | relURL }}" class="nav-link {{ if eq .Title "Settings" }}active{{ end }}" title="Settings">
+        <i class="bi bi-gear-fill"></i> 
+        <span>Rates & Rules</span>
+    </a>
+    <a href="#" class="nav-link" title="New Entry">
+        <i class="bi bi-plus-lg"></i> 
+        <span>New Entry</span>
+    </a>
+</div>
+
+<!-- USER PROFILE SECTION -->
+<div class="user-section">
+    <div class="bg-white border rounded-3 p-2 d-flex align-items-center shadow-sm" :class="sidebarCollapsed ? 'justify-content-center border-0 shadow-none bg-transparent' : ''">
+        <img src="https://ui-avatars.com/api/?name={{ .Site.Params.secretary_initials }}&background=f1f5f9&color=475569" class="rounded-circle me-3 brand-icon" width="36" height="36" alt="Profile" style="transition: margin 0.3s;">
+        <div class="flex-grow-1 user-details" style="line-height: 1.2;">
+            <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ .Site.Params.secretary_name }}</div>
+            <small class="text-muted" style="font-size: 0.7rem;">{{ .Site.Params.secretary_title }}</small>
+        </div>
+        <button class="btn btn-link text-muted p-0 user-details" style="text-decoration: none;">
+            <i class="bi bi-box-arrow-right"></i>
+        </button>
+    </div>
+</div>
