@@ -58,6 +58,8 @@ document.addEventListener('alpine:init', () => {
         mobileSidebarOpen: false,
         isLoading: false,
         isSubmitting: false,
+        showSuccessMessage: false, // New state for success alert
+        progress: 0, // New state for progress bar
         error: null,
         flats: [], 
         search: '',
@@ -65,22 +67,104 @@ document.addEventListener('alpine:init', () => {
         expandedFlatId: null,
         scriptUrl: window.API_URL || '',
         
-        // Added currentDate to fix "currentDate is not defined" error
         currentDate: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
 
         // --- New Maintenance Entry Form Data ---
         maintenanceFormData: {
-            FlatNo: '', Category: '', Title: '', Month: '', Amount: null,
-            PaymentDate: '', PaymentMethod: '', Status: 'Paid', Remarks: '',
+            FlatNo: '', Category: 'Monthly', Title: '', Month: '', Amount: null,
+            PaymentDate: '', PaymentMethod: 'UPI', Status: 'Paid', Remarks: '',
         },
 
         // --- Initialization ---
         async init() {
+            this.setInitialDates();
             await this.fetchAndJoinData();
         },
 
         toggleSidebar() {
             this.sidebarCollapsed = !this.sidebarCollapsed;
+        },
+
+        // --- FORM HELPERS ---
+        setInitialDates() {
+            const today = new Date().toISOString().split('T')[0];
+            const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+            
+            if (!this.maintenanceFormData.PaymentDate) this.maintenanceFormData.PaymentDate = today;
+            if (!this.maintenanceFormData.Month) this.maintenanceFormData.Month = currentMonth;
+        },
+
+        // --- SUBMISSION HANDLER ---
+        async submitMaintenanceEntry() {
+            this.isSubmitting = true;
+            this.error = null;
+            this.showSuccessMessage = false;
+            this.progress = 10; // Start progress
+
+            // 1. Validation
+            if (!this.maintenanceFormData.FlatNo || !this.maintenanceFormData.Amount) {
+                this.error = "Flat Number and Amount are required.";
+                this.isSubmitting = false;
+                this.progress = 0;
+                return;
+            }
+
+            this.progress = 30; // Validation done
+
+            // 2. Logic for Title
+            let entryTitle = this.maintenanceFormData.Title;
+            if (this.maintenanceFormData.Category === 'Monthly') {
+                entryTitle = 'Maint: ' + this.maintenanceFormData.Month;
+            } else if (this.maintenanceFormData.Category === 'Adhoc' && !entryTitle) {
+                this.error = "Adhoc entries require a Title/Purpose.";
+                this.isSubmitting = false;
+                this.progress = 0;
+                return;
+            }
+
+            this.progress = 50; // Payload ready
+
+            // 3. Prepare Payload
+            const payload = _preparePayload(this.maintenanceFormData, entryTitle);
+
+            // 4. Send Data
+            try {
+                // Simulate progress for better UX before the actual fetch
+                let progressInterval = setInterval(() => {
+                    if (this.progress < 80) this.progress += 10;
+                }, 200);
+
+                await DataFetcher(this.scriptUrl, 'POST', payload);
+                
+                clearInterval(progressInterval);
+                this.progress = 100; // Complete
+
+                // Show Success
+                this.showSuccessMessage = true;
+                
+                // Reset Form
+                this.maintenanceFormData = {
+                    FlatNo: '', Category: 'Monthly', Title: '', Month: '', Amount: null,
+                    PaymentDate: '', PaymentMethod: 'UPI', Status: 'Paid', Remarks: '',
+                };
+                this.setInitialDates();
+                
+                // Refresh Data to reflect changes
+                await this.fetchAndJoinData();
+                
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    this.showSuccessMessage = false;
+                    this.progress = 0;
+                }, 3000);
+                
+            } catch (e) {
+                console.error(e);
+                this.error = e.message;
+                this.progress = 0;
+            } finally {
+                this.isSubmitting = false;
+            }
         },
 
         // --- GET: Fetch & Join Data ---
@@ -93,10 +177,10 @@ document.addEventListener('alpine:init', () => {
                 const flatsRaw = data.flats || [];
                 const residentsRaw = data.residents || [];
                 
-                // Sanitize Payments: Ensure every payment has a unique ID to prevent Alpine "reading 'after'" crash
+                // Sanitize Payments: Ensure every payment has a strictly unique ID.
                 const paymentsRaw = (data.payments || []).map((p, idx) => ({
                     ...p,
-                    PaymentID: p.PaymentID || `pay-gen-${idx}-${Date.now()}` // Fallback ID if missing
+                    PaymentID: p.PaymentID ? `${p.PaymentID}-${idx}` : `pay-gen-${idx}-${Date.now()}` 
                 }));
 
                 const colors = ['bg-primary', 'bg-success', 'bg-warning', 'bg-info', 'bg-danger', 'bg-secondary'];
