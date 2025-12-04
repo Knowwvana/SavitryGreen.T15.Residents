@@ -2,6 +2,7 @@ baseURL = 'http://localhost:1313/'
 languageCode = 'en-us'
 title = 'Tower-15 Society'
 theme = [] # This line is crucial. It tells Hugo "Don't look for a theme, use my layouts folder."
+publishDir = "docs"
 [params]
   society_name = "Tower-15 Society"
   society_address = "Sector 42, Maintenance Drive"
