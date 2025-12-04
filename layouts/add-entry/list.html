@@ -24,13 +24,12 @@
 
                     <div class="card-body p-4">
                         
-                        <!-- Progress Bar (Hidden by default) -->
-                        <div class="progress mb-4" style="height: 4px; display: none;" x-show="isSubmitting || progress > 0" :style="{ display: (isSubmitting || progress > 0) ? 'flex' : 'none' }">
-                            <div class="progress-bar bg-primary" role="progressbar" :style="`width: ${progress}%`"></div>
+                        <!-- Progress Bar (Thicker and Animated) -->
+                        <div class="progress mb-4" style="height: 10px; display: none;" x-show="isSubmitting || progress > 0" :style="{ display: (isSubmitting || progress > 0) ? 'flex' : 'none' }">
+                            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" :style="`width: ${progress}%`"></div>
                         </div>
 
                         <!-- Success Alert -->
-                        <!-- Fixed: Removed d-flex from parent to prevent !important override on display:none -->
                         <div x-show="showSuccessMessage" style="display: none;" class="alert alert-success mb-4 py-2" role="alert" x-transition.opacity>
                             <div class="d-flex align-items-center">
                                 <i class="bi bi-check-circle-fill me-2"></i>
@@ -48,8 +47,9 @@
                                 <!-- Flat Selection -->
                                 <div class="col-md-6">
                                     <label class="form-label form-label-sm text-muted fw-bold">Flat Number</label>
-                                    <select class="form-select form-select-sm bg-light border-0" x-model="maintenanceFormData.FlatNo" required :disabled="isSubmitting">
-                                        <option value="" disabled selected>Select Flat</option>
+                                    <select class="form-select form-select-sm bg-light border-0" x-model="maintenanceFormData.FlatNo" required :disabled="isSubmitting || isLoading">
+                                        <!-- Dynamic Placeholder based on loading state -->
+                                        <option value="" disabled selected x-text="isLoading ? 'Please wait loading flats...' : 'Select Flat'"></option>
                                         <template x-for="flat in flats" :key="flat.FlatNo">
                                             <option :value="flat.FlatNo" x-text="flat.FlatNo + ' - ' + flat.primaryName"></option>
                                         </template>
@@ -118,9 +118,15 @@
 
                             <!-- Actions -->
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary fw-medium py-2" :disabled="isSubmitting">
-                                    <span x-show="!isSubmitting">Save Entry</span>
-                                    <span x-show="isSubmitting" style="display: none;">Processing...</span>
+                                <button type="submit" class="btn btn-primary fw-medium py-2" :disabled="isSubmitting || showSuccessMessage">
+                                    <!-- Default State -->
+                                    <span x-show="!isSubmitting && !showSuccessMessage">Save Entry</span>
+                                    
+                                    <!-- Processing State: Only show if submitting AND success is NOT yet shown -->
+                                    <span x-show="isSubmitting && !showSuccessMessage" style="display: none;">Processing...</span>
+                                    
+                                    <!-- Success State: Show immediately when success message triggers -->
+                                    <span x-show="showSuccessMessage" style="display: none;"><i class="bi bi-check-lg me-1"></i> Saved</span>
                                 </button>
                             </div>
                         </form>
