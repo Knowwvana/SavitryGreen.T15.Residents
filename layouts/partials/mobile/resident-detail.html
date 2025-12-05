@@ -1,74 +1,229 @@
-<div class="px-3 pt-4 pb-2 d-flex align-items-center sticky-top bg-white border-bottom shadow-sm">
+<!-- HEADER -->
+<div class="px-3 pt-4 pb-2 d-flex align-items-center sticky-top bg-white border-bottom shadow-sm" style="z-index: 1020;">
     <button class="btn btn-light rounded-circle p-2 me-3" @click="view = 'residents'">
         <i class="bi bi-arrow-left fs-5"></i>
     </button>
     <h5 class="fw-bold mb-0">Flat <span x-text="activeResident.flat"></span> Details</h5>
 </div>
 
-<div class="bg-light min-vh-100 p-3">
+<!-- Added 'px-3 pt-3' to container so cards float with margins -->
+<div class="bg-light min-vh-100 pb-5 px-3 pt-3">
     
-    <!-- Balance Summary Card -->
-    <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
-        <div class="card-body p-4 text-center" :class="activeResident.due > 0 ? 'bg-danger bg-opacity-10' : 'bg-success bg-opacity-10'">
-            <small class="text-uppercase fw-bold" :class="activeResident.due > 0 ? 'text-danger' : 'text-success'">Total Pending Dues</small>
-            <h1 class="display-4 fw-bold mb-0 mt-2" 
-                :class="activeResident.due > 0 ? 'text-danger' : 'text-success'"
-                x-text="'₹' + activeResident.due.toLocaleString('en-IN')"></h1>
-            <div x-show="activeResident.due > 0" class="mt-2 text-danger small fw-bold">
-                <i class="bi bi-exclamation-circle-fill me-1"></i> Action Required
-            </div>
-             <div x-show="activeResident.due <= 0" class="mt-2 text-success small fw-bold">
-                <i class="bi bi-check-circle-fill me-1"></i> All Clear
+    <!-- 1. RESIDENT(S) DETAILS SECTION (Card Style with Blue Border) -->
+    <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden position-relative bg-white">
+        
+        <!-- Left Blue Border Strip -->
+        <div class="position-absolute top-0 start-0 bottom-0 bg-primary" style="width: 5px;"></div>
+
+        <div class="card-body p-3 ps-4">
+            <h6 class="fw-bold text-secondary small mb-3 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.65rem;">Resident(s) Details</h6>
+            
+            <div class="d-flex flex-column gap-3">
+                <template x-for="p in activeResident.occupants">
+                    <div class="border-bottom pb-3 last:border-0 last:pb-0">
+                        
+                        <!-- Line 1: Name -->
+                        <div class="fw-bold text-dark mb-1" style="font-size: 1rem;" x-text="p.name"></div>
+
+                        <!-- Line 2: Role | Phone | Email | Actions -->
+                        <div class="d-flex flex-wrap align-items-center gap-3" style="font-size: 0.8rem;">
+                            
+                            <!-- Role -->
+                            <div class="d-flex align-items-center gap-1 fw-bold"
+                                 :class="p.type === 'Owner' ? 'text-success' : 'text-danger'">
+                                <i class="bi" :class="p.type === 'Owner' ? 'bi-house-fill' : 'bi-person-badge-fill'"></i>
+                                <span x-text="p.type"></span>
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="d-flex align-items-center gap-1 text-muted fw-medium">
+                                <i class="bi bi-telephone-fill text-primary"></i>
+                                <span x-text="p.phone"></span>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="d-flex align-items-center gap-1 text-muted fw-medium" x-show="p.email">
+                                <i class="bi bi-envelope-fill text-secondary"></i>
+                                <span x-text="p.email"></span>
+                            </div>
+
+                            <!-- Action Buttons (Right Aligned or Inline) -->
+                            <div class="d-flex gap-2 ms-auto">
+                                <a :href="'https://wa.me/91' + p.phone" class="btn btn-success rounded-circle p-0 d-flex align-items-center justify-content-center border-0 shadow-sm" style="width: 28px; height: 28px;">
+                                    <i class="bi bi-whatsapp" style="font-size: 0.8rem;"></i>
+                                </a>
+                                <a :href="'tel:' + p.phone" class="btn btn-primary rounded-circle p-0 d-flex align-items-center justify-content-center border-0 shadow-sm" style="width: 28px; height: 28px;">
+                                    <i class="bi bi-telephone-fill" style="font-size: 0.7rem;"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
 
-    <!-- Occupants List -->
-    <h6 class="fw-bold text-muted small px-1 mb-2">RESIDENTS</h6>
-    <div class="d-flex flex-column gap-2 mb-4">
-        <template x-for="p in activeResident.occupants">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-3 d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="fw-bold mb-1 text-dark" x-text="p.name"></h6>
-                        <div class="d-flex gap-2 small">
-                            <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i> <span x-text="p.type"></span></span>
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a :href="'tel:' + p.phone" class="btn btn-light rounded-circle text-primary"><i class="bi bi-telephone-fill"></i></a>
-                        <a :href="'https://wa.me/91' + p.phone" class="btn btn-light rounded-circle text-success"><i class="bi bi-whatsapp"></i></a>
-                    </div>
+    <!-- 2. PAYMENT SUMMARY (Compact, No Dividers) -->
+    <!-- Removed 'px-3' wrapper since parent now handles padding -->
+    <div class="mb-4">
+        <h6 class="fw-bold text-muted small mb-2 px-1">PAYMENT SUMMARY</h6>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-body py-3 px-1 d-flex justify-content-around align-items-center text-center">
+                
+                <!-- Paid -->
+                <div class="d-flex flex-column align-items-center">
+                    <div class="mb-1 text-success"><i class="bi bi-check-circle-fill fs-3"></i></div>
+                    <div class="text-muted fw-bold small" style="font-size: 0.6rem;">PAID</div>
+                    <div class="fw-bold text-dark" x-text="'₹' + (activeResident.stats.totalPaid || 0).toLocaleString('en-IN')"></div>
                 </div>
-            </div>
-        </template>
-    </div>
+                
+                <!-- In Review -->
+                <div class="d-flex flex-column align-items-center">
+                    <div class="mb-1 text-warning"><i class="bi bi-hourglass-split fs-3"></i></div>
+                    <div class="text-muted fw-bold small" style="font-size: 0.6rem;">IN REVIEW</div>
+                    <div class="fw-bold text-dark" x-text="'₹' + (activeResident.stats.pendingValidation || 0).toLocaleString('en-IN')"></div>
+                </div>
 
-    <!-- History -->
-    <h6 class="fw-bold text-muted small px-1 mb-2">PAYMENT HISTORY</h6>
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="list-group list-group-flush">
-            <template x-for="txn in activeResident.history">
-                <div class="list-group-item p-3 border-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                <i class="bi" :class="txn.type === 'Adhoc' ? 'bi-star-fill text-warning' : 'bi-calendar-check-fill text-primary'"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold text-dark" x-text="txn.category"></div>
-                                <small class="text-muted" x-text="new Date(txn.date).toLocaleDateString('en-GB')"></small>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <div class="fw-bold text-success" x-text="'+ ₹' + txn.amount"></div>
-                        </div>
-                    </div>
+                <!-- Total Due -->
+                <div class="d-flex flex-column align-items-center">
+                    <div class="mb-1 text-danger"><i class="bi bi-exclamation-circle-fill fs-3"></i></div>
+                    <div class="text-muted fw-bold small" style="font-size: 0.6rem;">TOTAL DUE</div>
+                    <div class="fw-bold text-dark" x-text="'₹' + (activeResident.stats.currentDue || 0).toLocaleString('en-IN')"></div>
                 </div>
-            </template>
-            <div x-show="!activeResident.history || activeResident.history.length === 0" class="p-4 text-center text-muted">
-                No payment history found.
+
             </div>
         </div>
+    </div>
+
+    <div class="d-flex flex-column gap-4">
+
+        <!-- 3. PENDING DUES (Single Section List) -->
+        <div x-show="activeResident.pendingList && activeResident.pendingList.length > 0">
+            <h6 class="fw-bold text-dark mb-2 ps-2 border-start border-4 border-danger">PENDING DUES</h6>
+            
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="list-group list-group-flush">
+                    <template x-for="item in activeResident.pendingList">
+                        <div class="list-group-item p-3 border-light d-flex justify-content-between align-items-center">
+                            
+                            <!-- Month Info -->
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-calendar-x text-danger fs-5"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-dark" x-text="item.label"></h6>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Monthly Maintenance</small>
+                                </div>
+                            </div>
+
+                            <!-- Amount & Action -->
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="fw-bold text-danger" x-text="'₹' + item.amount"></span>
+                                
+                                <!-- Pay Button (Blue) -->
+                                <a :href="'upi://pay?pa=society@upi&pn=Society&am=' + item.amount + '&tn=Maint ' + item.label + ' ' + activeResident.flat" 
+                                   class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-sm">
+                                    Pay
+                                </a>
+                                <!-- Record Button -->
+                                <button class="btn btn-light btn-sm rounded-circle border text-muted" 
+                                        style="width: 32px; height: 32px;"
+                                        @click="payPending(item.value, item.amount)">
+                                    <i class="bi bi-pencil-fill" style="font-size: 0.7rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. MONTHLY HISTORY -->
+        <div>
+            <h6 class="fw-bold text-dark mb-2 ps-2 border-start border-4 border-primary">MONTHLY PAYMENTS</h6>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="list-group list-group-flush">
+                    <template x-for="txn in activeResident.history.filter(h => h.type === 'Monthly')">
+                        <div class="list-group-item p-3 border-light">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex gap-3">
+                                    <!-- Meaningful Icon: Receipt -->
+                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-receipt-cutoff"></i>
+                                    </div>
+                                    <div>
+                                        <!-- Month & Amount -->
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold text-dark" x-text="txn.month || 'Maintenance'"></span>
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 rounded-pill px-2" 
+                                                  style="font-size: 0.7rem;" x-text="'₹' + txn.amount"></span>
+                                        </div>
+                                        
+                                        <!-- Meta: Date & Method -->
+                                        <div class="text-muted small mt-1">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            <span x-text="new Date(txn.date).toLocaleDateString('en-GB')"></span>
+                                            <span class="mx-1">•</span>
+                                            <span x-text="txn.method"></span>
+                                        </div>
+
+                                        <!-- Comments -->
+                                        <div class="mt-2 p-2 bg-light rounded-3 small text-muted border border-light" x-show="txn.remarks">
+                                            <i class="bi bi-chat-left-text me-1"></i> <span x-text="txn.remarks"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Status Badge -->
+                                <div class="text-end">
+                                    <span class="badge rounded-pill" 
+                                          :class="txn.status === 'Paid' ? 'bg-success' : 'bg-warning text-dark'" 
+                                          style="font-size: 0.65rem;" x-text="txn.status"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <div class="p-4 text-center text-muted small" x-show="!activeResident.history.some(h => h.type === 'Monthly')">
+                        No monthly payments recorded
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. ADHOC HISTORY -->
+        <div>
+            <h6 class="fw-bold text-dark mb-2 ps-2 border-start border-4 border-warning">ADHOC / OTHER PAYMENTS</h6>
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="list-group list-group-flush">
+                    <template x-for="txn in activeResident.history.filter(h => h.type === 'Adhoc')">
+                        <div class="list-group-item p-3 border-light">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex gap-3">
+                                    <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-star-fill"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark" x-text="txn.remarks || txn.category"></div>
+                                        <div class="text-muted small mt-1">
+                                            <span x-text="new Date(txn.date).toLocaleDateString('en-GB')"></span> • 
+                                            <span x-text="txn.method"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-success" x-text="'+ ₹' + txn.amount"></div>
+                                    <span class="badge rounded-pill mt-1" 
+                                          :class="txn.status === 'Paid' ? 'bg-success' : 'bg-warning text-dark'" 
+                                          style="font-size: 0.6rem;" x-text="txn.status"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <div class="p-4 text-center text-muted small" x-show="!activeResident.history.some(h => h.type === 'Adhoc')">
+                        No adhoc payments recorded
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>

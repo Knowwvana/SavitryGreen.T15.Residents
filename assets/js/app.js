@@ -5,7 +5,7 @@ document.addEventListener('alpine:init', () => {
         filterStatus: 'all',
         currentDate: '',
         
-        activeResident: { flat: '', occupants: [], history: [], due: 0 },
+        activeResident: { flat: '', occupants: [], history: [], due: 0, pendingList: [], stats: {} },
         residents: [],
         settings: {}, 
         isLoading: true,
@@ -66,18 +66,22 @@ document.addEventListener('alpine:init', () => {
                         .map(r => ({
                             name: r.Name || r.name || r.ResidentName || 'Unknown',
                             phone: r.Phone || r.Mobile || r.phone || '',
+                            email: r.Email || r.email || '', // NEW: Capture Email
                             type: r.Type || r.type || r.ResidentType || 'Owner'
                         }));
 
                     const history = rawPayments
                         .filter(p => this.getCleanFlatNo(p.FlatNo || p.flat) === flatKey)
                         .map(p => ({
+                            id: p.PaymentID || p.id,
                             date: p.PaymentDate || p.date,
-                            amount: p.Amount || p.amount,
+                            month: p.Month || '', // NEW: Capture Month (e.g. "2025-12")
+                            amount: parseFloat(p.Amount || p.amount || 0),
                             category: p.Category || p.category || 'Maintenance',
                             type: p.Type || 'Monthly',
-                            // NEW: Map the Status field
-                            status: p.Status || p.status || 'Pending' 
+                            status: p.Status || p.status || 'Pending',
+                            remarks: p.Remarks || p.remarks || '',
+                            method: p.PaymentMethod || p.method || 'UPI'
                         }))
                         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -117,8 +121,95 @@ document.addEventListener('alpine:init', () => {
 
         openHistory(resident) {
             this.activeResident = resident;
+            
+            // 1. Calculate Stats
+            const totalPaid = resident.history
+                .filter(p => p.status === 'Paid')
+                .reduce((sum, p) => sum + p.amount, 0);
+                
+            const pendingVal = resident.history
+                .filter(p => p.status !== 'Paid' && p.status !== 'Rejected')
+                .reduce((sum, p) => sum + p.amount, 0);
+
+            this.activeResident.stats = {
+                totalPaid: totalPaid,
+                pendingValidation: pendingVal,
+                currentDue: resident.due
+            };
+
+            // 2. Generate Pending Months List
+            // Default to 'Sep-2025' and 150 if settings missing
+            const startStr = this.settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025'; 
+            const monthlyAmount = parseFloat(this.settings.MonthlyMaintainenceAmount || 150);
+            
+            this.activeResident.pendingList = this.calculatePendingMonths(startStr, monthlyAmount, resident.history);
+
             this.view = 'history';
             window.scrollTo(0,0);
+        },
+
+        // Helper to generate list of unpaid months
+        calculatePendingMonths(startStr, amount, history) {
+            // Parse "Sep-2025"
+            const monthsMap = {Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11};
+            const parts = startStr.split('-');
+            if(parts.length !== 2) return [];
+
+            let startMonth = monthsMap[parts[0].substr(0,3)];
+            let startYear = parseInt(parts[1]);
+            
+            const now = new Date();
+            const endYear = now.getFullYear();
+            const endMonth = now.getMonth();
+            
+            let list = [];
+            
+            // Iterate month by month from Start Date to Now
+            let currY = startYear;
+            let currM = startMonth;
+
+            while (currY < endYear || (currY === endYear && currM <= endMonth)) {
+                // Format: "2025-09" (matches HTML input type="month")
+                const monthKey = `${currY}-${String(currM + 1).padStart(2, '0')}`;
+                
+                // Display: "Sep 2025"
+                const monthName = Object.keys(monthsMap).find(key => monthsMap[key] === currM);
+                const display = `${monthName} ${currY}`;
+
+                // Check if Paid in History
+                // Look for a payment that is 'Monthly', 'Paid', and matches the month key
+                const isPaid = history.some(p => 
+                    p.type === 'Monthly' && 
+                    p.status === 'Paid' && 
+                    p.month === monthKey
+                );
+
+                if (!isPaid) {
+                    list.push({
+                        label: display,
+                        value: monthKey,
+                        amount: amount
+                    });
+                }
+
+                // Increment
+                currM++;
+                if (currM > 11) {
+                    currM = 0;
+                    currY++;
+                }
+            }
+            return list.reverse(); // Show newest pending first
+        },
+
+        // Open Add Entry with Pre-filled data
+        payPending(monthIso, amount) {
+            this.resetTxnForm();
+            this.txnForm.flatNo = this.activeResident.flat;
+            this.txnForm.category = 'Monthly';
+            this.txnForm.month = monthIso;
+            this.txnForm.amount = amount;
+            this.view = 'add';
         },
 
         resetTxnForm() {
@@ -130,6 +221,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         async saveTransaction() {
+            // ... (Existing saveTransaction Logic) ...
             this.isSubmitting = true;
             const paymentId = Date.now().toString(); 
             const timestamp = new Date().toLocaleString();
