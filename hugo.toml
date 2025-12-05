@@ -1,7 +1,7 @@
 baseURL = 'https://example.org/'
 languageCode = 'en-us'
 theme = [] # Crucial: We are NOT using a theme, we are building custom layouts.
-
+publishDir = "docs"
 [params]
   secretary_initials = "AG"
   API_URL = "https://script.google.com/macros/s/AKfycbwvQvOSfTFF0hVkk3Q6m8ym2CSQNIWrL4IxoAAd-v9JSUjAlr8UhVUHjlTLzv_cgh6R0g/exec"
