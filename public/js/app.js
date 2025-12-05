@@ -1,6 +1,6 @@
 document.addEventListener('alpine:init', () => {
     window.societyApp = (api_url) => ({
-        view: 'residents', // Default view
+        view: 'residents', 
         searchQuery: '',
         filterStatus: 'all',
         currentDate: '',
@@ -18,9 +18,19 @@ document.addEventListener('alpine:init', () => {
 
         updateDate() {
             const date = new Date();
-            // Format: "FRI, DEC 5"
             const options = { weekday: 'short', month: 'short', day: 'numeric' };
             this.currentDate = date.toLocaleDateString('en-US', options).toUpperCase();
+        },
+
+        // HELPER: Removes zeros to ensure "001" matches "1"
+        getCleanFlatNo(value) {
+            if (!value) return '';
+            // Convert to string, trim whitespace, parse to int to remove zeros, then back to string
+            // "001" -> 1 -> "1"
+            // "101" -> 101 -> "101"
+            const s = String(value).trim();
+            const n = parseInt(s, 10);
+            return isNaN(n) ? s : String(n); 
         },
 
         async fetchData() {
@@ -31,6 +41,9 @@ document.addEventListener('alpine:init', () => {
                 const response = await fetch(this.apiUrl + '?action=getData'); 
                 const result = await response.json();
                 
+                // Debugging: Check your console to see the raw data!
+                console.log("Raw API Data:", result);
+
                 const rawFlats = result.flats || [];
                 const rawResidents = result.residents || [];
                 const rawPayments = result.payments || [];
@@ -38,42 +51,44 @@ document.addEventListener('alpine:init', () => {
 
                 // MERGE DATA
                 this.residents = rawFlats.map((f, index) => {
-                    const flatNo = String(f.FlatNo || f.flat || '').trim();
+                    // 1. Normalize the Flat ID from the Master List
+                    const flatKey = this.getCleanFlatNo(f.FlatNo || f.flat);
+                    const displayFlat = String(f.FlatNo || f.flat || '').trim(); // Keep original for display (e.g. "001")
                     
-                    // Occupants
+                    // 2. Find Occupants (Match using clean flat number)
                     const occupants = rawResidents
-                        .filter(r => String(r.FlatNo || r.flat).trim() === flatNo)
+                        .filter(r => this.getCleanFlatNo(r.FlatNo || r.flat) === flatKey)
                         .map(r => ({
-                            name: r.Name || r.name || 'Unknown',
+                            name: r.Name || r.name || r.ResidentName || 'Unknown',
                             phone: r.Phone || r.Mobile || r.phone || '',
-                            type: r.Type || r.type || 'Owner'
+                            // Map 'ResidentType' column correctly
+                            type: r.Type || r.type || r.ResidentType || 'Owner'
                         }));
 
-                    // Payment History & Last Payment Logic
+                    // 3. Find History (Match using clean flat number)
                     const history = rawPayments
-                        .filter(p => String(p.FlatNo || p.flat).trim() === flatNo)
+                        .filter(p => this.getCleanFlatNo(p.FlatNo || p.flat) === flatKey)
                         .map(p => ({
                             date: p.PaymentDate || p.date,
                             amount: p.Amount || p.amount,
                             category: p.Category || p.category || 'Maintenance',
                             type: p.Type || 'Monthly'
                         }))
-                        // Sort by date descending (newest first)
                         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
                     const lastPayment = history.length > 0 ? history[0] : null;
-
                     const due = parseFloat(f.Due || f.Pending || 0);
 
                     return {
                         id: index,
-                        flat: flatNo,
+                        flat: displayFlat, // Show "001" on screen, but we used "1" for matching
                         occupants: occupants,
                         history: history,
                         lastPayment: lastPayment,
                         due: due,
                         isPaid: due <= 0,
-                        searchStr: `${flatNo} ${occupants.map(o => o.name).join(' ')}`.toLowerCase()
+                        // Search includes normalized keys so searching "1" finds "001"
+                        searchStr: `${displayFlat} ${flatKey} ${occupants.map(o => o.name).join(' ')}`.toLowerCase()
                     };
                 });
 
