@@ -1,5 +1,6 @@
-baseURL = 'https://example.org/'
+baseURL = 'https://knowwvana.github.io/SavitryGreen.T15.Residents/'
 languageCode = 'en-us'
+title = 'Savitry Greens - Tower 15 Residents'
 theme = [] # Crucial: We are NOT using a theme, we are building custom layouts.
 publishDir = "docs"
 [params]
