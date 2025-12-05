@@ -1,0 +1,140 @@
+<!-- HEADER SECTION -->
+<div class="bg-white px-3 pt-4 pb-0 sticky-top shadow-sm" style="z-index: 1000;">
+    
+    <!-- Title & Date -->
+    <div class="d-flex align-items-center mb-3">
+        <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+            <i class="bi bi-building"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold mb-0 text-dark">Resident List</h5>
+            <small class="text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;" x-text="currentDate"></small>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="position-relative mb-3">
+        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+        <input type="text" x-model="searchQuery" class="form-control ps-5 border-light bg-light rounded-3 shadow-sm" placeholder="Search flat or name..." style="height: 48px;">
+    </div>
+
+    <!-- Filter Chips (Green/Pink) -->
+    <div class="d-flex gap-2 pb-3 overflow-auto">
+        <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
+                :class="filterStatus === 'all' ? 'bg-dark text-white border-dark' : 'bg-white text-muted border'"
+                @click="filterStatus = 'all'">
+            All
+        </button>
+        <!-- Paid = Green -->
+        <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
+                :class="filterStatus === 'paid' ? 'bg-success text-white border-success' : 'bg-success bg-opacity-10 text-success border-0'"
+                @click="filterStatus = 'paid'">
+            Paid
+        </button>
+        <!-- Unpaid = Pink/Red -->
+        <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
+                :class="filterStatus === 'unpaid' ? 'bg-danger text-white border-danger' : 'bg-danger bg-opacity-10 text-danger border-0'"
+                @click="filterStatus = 'unpaid'">
+            Unpaid
+        </button>
+    </div>
+</div>
+
+<!-- LIST SECTION -->
+<div class="p-3 d-flex flex-column gap-3 pb-5 bg-light min-vh-100">
+    
+    <template x-if="isLoading">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <p class="text-muted small">Loading residents...</p>
+        </div>
+    </template>
+
+    <template x-if="!isLoading">
+        <!-- We use 'index' to create the alternating border effect -->
+        <template x-for="(r, index) in filteredResidents" :key="r.flat">
+            
+            <div class="card shadow-sm rounded-4 overflow-hidden bg-white mb-2 border-0" 
+                 @click="openHistory(r)"
+                 style="position: relative;">
+                
+                <!-- Alternating Colored Left Border Strip -->
+                <div class="position-absolute top-0 start-0 bottom-0" 
+                     :class="index % 2 === 0 ? 'bg-primary' : 'bg-info'"
+                     style="width: 4px;"></div>
+
+                <div class="card-body p-3 ps-4"> <!-- Added ps-4 for spacing from strip -->
+                    <div class="d-flex align-items-start">
+                        
+                        <!-- 1. Flat Number (Blue Box) -->
+                        <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 flex-shrink-0" 
+                             style="width: 50px; height: 50px; font-weight: 800; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);">
+                            <span x-text="r.flat"></span>
+                        </div>
+
+                        <!-- 2. Main Content -->
+                        <div class="flex-grow-1" style="min-width: 0;">
+                            
+                            <!-- Occupant Name & Type -->
+                            <template x-if="r.occupants.length > 0">
+                                <template x-for="p in r.occupants">
+                                    <div class="mb-2">
+                                        <h6 class="fw-bold mb-1 text-dark text-truncate" style="font-size: 1rem;" x-text="p.name"></h6>
+                                        
+                                        <!-- Type & Phone -->
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="d-flex align-items-center text-secondary small fw-medium">
+                                                <i class="bi me-1 text-success" :class="p.type === 'Owner' ? 'bi-house-fill' : 'bi-person-badge-fill'"></i>
+                                                <span x-text="p.type"></span> <!-- Full Text: Owner/Tenant -->
+                                            </div>
+                                            <div class="d-flex align-items-center text-secondary small fw-medium">
+                                                <i class="bi bi-telephone-fill me-1 text-success"></i>
+                                                <span x-text="p.phone"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </template>
+                             <template x-if="r.occupants.length === 0">
+                                <span class="text-muted fst-italic small">No occupant info</span>
+                            </template>
+
+                            <hr class="border-secondary opacity-10 my-2">
+
+                            <!-- 3. Bottom Row: Pending Dues & Last Payment -->
+                            <div class="d-flex justify-content-between align-items-end">
+                                
+                                <!-- Pending Dues -->
+                                <div>
+                                    <div class="text-secondary fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">PENDING DUES</div>
+                                    <div class="fw-bold fs-5 d-flex align-items-center" :class="r.due > 0 ? 'text-danger' : 'text-dark'">
+                                        <i x-show="r.due > 0" class="bi bi-exclamation-circle-fill me-1" style="font-size: 0.9rem;"></i>
+                                        <span x-text="'₹' + r.due.toLocaleString('en-IN')"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Last Payment (Small Pill) -->
+                                <template x-if="r.lastPayment">
+                                    <div class="text-end">
+                                        <div class="text-secondary fw-bold" style="font-size: 0.55rem; letter-spacing: 0.5px;">LAST PAID</div>
+                                        <div class="badge bg-light text-dark border d-flex align-items-center gap-1 px-2 py-1 mt-1">
+                                            <i class="bi bi-check-circle-fill text-success" style="font-size: 0.7rem;"></i>
+                                            <span style="font-weight: 600;" x-text="'₹' + r.lastPayment.amount"></span>
+                                            <span class="text-muted fw-normal border-start ps-1 ms-1" x-text="new Date(r.lastPayment.date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})"></span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Chevron -->
+                                <button class="btn btn-light rounded-circle btn-sm ms-2 shadow-sm border-0" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-chevron-right text-muted" style="font-size: 0.8rem;"></i>
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </template>
+</div>
