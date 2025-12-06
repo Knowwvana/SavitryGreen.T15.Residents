@@ -26,68 +26,249 @@
     
     
 
-<div x-data="societyApp('https://script.google.com/macros/s/AKfycbwvQvOSfTFF0hVkk3Q6m8ym2CSQNIWrL4IxoAAd-v9JSUjAlr8UhVUHjlTLzv_cgh6R0g/exec')" class="min-vh-100 bg-white" x-cloak>
+<div x-data="societyApp('https://script.google.com/macros/s/AKfycbziHRwfhgzg7GgW5mf0riwmknB3T8vZTTgyLogclyxJhfaeZH_tc1Wg-tyRs53mNrhsGg/exec')" class="min-vh-100 bg-white" x-cloak>
 
     
     <div x-show="view === 'home'" class="app-view">
         
-<div class="px-3 pt-4 pb-2 bg-white sticky-top d-flex justify-content-between align-items-center shadow-sm">
-    <div>
-        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Savitry Greens - Tower 15 Residents</small>
-        <h5 class="fw-bold mb-0 text-dark">Dashboard</h5>
+<div class="position-relative bg-dark text-white shadow-sm overflow-hidden" 
+     style="min-height: 220px; border-bottom-left-radius: 2rem; border-bottom-right-radius: 2rem;">
+    
+    
+    <div class="position-absolute top-0 start-0 w-100 h-100" 
+         style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(51, 65, 85, 0.8) 100%), url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; z-index: 0;">
     </div>
-    <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-weight: bold;">AG</div>
+
+    
+    <div class="position-relative p-4 d-flex flex-column h-100 justify-content-between" style="z-index: 1;">
+        
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-success bg-opacity-25 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <i class="bi bi-building text-white"></i>
+                </div>
+                <small class="fw-medium text-white-50" style="letter-spacing: 0.5px;" x-text="currentDate"></small>
+            </div>
+            <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold shadow-sm" @click="view = 'add'">
+                <i class="bi bi-plus-lg me-1"></i> New Entry
+            </button>
+        </div>
+
+        
+        <div>
+            <h2 class="fw-bold mb-1" x-text="settings.SocietyName || 'Loading...'"></h2>
+            <div class="d-flex align-items-center text-white-50 small mb-4">
+                <i class="bi bi-geo-alt-fill me-2 text-warning"></i>
+                <span x-text="settings.SocietyAddress || ''"></span>
+            </div>
+
+            
+            <div class="d-flex gap-2">
+                <div class="px-3 py-2 rounded-3 bg-white bg-opacity-10 backdrop-blur d-flex align-items-center border border-white border-opacity-10">
+                    <div class="text-start">
+                        <small class="d-block text-white-50" style="font-size: 0.65rem; text-transform: uppercase;">Total Flats</small>
+                        <span class="fw-bold fs-5" x-text="dashboardStats.flatsCount"></span>
+                    </div>
+                </div>
+                <div class="px-3 py-2 rounded-3 bg-white bg-opacity-10 backdrop-blur d-flex align-items-center border border-white border-opacity-10">
+                    <div class="text-start">
+                        <small class="d-block text-white-50" style="font-size: 0.65rem; text-transform: uppercase;">Owners</small>
+                        <span class="fw-bold fs-5" x-text="dashboardStats.ownersCount"></span>
+                    </div>
+                </div>
+                <div class="px-3 py-2 rounded-3 bg-white bg-opacity-10 backdrop-blur d-flex align-items-center border border-white border-opacity-10">
+                    <div class="text-start">
+                        <small class="d-block text-white-50" style="font-size: 0.65rem; text-transform: uppercase;">Tenants</small>
+                        <span class="fw-bold fs-5" x-text="dashboardStats.tenantsCount"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="p-3">
+
+<div class="p-3 pb-5" style="margin-top: -20px; position: relative; z-index: 2;">
+
     
-    <div class="card border-0 text-white rounded-4 shadow mb-4 overflow-hidden position-relative" style="background: linear-gradient(135deg, #0f172a 0%, #334155 100%);">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                    <small class="text-white-50 text-uppercase fw-bold">Cash in Hand</small>
-                    <h1 class="display-5 fw-bold mb-0 mt-1">₹22,850</h1>
-                </div>
-                <i class="bi bi-wallet2 fs-3 text-white-50"></i>
-            </div>
-            <div class="d-flex gap-2">
-                <div style="background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 8px; flex: 1;">
-                    <small class="text-white-50 d-block" style="font-size: 0.7rem;">Income</small>
-                    <span class="fw-bold">₹18,000</span>
-                </div>
-                <div style="background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 8px; flex: 1;">
-                    <small class="text-white-50 d-block" style="font-size: 0.7rem;">Expense</small>
-                    <span class="fw-bold">₹4,000</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    
-    <div class="row g-3">
-        <div class="col-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white" @click="view = 'residents'">
-                <div class="card-body p-3">
-                    <div class="d-flex align-items-center mb-2">
-                        <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-2" style="width: 35px; height: 35px;"><i class="bi bi-exclamation-lg"></i></div>
-                        <span class="ms-2 small fw-bold text-muted">Pending</span>
-                    </div>
-                    <h5 class="fw-bold mb-0">₹29,550</h5>
-                </div>
-            </div>
-        </div>
-        <div class="col-6">
+    <div class="row g-3 mb-4">
+        
+        <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
                 <div class="card-body p-3">
-                    <div class="d-flex align-items-center mb-2">
-                        <div class="rounded-circle bg-info bg-opacity-10 text-info p-2" style="width: 35px; height: 35px;"><i class="bi bi-houses"></i></div>
-                        <span class="ms-2 small fw-bold text-muted">Flats</span>
+                    
+                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom border-light">
+                        <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px;">
+                            <i class="bi bi-wallet2 fs-5"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Collections</small>
+                            
+                            <h3 class="fw-bold text-success mb-0" x-text="'₹' + dashboardStats.totalCollection.toLocaleString('en-IN')"></h3>
+                        </div>
                     </div>
-                    <h5 class="fw-bold mb-0">9</h5>
+                    
+                    
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded-3 border border-light h-100">
+                                <small class="text-muted d-block mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Monthly</small>
+                                <span class="fw-bold text-dark" x-text="'₹' + dashboardStats.monthlyCollection.toLocaleString('en-IN')"></span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded-3 border border-light h-100">
+                                <small class="text-muted d-block mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Adhoc / Other</small>
+                                <span class="fw-bold text-info" x-text="'₹' + dashboardStats.adhocCollection.toLocaleString('en-IN')"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="row g-2 mt-0">
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded-3 border border-light h-100">
+                                <small class="text-muted d-block mb-1" style="font-size: 0.65rem; text-transform: uppercase;">This Month</small>
+                                <span class="fw-bold text-dark" x-text="'₹' + dashboardStats.currMonthCollection.toLocaleString('en-IN')"></span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded-3 border border-light h-100">
+                                <small class="text-muted d-block mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Last Month</small>
+                                <span class="fw-bold text-dark" x-text="'₹' + dashboardStats.prevMonthCollection.toLocaleString('en-IN')"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="col-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-cash-stack fs-5"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Cash in Hand</small>
+                    <h5 class="fw-bold text-dark mt-1 mb-0">₹0</h5>
+                    <small class="text-muted" style="font-size: 0.6rem;">Coming soon</small>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="col-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-graph-down-arrow fs-5"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Expenses</small>
+                    <h5 class="fw-bold text-dark mt-1 mb-0">₹0</h5>
+                    <small class="text-muted" style="font-size: 0.6rem;">Coming soon</small>
                 </div>
             </div>
         </div>
     </div>
+
+    
+    <div class="d-flex justify-content-between align-items-end mb-3 px-1">
+        <h6 class="fw-bold text-dark mb-0">Recent Transactions</h6>
+        <a href="#" class="text-decoration-none small fw-bold" @click.prevent="view = 'residents'">View All</a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="list-group list-group-flush">
+            <template x-for="(txn, index) in dashboardStats.recentTransactions" :key="txn.id">
+                <div class="list-group-item p-3 border-light position-relative">
+                    
+                    
+                    <div class="position-absolute top-0 start-0 bottom-0" 
+                         :class="index % 2 === 0 ? 'bg-primary' : 'bg-info'"
+                         style="width: 4px;"></div>
+
+                    <div class="d-flex justify-content-between align-items-center ps-2">
+                        <div class="d-flex align-items-start gap-3">
+                            
+                            
+                            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 mt-1" 
+                                 style="width: 45px; height: 45px;"
+                                 :class="txn.isMonthly ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'">
+                                
+                                <i class="bi fs-5" :class="txn.isMonthly ? 'bi-wallet-fill' : 'bi-cash-stack'"></i>
+                            </div>
+                            
+                            
+                            <div class="d-flex flex-column">
+                                
+                                
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;" x-text="txn.type"></span>
+                                    
+                                    
+                                    <span class="badge bg-light text-secondary border px-2 py-1 d-flex align-items-center gap-1" style="font-size: 0.65rem;">
+                                        <i class="bi bi-phone-flip" style="font-size: 0.7rem;"></i>
+                                        <span x-text="txn.method"></span>
+                                    </span>
+                                </div>
+
+                                
+                                <div class="text-dark small fw-medium mt-1 d-flex align-items-center">
+                                    
+                                    <i class="bi bi-house-door-fill me-1" 
+                                       :class="txn.payerType === 'Tenant' ? 'text-warning' : 'text-success'"></i> 
+                                    
+                                    <span x-text="txn.displayResidentName"></span>
+                                    <span class="text-muted ms-1" style="font-size: 0.8rem;">(Flat No:<span x-text="txn.displayFlat"></span>)</span>
+                                </div>
+                                
+                                
+                                <div class="text-muted small mt-1 d-flex align-items-center flex-wrap gap-2" style="font-size: 0.7rem;">
+                                    
+                                    
+                                    <div class="d-flex align-items-center">
+                                         <i class="bi bi-calendar-check-fill text-secondary me-1" x-show="txn.isMonthly"></i>
+                                         <span x-text="txn.displayPaymentFor"></span>
+                                    </div>
+                                    
+                                    <span x-show="txn.isMonthly">•</span>
+
+                                    
+                                    <div class="d-flex align-items-center text-primary">
+                                        <i class="bi bi-clock-fill me-1"></i>
+                                        <span x-text="txn.fullDateTime"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <div class="text-end">
+                            <div class="fw-bold text-success fs-6" x-text="'+ ₹' + txn.amount"></div>
+                            <div class="mt-1">
+                                <span class="badge rounded-pill" 
+                                      :class="txn.status.toLowerCase() === 'paid' ? 'bg-success' : 'bg-warning text-dark'" 
+                                      style="font-size: 0.6rem;" x-text="txn.status"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            
+            <template x-if="dashboardStats.recentTransactions.length === 0">
+                <div class="p-4 text-center text-muted small">
+                    No recent transactions found
+                </div>
+            </template>
+        </div>
+    </div>
+
 </div>
     </div>
 
@@ -95,7 +276,6 @@
     <div x-show="view === 'residents'" class="app-view">
         
 <div class="bg-white px-3 pt-4 pb-0 sticky-top shadow-sm" style="z-index: 1000;">
-    
     
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center">
@@ -139,19 +319,13 @@
     <div class="d-flex gap-2 pb-3 overflow-auto">
         <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
                 :class="filterStatus === 'all' ? 'bg-dark text-white border-dark' : 'bg-white text-muted border'"
-                @click="filterStatus = 'all'">
-            All
-        </button>
+                @click="filterStatus = 'all'">All</button>
         <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
                 :class="filterStatus === 'paid' ? 'bg-success text-white border-success' : 'bg-success bg-opacity-10 text-success border-0'"
-                @click="filterStatus = 'paid'">
-            Paid
-        </button>
+                @click="filterStatus = 'paid'">Paid</button>
         <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
                 :class="filterStatus === 'unpaid' ? 'bg-danger text-white border-danger' : 'bg-danger bg-opacity-10 text-danger border-0'"
-                @click="filterStatus = 'unpaid'">
-            Unpaid
-        </button>
+                @click="filterStatus = 'unpaid'">Unpaid</button>
     </div>
 </div>
 
@@ -177,19 +351,15 @@
                      style="width: 4px;"></div>
 
                 <div class="card-body p-3 ps-4">
-                    
                     <div class="d-flex w-100 align-items-stretch">
                         
                         
-                        
                         <div class="flex-grow-1 d-flex align-items-start" style="min-width: 0;">
-                            
                             <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 flex-shrink-0" 
                                  style="width: 50px; height: 50px; font-weight: 800; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);">
                                 <span x-text="r.flat"></span>
                             </div>
 
-                            
                             <div class="flex-grow-1" style="min-width: 0;">
                                 
                                 <div class="d-flex flex-column gap-1 mb-2">
@@ -211,7 +381,6 @@
                                             </div>
                                         </template>
                                     </template>
-                                    
                                     <template x-if="r.occupants.length === 0">
                                         <span class="text-muted fst-italic small">No occupant info</span>
                                     </template>
@@ -226,11 +395,10 @@
                                     <div class="d-flex align-items-center">
                                         <span class="text-secondary fw-bold me-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">PENDING DUES</span>
                                         <span class="fw-bold fs-6" 
-                                              :class="calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).length > 0 ? 'text-danger' : 'text-dark'" 
-                                              x-text="'₹' + calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).reduce((sum, h) => sum + h.amount, 0).toLocaleString('en-IN')">
+                                              :class="r.totalPendingDue > 0 ? 'text-danger' : 'text-dark'" 
+                                              x-text="'₹' + r.totalPendingDue.toLocaleString('en-IN')">
                                         </span>
-                                        <i x-show="calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).length > 0" 
-                                           class="bi bi-exclamation-circle-fill ms-2 text-danger" style="font-size: 0.9rem;"></i>
+                                        <i x-show="r.totalPendingDue > 0" class="bi bi-exclamation-circle-fill ms-2 text-danger" style="font-size: 0.9rem;"></i>
                                     </div>
 
                                     
@@ -239,20 +407,15 @@
                                         
                                         <template x-if="r.lastPayment">
                                             <div class="d-flex align-items-center">
-                                                
                                                 <span class="fw-bold text-success" style="font-size: 0.95rem;" x-text="'₹' + r.lastPayment.amount.toLocaleString('en-IN')"></span>
-                                                
                                                 <span class="text-muted opacity-50 mx-2">|</span>
-                                                
                                                 
                                                 <span class="text-dark fw-medium small text-nowrap" 
-                                                      x-text="new Date(r.lastPayment.date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'numeric'})"></span>
-                                                
+                                                      x-text="new Date(r.lastPayment.rawDate).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'numeric'})"></span>
                                                 <span class="text-muted opacity-50 mx-2">|</span>
-
                                                 
                                                 <div class="d-flex align-items-center px-2 py-0 rounded-pill border"
-                                                     :class="r.lastPayment.status === 'Paid' ? 'bg-success bg-opacity-10 border-success border-opacity-25 text-success' : 'bg-warning bg-opacity-10 border-warning border-opacity-25 text-warning'">
+                                                     :class="r.lastPayment.status.toLowerCase() === 'paid' ? 'bg-success bg-opacity-10 border-success border-opacity-25 text-success' : 'bg-warning bg-opacity-10 border-warning border-opacity-25 text-warning'">
                                                     <span style="font-size: 0.65rem; text-transform: uppercase;" x-text="r.lastPayment.status"></span>
                                                 </div>
                                             </div>
@@ -265,8 +428,6 @@
                             </div>
                         </div>
 
-                        
-                        
                         
                         <div class="d-flex align-items-center justify-content-center ps-2 border-start ms-3 flex-shrink-0" style="width: 40px;">
                             <button class="btn btn-light rounded-circle shadow-sm border-0 d-flex align-items-center justify-content-center" 
@@ -306,34 +467,28 @@
                     
                     
                     <div class="d-flex align-items-center gap-2 mb-2">
-                        
                         <i class="bi fs-5" 
-                           :class="p.type === 'Owner' ? 'bi-house-fill text-success' : 'bi-person-badge-fill text-danger'"></i>
-                        
+                            :class="p.type.toLowerCase() === 'owner' ? 'bi-house-fill text-success' : 'bi-person-badge-fill text-danger'"></i>
                         
                         <span class="fw-bold small text-uppercase" 
-                              :class="p.type === 'Owner' ? 'text-success' : 'text-danger'" 
-                              style="font-size: 0.75rem;" x-text="p.type"></span>
+                                :class="p.type.toLowerCase() === 'owner' ? 'text-success' : 'text-danger'" 
+                                style="font-size: 0.75rem;" x-text="p.type"></span>
 
-                        
                         <div class="fw-bold text-dark" style="font-size: 1rem;" x-text="p.name"></div>
                     </div>
 
                     
                     <div class="d-flex flex-wrap align-items-center gap-3 ms-1">
                         
-                        
                         <div class="d-flex align-items-center gap-1 text-muted small">
                             <i class="bi bi-telephone-fill text-primary" style="font-size: 0.8rem;"></i>
                             <span class="fw-medium text-dark" style="font-size: 0.9rem;" x-text="p.phone"></span>
                         </div>
 
-                        
                         <div class="d-flex align-items-center gap-1 text-muted small" x-show="p.email">
                             <i class="bi bi-envelope-fill text-secondary" style="font-size: 0.8rem;"></i>
                             <span x-text="p.email" style="font-size: 0.85rem;"></span>
                         </div>
-                        
                         
                         <div class="d-flex gap-2 ms-auto">
                             <a :href="'https://wa.me/91' + p.phone" class="btn btn-success rounded-circle p-0 d-flex align-items-center justify-content-center border-0 shadow-sm" style="width: 28px; height: 28px;">
@@ -404,12 +559,10 @@
                             <div class="d-flex align-items-center gap-3">
                                 <span class="fw-bold text-danger" x-text="'₹' + item.amount"></span>
                                 
-                                
                                 <a :href="'upi://pay?pa=society@upi&pn=Society&am=' + item.amount + '&tn=Maint ' + item.label + ' ' + activeResident.flat" 
                                    class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-sm">
                                     Pay
                                 </a>
-                                
                                 <button class="btn btn-light btn-sm rounded-circle border text-muted" 
                                         style="width: 32px; height: 32px;"
                                         @click="payPending(item.value, item.amount)">
@@ -427,53 +580,47 @@
             <h6 class="fw-bold text-dark mb-2 ps-2 border-start border-4 border-primary">MONTHLY PAYMENTS</h6>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="list-group list-group-flush">
-                    <template x-for="txn in activeResident.history.filter(h => h.type === 'Monthly')">
+                    
+                    <template x-for="txn in activeResident.history.filter(h => h.isMonthly)">
                         <div class="list-group-item p-3 border-light">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="d-flex gap-3">
-                                    
                                     <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
                                         <i class="bi bi-receipt-cutoff"></i>
                                     </div>
                                     <div>
-                                        
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="fw-bold text-dark" x-text="new Date(txn.month || txn.date).toLocaleDateString('en-GB', {month: 'short', year: '2-digit'}).replace(' ', '-')"></span>
+                                            <span class="fw-bold text-dark" x-text="new Date(txn.rawMonth || txn.rawDate).toLocaleDateString('en-GB', {month: 'short', year: '2-digit'}).replace(' ', '-')"></span>
                                             <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 rounded-pill px-2" 
-                                                  style="font-size: 0.7rem;" x-text="'₹' + txn.amount"></span>
+                                                    style="font-size: 0.7rem;" x-text="'₹' + txn.amount"></span>
                                         </div>
-                                        
                                         
                                         <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
                                             <div class="text-muted small d-flex align-items-center">
                                                 <i class="bi bi-calendar3 me-1"></i>
-                                                <span x-text="new Date(txn.date).toLocaleString('en-GB', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true}).toUpperCase()"></span>
+                                                <span x-text="new Date(txn.rawDate).toLocaleString('en-GB', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true}).toUpperCase()"></span>
                                             </div>
-                                            
-                                            
                                             <span class="badge bg-light text-secondary border d-flex align-items-center gap-1" style="font-size: 0.65rem;">
                                                 <i class="bi bi-credit-card-2-front-fill"></i>
                                                 <span x-text="txn.method"></span>
                                             </span>
                                         </div>
 
-                                        
                                         <div class="mt-2 p-2 bg-light rounded-3 small text-muted border border-light" x-show="txn.remarks">
                                             <span class="fw-bold text-secondary" style="font-size: 0.65rem;">COMMENTS:</span> <span x-text="txn.remarks"></span>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                
                                 <div class="text-end">
                                     <span class="badge rounded-pill" 
-                                          :class="txn.status === 'Paid' ? 'bg-success' : 'bg-warning text-dark'" 
-                                          style="font-size: 0.65rem;" x-text="txn.status"></span>
+                                            :class="txn.status.toLowerCase() === 'paid' ? 'bg-success' : 'bg-warning text-dark'" 
+                                            style="font-size: 0.65rem;" x-text="txn.status"></span>
                                 </div>
                             </div>
                         </div>
                     </template>
-                    <div class="p-4 text-center text-muted small" x-show="!activeResident.history.some(h => h.type === 'Monthly')">
+                    <div class="p-4 text-center text-muted small" x-show="!activeResident.history.some(h => h.isMonthly)">
                         No monthly payments recorded
                     </div>
                 </div>
@@ -485,7 +632,7 @@
             <h6 class="fw-bold text-dark mb-2 ps-2 border-start border-4 border-warning">ADHOC / OTHER PAYMENTS</h6>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="list-group list-group-flush">
-                    <template x-for="txn in activeResident.history.filter(h => h.type === 'Adhoc')">
+                    <template x-for="txn in activeResident.history.filter(h => !h.isMonthly)">
                         <div class="list-group-item p-3 border-light">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="d-flex gap-3">
@@ -495,7 +642,7 @@
                                     <div>
                                         <div class="fw-bold text-dark" x-text="txn.remarks || txn.category"></div>
                                         <div class="text-muted small mt-1">
-                                            <span x-text="new Date(txn.date).toLocaleDateString('en-GB')"></span> • 
+                                            <span x-text="new Date(txn.rawDate).toLocaleDateString('en-GB')"></span> • 
                                             <span x-text="txn.method"></span>
                                         </div>
                                     </div>
@@ -503,13 +650,13 @@
                                 <div class="text-end">
                                     <div class="fw-bold text-success" x-text="'+ ₹' + txn.amount"></div>
                                     <span class="badge rounded-pill mt-1" 
-                                          :class="txn.status === 'Paid' ? 'bg-success' : 'bg-warning text-dark'" 
-                                          style="font-size: 0.6rem;" x-text="txn.status"></span>
+                                            :class="txn.status.toLowerCase() === 'paid' ? 'bg-success' : 'bg-warning text-dark'" 
+                                            style="font-size: 0.6rem;" x-text="txn.status"></span>
                                 </div>
                             </div>
                         </div>
                     </template>
-                    <div class="p-4 text-center text-muted small" x-show="!activeResident.history.some(h => h.type === 'Adhoc')">
+                    <div class="p-4 text-center text-muted small" x-show="!activeResident.history.some(h => !h.isMonthly)">
                         No adhoc payments recorded
                     </div>
                 </div>

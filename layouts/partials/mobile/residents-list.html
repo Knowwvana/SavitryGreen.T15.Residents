@@ -1,6 +1,5 @@
 <!-- HEADER SECTION -->
 <div class="bg-white px-3 pt-4 pb-0 sticky-top shadow-sm" style="z-index: 1000;">
-    
     <!-- Title & Date -->
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center">
@@ -44,19 +43,13 @@
     <div class="d-flex gap-2 pb-3 overflow-auto">
         <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
                 :class="filterStatus === 'all' ? 'bg-dark text-white border-dark' : 'bg-white text-muted border'"
-                @click="filterStatus = 'all'">
-            All
-        </button>
+                @click="filterStatus = 'all'">All</button>
         <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
                 :class="filterStatus === 'paid' ? 'bg-success text-white border-success' : 'bg-success bg-opacity-10 text-success border-0'"
-                @click="filterStatus = 'paid'">
-            Paid
-        </button>
+                @click="filterStatus = 'paid'">Paid</button>
         <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
                 :class="filterStatus === 'unpaid' ? 'bg-danger text-white border-danger' : 'bg-danger bg-opacity-10 text-danger border-0'"
-                @click="filterStatus = 'unpaid'">
-            Unpaid
-        </button>
+                @click="filterStatus = 'unpaid'">Unpaid</button>
     </div>
 </div>
 
@@ -82,21 +75,17 @@
                      style="width: 4px;"></div>
 
                 <div class="card-body p-3 ps-4">
-                    <!-- Changed align-items-center to align-items-stretch for full height vertical line -->
                     <div class="d-flex w-100 align-items-stretch">
                         
-                        <!-- 1. LEFT: Flat Number & Content Wrapper -->
-                        <!-- Added min-width: 0 to ensure this container shrinks properly before pushing the arrow out -->
+                        <!-- 1. LEFT: Flat Number -->
                         <div class="flex-grow-1 d-flex align-items-start" style="min-width: 0;">
-                            <!-- Flat Box -->
                             <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 flex-shrink-0" 
                                  style="width: 50px; height: 50px; font-weight: 800; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);">
                                 <span x-text="r.flat"></span>
                             </div>
 
-                            <!-- Content Column -->
                             <div class="flex-grow-1" style="min-width: 0;">
-                                <!-- Occupant Loop -->
+                                <!-- Occupants -->
                                 <div class="d-flex flex-column gap-1 mb-2">
                                     <template x-if="r.occupants.length > 0">
                                         <template x-for="p in r.occupants">
@@ -116,7 +105,6 @@
                                             </div>
                                         </template>
                                     </template>
-                                    
                                     <template x-if="r.occupants.length === 0">
                                         <span class="text-muted fst-italic small">No occupant info</span>
                                     </template>
@@ -124,18 +112,17 @@
                                 
                                 <hr class="border-light my-2">
                                 
-                                <!-- Financial Summary (Stacked Layout) -->
+                                <!-- Financial Summary (Uses Calculated Models!) -->
                                 <div class="d-flex flex-column gap-2 pt-1">
                                     
-                                    <!-- Row 1: PENDING DUES (Calculated via Schedule using calculatePendingMonths) -->
+                                    <!-- Row 1: PENDING DUES (Cleaned) -->
                                     <div class="d-flex align-items-center">
                                         <span class="text-secondary fw-bold me-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">PENDING DUES</span>
                                         <span class="fw-bold fs-6" 
-                                              :class="calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).length > 0 ? 'text-danger' : 'text-dark'" 
-                                              x-text="'₹' + calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).reduce((sum, h) => sum + h.amount, 0).toLocaleString('en-IN')">
+                                              :class="r.totalPendingDue > 0 ? 'text-danger' : 'text-dark'" 
+                                              x-text="'₹' + r.totalPendingDue.toLocaleString('en-IN')">
                                         </span>
-                                        <i x-show="calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).length > 0" 
-                                           class="bi bi-exclamation-circle-fill ms-2 text-danger" style="font-size: 0.9rem;"></i>
+                                        <i x-show="r.totalPendingDue > 0" class="bi bi-exclamation-circle-fill ms-2 text-danger" style="font-size: 0.9rem;"></i>
                                     </div>
 
                                     <!-- Row 2: LAST PAYMENT -->
@@ -144,20 +131,15 @@
                                         
                                         <template x-if="r.lastPayment">
                                             <div class="d-flex align-items-center">
-                                                <!-- Amount -->
                                                 <span class="fw-bold text-success" style="font-size: 0.95rem;" x-text="'₹' + r.lastPayment.amount.toLocaleString('en-IN')"></span>
-                                                
                                                 <span class="text-muted opacity-50 mx-2">|</span>
                                                 
-                                                <!-- Date (Full Date, 1 line) -->
                                                 <span class="text-dark fw-medium small text-nowrap" 
-                                                      x-text="new Date(r.lastPayment.date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'numeric'})"></span>
-                                                
+                                                      x-text="new Date(r.lastPayment.rawDate).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'numeric'})"></span>
                                                 <span class="text-muted opacity-50 mx-2">|</span>
-
-                                                <!-- Status Badge -->
+                                                
                                                 <div class="d-flex align-items-center px-2 py-0 rounded-pill border"
-                                                     :class="r.lastPayment.status === 'Paid' ? 'bg-success bg-opacity-10 border-success border-opacity-25 text-success' : 'bg-warning bg-opacity-10 border-warning border-opacity-25 text-warning'">
+                                                     :class="r.lastPayment.status.toLowerCase() === 'paid' ? 'bg-success bg-opacity-10 border-success border-opacity-25 text-success' : 'bg-warning bg-opacity-10 border-warning border-opacity-25 text-warning'">
                                                     <span style="font-size: 0.65rem; text-transform: uppercase;" x-text="r.lastPayment.status"></span>
                                                 </div>
                                             </div>
@@ -170,9 +152,7 @@
                             </div>
                         </div>
 
-                        <!-- 2. RIGHT: Vertical Arrow Column -->
-                        <!-- Added flex-shrink-0 to prevent this from being squeezed or truncated -->
-                        <!-- align-items-stretch on parent makes this full height. justify-content-center centers the button horizontally. -->
+                        <!-- 2. RIGHT: Vertical Arrow -->
                         <div class="d-flex align-items-center justify-content-center ps-2 border-start ms-3 flex-shrink-0" style="width: 40px;">
                             <button class="btn btn-light rounded-circle shadow-sm border-0 d-flex align-items-center justify-content-center" 
                                     style="width: 36px; height: 36px;"
