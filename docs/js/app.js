@@ -5,6 +5,7 @@ document.addEventListener('alpine:init', () => {
         filterStatus: 'all',
         currentDate: '',
         
+        // Correctly initialized with all sub-properties to prevent errors
         activeResident: { flat: '', occupants: [], history: [], due: 0, pendingList: [], stats: {} },
         residents: [],
         settings: {}, 
@@ -18,15 +19,28 @@ document.addEventListener('alpine:init', () => {
             amount: '',
             category: 'Monthly',
             title: '',
-            month: new Date().toISOString().slice(0, 7),
-            paymentDate: new Date().toISOString().slice(0, 16),
+            month: '', // Will be set in init using local time
+            paymentDate: '', // Will be set in init using local time
             method: 'UPI',
             remarks: ''
         },
 
         init() {
+            // Set initial form values using local time logic
+            this.txnForm.month = this.getLocalISOString().slice(0, 7);
+            this.txnForm.paymentDate = this.getLocalISOString().slice(0, 16);
+            
             this.updateDate();
             this.fetchData();
+        },
+
+        // NEW: Helper to get local time in ISO format (YYYY-MM-DDTHH:mm)
+        // This fixes the issue where dates were defaulting to UTC (e.g., 7:41 AM instead of 1:11 PM)
+        getLocalISOString() {
+            const now = new Date();
+            // Subtract the timezone offset to get the correct local time in ISO format
+            const offset = now.getTimezoneOffset() * 60000; 
+            return new Date(now.getTime() - offset).toISOString();
         },
 
         updateDate() {
@@ -66,7 +80,7 @@ document.addEventListener('alpine:init', () => {
                         .map(r => ({
                             name: r.Name || r.name || r.ResidentName || 'Unknown',
                             phone: r.Phone || r.Mobile || r.phone || '',
-                            email: r.Email || r.email || '', // NEW: Capture Email
+                            email: r.Email || r.email || '', 
                             type: r.Type || r.type || r.ResidentType || 'Owner'
                         }));
 
@@ -75,11 +89,13 @@ document.addEventListener('alpine:init', () => {
                         .map(p => ({
                             id: p.PaymentID || p.id,
                             date: p.PaymentDate || p.date,
-                            month: p.Month || '', // NEW: Capture Month (e.g. "2025-12")
+                            // Added p.month fallback
+                            month: (p.Month || p.month || '').trim(), 
                             amount: parseFloat(p.Amount || p.amount || 0),
-                            category: p.Category || p.category || 'Maintenance',
-                            type: p.Type || 'Monthly',
-                            status: p.Status || p.status || 'Pending',
+                            category: (p.Category || p.category || 'Maintenance').trim(),
+                            // Added p.type fallback
+                            type: (p.Type || p.type || 'Monthly').trim(),
+                            status: (p.Status || p.status || 'Pending').trim(),
                             remarks: p.Remarks || p.remarks || '',
                             method: p.PaymentMethod || p.method || 'UPI'
                         }))
@@ -122,13 +138,16 @@ document.addEventListener('alpine:init', () => {
         openHistory(resident) {
             this.activeResident = resident;
             
-            // 1. Calculate Stats
+            // 1. Calculate Stats (Case-insensitive logic)
             const totalPaid = resident.history
-                .filter(p => p.status === 'Paid')
+                .filter(p => (p.status || '').toLowerCase() === 'paid')
                 .reduce((sum, p) => sum + p.amount, 0);
                 
             const pendingVal = resident.history
-                .filter(p => p.status !== 'Paid' && p.status !== 'Rejected')
+                .filter(p => {
+                    const s = (p.status || '').toLowerCase();
+                    return s !== 'paid' && s !== 'rejected';
+                })
                 .reduce((sum, p) => sum + p.amount, 0);
 
             this.activeResident.stats = {
@@ -138,7 +157,6 @@ document.addEventListener('alpine:init', () => {
             };
 
             // 2. Generate Pending Months List
-            // Default to 'Sep-2025' and 150 if settings missing
             const startStr = this.settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025'; 
             const monthlyAmount = parseFloat(this.settings.MonthlyMaintainenceAmount || 150);
             
@@ -150,7 +168,6 @@ document.addEventListener('alpine:init', () => {
 
         // Helper to generate list of unpaid months
         calculatePendingMonths(startStr, amount, history) {
-            // Parse "Sep-2025"
             const monthsMap = {Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11};
             const parts = startStr.split('-');
             if(parts.length !== 2) return [];
@@ -164,25 +181,42 @@ document.addEventListener('alpine:init', () => {
             
             let list = [];
             
-            // Iterate month by month from Start Date to Now
             let currY = startYear;
             let currM = startMonth;
 
             while (currY < endYear || (currY === endYear && currM <= endMonth)) {
-                // Format: "2025-09" (matches HTML input type="month")
                 const monthKey = `${currY}-${String(currM + 1).padStart(2, '0')}`;
-                
-                // Display: "Sep 2025"
                 const monthName = Object.keys(monthsMap).find(key => monthsMap[key] === currM);
                 const display = `${monthName} ${currY}`;
 
-                // Check if Paid in History
-                // Look for a payment that is 'Monthly', 'Paid', and matches the month key
-                const isPaid = history.some(p => 
-                    p.type === 'Monthly' && 
-                    p.status === 'Paid' && 
-                    p.month === monthKey
-                );
+                // --- CHANGED LOGIC HERE ---
+                // Robust check: 
+                // 1. Case-insensitive for Status/Type
+                // 2. Date-parsing using getFullYear/getMonth to avoid Timezone shifts (e.g. Sep 1 becoming Aug 31)
+                const isPaid = history.some(p => {
+                    const pType = (p.type || '').toLowerCase();
+                    const pCat = (p.category || '').toLowerCase();
+                    const pStatus = (p.status || '').toLowerCase();
+                    
+                    // Must be Monthly (Check Type OR Category) and (Paid OR Pending Validation)
+                    if (pType !== 'monthly' && pCat !== 'monthly') return false;
+                    if (pStatus !== 'paid' && pStatus !== 'pending validation') return false;
+
+                    // 1. Direct String Match
+                    if (p.month === monthKey) return true;
+
+                    // 2. Date Object Match (Robust fallback for format differences, timezone safe)
+                    try {
+                        const d = new Date(p.month);
+                        if (!isNaN(d.getTime())) {
+                            // Construct YYYY-MM from local date components to avoid UTC shift
+                            const dKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                            if (dKey === monthKey) return true;
+                        }
+                    } catch(e) { /* ignore parse errors */ }
+                    
+                    return false;
+                });
 
                 if (!isPaid) {
                     list.push({
@@ -192,17 +226,15 @@ document.addEventListener('alpine:init', () => {
                     });
                 }
 
-                // Increment
                 currM++;
                 if (currM > 11) {
                     currM = 0;
                     currY++;
                 }
             }
-            return list.reverse(); // Show newest pending first
+            return list.reverse(); 
         },
 
-        // Open Add Entry with Pre-filled data
         payPending(monthIso, amount) {
             this.resetTxnForm();
             this.txnForm.flatNo = this.activeResident.flat;
@@ -217,11 +249,11 @@ document.addEventListener('alpine:init', () => {
             this.txnForm.amount = '';
             this.txnForm.remarks = '';
             this.txnForm.flatNo = ''; 
-            this.txnForm.paymentDate = new Date().toISOString().slice(0, 16);
+            // Use local time for the reset form as well
+            this.txnForm.paymentDate = this.getLocalISOString().slice(0, 16);
         },
 
         async saveTransaction() {
-            // ... (Existing saveTransaction Logic) ...
             this.isSubmitting = true;
             const paymentId = Date.now().toString(); 
             const timestamp = new Date().toLocaleString();

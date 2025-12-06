@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta name="generator" content="Hugo 0.152.2">
+	<meta name="generator" content="Hugo 0.152.2"><script src="/SavitryGreen.T15.Residents/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=SavitryGreen.T15.Residents/livereload" data-no-instant defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title></title>
@@ -177,10 +177,12 @@
                      style="width: 4px;"></div>
 
                 <div class="card-body p-3 ps-4">
-                    <div class="d-flex">
+                    
+                    <div class="d-flex w-100 align-items-stretch">
                         
                         
-                        <div class="flex-grow-1 d-flex align-items-start">
+                        
+                        <div class="flex-grow-1 d-flex align-items-start" style="min-width: 0;">
                             
                             <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 flex-shrink-0" 
                                  style="width: 50px; height: 50px; font-weight: 800; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);">
@@ -209,62 +211,54 @@
                                             </div>
                                         </template>
                                     </template>
+                                    
+                                    <template x-if="r.occupants.length === 0">
+                                        <span class="text-muted fst-italic small">No occupant info</span>
+                                    </template>
                                 </div>
-                                
-                                <template x-if="r.occupants.length === 0">
-                                    <span class="text-muted fst-italic small">No occupant info</span>
-                                </template>
                                 
                                 <hr class="border-light my-2">
                                 
                                 
-                                <div class="d-flex justify-content-between align-items-start pt-1">
+                                <div class="d-flex flex-column gap-2 pt-1">
                                     
                                     
-                                    <div class="d-flex flex-column">
-                                        <div class="text-secondary fw-bold mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">PENDING DUES</div>
-                                        <div class="fw-bold fs-5 d-flex align-items-center" :class="r.due > 0 ? 'text-danger' : 'text-dark'">
-                                            <i x-show="r.due > 0" class="bi bi-exclamation-circle-fill me-1" style="font-size: 0.9rem;"></i>
-                                            <span x-text="'₹' + r.due.toLocaleString('en-IN')"></span>
-                                        </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="text-secondary fw-bold me-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">PENDING DUES</span>
+                                        <span class="fw-bold fs-6" 
+                                              :class="calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).length > 0 ? 'text-danger' : 'text-dark'" 
+                                              x-text="'₹' + calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).reduce((sum, h) => sum + h.amount, 0).toLocaleString('en-IN')">
+                                        </span>
+                                        <i x-show="calculatePendingMonths(settings.KeyValueMonthlyMaintainenceStartFrom || 'Sep-2025', parseFloat(settings.MonthlyMaintainenceAmount || 150), r.history).length > 0" 
+                                           class="bi bi-exclamation-circle-fill ms-2 text-danger" style="font-size: 0.9rem;"></i>
                                     </div>
 
                                     
-                                    <div class="text-end" style="margin-left: auto;"> 
-                                        <div class="text-secondary fw-bold mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">LAST PAYMENT</div>
+                                    <div class="d-flex align-items-center flex-wrap" style="min-height: 24px;">
+                                        <span class="text-secondary fw-bold me-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">LAST PAYMENT</span>
                                         
                                         <template x-if="r.lastPayment">
-                                            <div class="d-flex flex-column align-items-end">
+                                            <div class="d-flex align-items-center">
                                                 
-                                                <div class="fw-bold d-flex align-items-center text-success" style="font-size: 1.1rem;">
-                                                    <i class="bi bi-tag-fill me-1" style="font-size: 0.9rem;"></i>
-                                                    <span x-text="'₹' + r.lastPayment.amount.toLocaleString('en-IN')"></span>
-                                                </div>
+                                                <span class="fw-bold text-success" style="font-size: 0.95rem;" x-text="'₹' + r.lastPayment.amount.toLocaleString('en-IN')"></span>
+                                                
+                                                <span class="text-muted opacity-50 mx-2">|</span>
                                                 
                                                 
-                                                <div class="d-flex align-items-center gap-2 text-muted fw-medium mt-1" style="font-size: 0.7rem;">
-                                                    
-                                                    
-                                                    <span class="text-secondary" x-text="new Date(r.lastPayment.date).toLocaleDateString('en-GB', {day: 'numeric', month: 'long', year:'numeric'})"></span>
-                                                    
-                                                    <span class="text-secondary opacity-25">|</span>
-                                                    
-                                                    
-                                                    <span :class="r.lastPayment.type === 'Adhoc' ? 'text-warning' : 'text-secondary'" x-text="r.lastPayment.type"></span>
-                                                    
-                                                    
-                                                    <div class="d-flex align-items-center px-2 py-0 rounded-pill border"
-                                                         :class="r.lastPayment.status === 'Paid' ? 'bg-success bg-opacity-10 border-success border-opacity-25 text-success' : 'bg-warning bg-opacity-10 border-warning border-opacity-25 text-warning'">
-                                                        <i class="bi me-1" style="font-size: 0.65rem;" 
-                                                           :class="r.lastPayment.status === 'Paid' ? 'bi-check-circle-fill' : 'bi-hourglass-split'"></i>
-                                                        <span style="font-size: 0.65rem; text-transform: uppercase;" x-text="r.lastPayment.status"></span>
-                                                    </div>
+                                                <span class="text-dark fw-medium small text-nowrap" 
+                                                      x-text="new Date(r.lastPayment.date).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'numeric'})"></span>
+                                                
+                                                <span class="text-muted opacity-50 mx-2">|</span>
 
+                                                
+                                                <div class="d-flex align-items-center px-2 py-0 rounded-pill border"
+                                                     :class="r.lastPayment.status === 'Paid' ? 'bg-success bg-opacity-10 border-success border-opacity-25 text-success' : 'bg-warning bg-opacity-10 border-warning border-opacity-25 text-warning'">
+                                                    <span style="font-size: 0.65rem; text-transform: uppercase;" x-text="r.lastPayment.status"></span>
                                                 </div>
                                             </div>
                                         </template>
                                         <template x-if="!r.lastPayment">
-                                            <small class="text-muted fw-medium mt-1 d-block" style="font-size: 0.75rem;">None recorded</small>
+                                            <small class="text-muted fw-medium fst-italic" style="font-size: 0.75rem;">None recorded</small>
                                         </template>
                                     </div>
                                 </div>
@@ -272,7 +266,9 @@
                         </div>
 
                         
-                        <div class="d-flex align-items-center justify-content-center ps-3 border-start ms-3" style="width: 40px;">
+                        
+                        
+                        <div class="d-flex align-items-center justify-content-center ps-2 border-start ms-3 flex-shrink-0" style="width: 40px;">
                             <button class="btn btn-light rounded-circle shadow-sm border-0 d-flex align-items-center justify-content-center" 
                                     style="width: 36px; height: 36px;"
                                     @click.stop="openHistory(r)">
@@ -298,66 +294,63 @@
     <h5 class="fw-bold mb-0">Flat <span x-text="activeResident.flat"></span> Details</h5>
 </div>
 
-
-<div class="bg-light min-vh-100 pb-5 px-3 pt-3">
+<div class="bg-light min-vh-100 pb-5">
     
     
-    <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden position-relative bg-white">
+    <div class="bg-white p-3 mb-3 shadow-sm border-bottom">
+        <h6 class="fw-bold text-secondary small mb-3 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.7rem;">Resident(s) Details</h6>
         
-        
-        <div class="position-absolute top-0 start-0 bottom-0 bg-primary" style="width: 5px;"></div>
-
-        <div class="card-body p-3 ps-4">
-            <h6 class="fw-bold text-secondary small mb-3 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.65rem;">Resident(s) Details</h6>
-            
-            <div class="d-flex flex-column gap-3">
-                <template x-for="p in activeResident.occupants">
-                    <div class="border-bottom pb-3 last:border-0 last:pb-0">
+        <div class="d-flex flex-column gap-3">
+            <template x-for="p in activeResident.occupants">
+                <div class="border-bottom pb-3 last:border-0 last:pb-0">
+                    
+                    
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        
+                        <i class="bi fs-5" 
+                           :class="p.type === 'Owner' ? 'bi-house-fill text-success' : 'bi-person-badge-fill text-danger'"></i>
                         
                         
-                        <div class="fw-bold text-dark mb-1" style="font-size: 1rem;" x-text="p.name"></div>
+                        <span class="fw-bold small text-uppercase" 
+                              :class="p.type === 'Owner' ? 'text-success' : 'text-danger'" 
+                              style="font-size: 0.75rem;" x-text="p.type"></span>
 
                         
-                        <div class="d-flex flex-wrap align-items-center gap-3" style="font-size: 0.8rem;">
-                            
-                            
-                            <div class="d-flex align-items-center gap-1 fw-bold"
-                                 :class="p.type === 'Owner' ? 'text-success' : 'text-danger'">
-                                <i class="bi" :class="p.type === 'Owner' ? 'bi-house-fill' : 'bi-person-badge-fill'"></i>
-                                <span x-text="p.type"></span>
-                            </div>
+                        <div class="fw-bold text-dark" style="font-size: 1rem;" x-text="p.name"></div>
+                    </div>
 
-                            
-                            <div class="d-flex align-items-center gap-1 text-muted fw-medium">
-                                <i class="bi bi-telephone-fill text-primary"></i>
-                                <span x-text="p.phone"></span>
-                            </div>
+                    
+                    <div class="d-flex flex-wrap align-items-center gap-3 ms-1">
+                        
+                        
+                        <div class="d-flex align-items-center gap-1 text-muted small">
+                            <i class="bi bi-telephone-fill text-primary" style="font-size: 0.8rem;"></i>
+                            <span class="fw-medium text-dark" style="font-size: 0.9rem;" x-text="p.phone"></span>
+                        </div>
 
-                            
-                            <div class="d-flex align-items-center gap-1 text-muted fw-medium" x-show="p.email">
-                                <i class="bi bi-envelope-fill text-secondary"></i>
-                                <span x-text="p.email"></span>
-                            </div>
-
-                            
-                            <div class="d-flex gap-2 ms-auto">
-                                <a :href="'https://wa.me/91' + p.phone" class="btn btn-success rounded-circle p-0 d-flex align-items-center justify-content-center border-0 shadow-sm" style="width: 28px; height: 28px;">
-                                    <i class="bi bi-whatsapp" style="font-size: 0.8rem;"></i>
-                                </a>
-                                <a :href="'tel:' + p.phone" class="btn btn-primary rounded-circle p-0 d-flex align-items-center justify-content-center border-0 shadow-sm" style="width: 28px; height: 28px;">
-                                    <i class="bi bi-telephone-fill" style="font-size: 0.7rem;"></i>
-                                </a>
-                            </div>
+                        
+                        <div class="d-flex align-items-center gap-1 text-muted small" x-show="p.email">
+                            <i class="bi bi-envelope-fill text-secondary" style="font-size: 0.8rem;"></i>
+                            <span x-text="p.email" style="font-size: 0.85rem;"></span>
+                        </div>
+                        
+                        
+                        <div class="d-flex gap-2 ms-auto">
+                            <a :href="'https://wa.me/91' + p.phone" class="btn btn-success rounded-circle p-0 d-flex align-items-center justify-content-center border-0 shadow-sm" style="width: 28px; height: 28px;">
+                                <i class="bi bi-whatsapp" style="font-size: 0.8rem;"></i>
+                            </a>
+                            <a :href="'tel:' + p.phone" class="btn btn-primary rounded-circle p-0 d-flex align-items-center justify-content-center border-0 shadow-sm" style="width: 28px; height: 28px;">
+                                <i class="bi bi-telephone-fill" style="font-size: 0.7rem;"></i>
+                            </a>
                         </div>
                     </div>
-                </template>
-            </div>
+                </div>
+            </template>
         </div>
     </div>
 
     
-    
-    <div class="mb-4">
+    <div class="px-3 mb-4">
         <h6 class="fw-bold text-muted small mb-2 px-1">PAYMENT SUMMARY</h6>
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-body py-3 px-1 d-flex justify-content-around align-items-center text-center">
@@ -387,7 +380,7 @@
         </div>
     </div>
 
-    <div class="d-flex flex-column gap-4">
+    <div class="px-3 d-flex flex-column gap-4">
 
         
         <div x-show="activeResident.pendingList && activeResident.pendingList.length > 0">
@@ -445,22 +438,28 @@
                                     <div>
                                         
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="fw-bold text-dark" x-text="txn.month || 'Maintenance'"></span>
+                                            <span class="fw-bold text-dark" x-text="new Date(txn.month || txn.date).toLocaleDateString('en-GB', {month: 'short', year: '2-digit'}).replace(' ', '-')"></span>
                                             <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 rounded-pill px-2" 
                                                   style="font-size: 0.7rem;" x-text="'₹' + txn.amount"></span>
                                         </div>
                                         
                                         
-                                        <div class="text-muted small mt-1">
-                                            <i class="bi bi-calendar3 me-1"></i>
-                                            <span x-text="new Date(txn.date).toLocaleDateString('en-GB')"></span>
-                                            <span class="mx-1">•</span>
-                                            <span x-text="txn.method"></span>
+                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                            <div class="text-muted small d-flex align-items-center">
+                                                <i class="bi bi-calendar3 me-1"></i>
+                                                <span x-text="new Date(txn.date).toLocaleString('en-GB', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true}).toUpperCase()"></span>
+                                            </div>
+                                            
+                                            
+                                            <span class="badge bg-light text-secondary border d-flex align-items-center gap-1" style="font-size: 0.65rem;">
+                                                <i class="bi bi-credit-card-2-front-fill"></i>
+                                                <span x-text="txn.method"></span>
+                                            </span>
                                         </div>
 
                                         
                                         <div class="mt-2 p-2 bg-light rounded-3 small text-muted border border-light" x-show="txn.remarks">
-                                            <i class="bi bi-chat-left-text me-1"></i> <span x-text="txn.remarks"></span>
+                                            <span class="fw-bold text-secondary" style="font-size: 0.65rem;">COMMENTS:</span> <span x-text="txn.remarks"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -557,7 +556,6 @@
 
 
     
-    
     <template x-if="!txnSuccess">
         <div class="d-flex flex-column gap-3">
             
@@ -613,7 +611,9 @@
                 
                 <div class="col-12">
                     <label class="form-label small fw-bold text-muted ms-1">For Month</label>
-                    <input type="month" x-model="txnForm.month" class="form-control border-0 shadow-sm rounded-4 py-3 bg-white fw-bold">
+                    <input type="month" x-model="txnForm.month" 
+                           class="form-control border-0 shadow-sm rounded-4 py-3 bg-white fw-bold custom-date-input"
+                           onclick="this.showPicker()">
                 </div>
 
                 
@@ -626,7 +626,9 @@
             
             <div>
                 <label class="form-label small fw-bold text-muted ms-1">Payment Date & Time</label>
-                <input type="datetime-local" x-model="txnForm.paymentDate" class="form-control border-0 shadow-sm rounded-4 py-3 bg-white">
+                <input type="datetime-local" x-model="txnForm.paymentDate" 
+                       class="form-control border-0 shadow-sm rounded-4 py-3 bg-white custom-date-input"
+                       onclick="this.showPicker()">
             </div>
 
             
@@ -665,6 +667,17 @@
 
         </div>
     </template>
+
+    
+    <style>
+         
+        .custom-date-input::-webkit-calendar-picker-indicator {
+            filter: invert(33%) sepia(96%) saturate(1494%) hue-rotate(202deg) brightness(96%) contrast(96%);
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+    </style>
 
 </div>
     </div>

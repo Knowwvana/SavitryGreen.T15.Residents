@@ -1,4 +1,4 @@
-<!-- Header -->
+<!-- HEADER -->
 <div class="px-3 pt-4 pb-2 d-flex align-items-center sticky-top bg-white border-bottom shadow-sm" style="z-index: 1020;">
     <button class="btn btn-light rounded-circle p-2 me-3" @click="view = 'residents'; txnSuccess = false;">
         <i class="bi bi-arrow-left fs-5"></i>
@@ -32,9 +32,6 @@
 
 
     <!-- 2. FORM STATE VIEW -->
-    <!-- FIX: Changed x-show to template x-if. 
-         This removes the element from DOM entirely when successful, 
-         fixing the Bootstrap 'd-flex !important' display conflict. -->
     <template x-if="!txnSuccess">
         <div class="d-flex flex-column gap-3">
             
@@ -87,10 +84,12 @@
 
             <!-- MONTH & TITLE LOGIC -->
             <div class="row g-3">
-                <!-- Month Picker -->
+                <!-- Month Picker (Colorful & Clickable) -->
                 <div class="col-12">
                     <label class="form-label small fw-bold text-muted ms-1">For Month</label>
-                    <input type="month" x-model="txnForm.month" class="form-control border-0 shadow-sm rounded-4 py-3 bg-white fw-bold">
+                    <input type="month" x-model="txnForm.month" 
+                           class="form-control border-0 shadow-sm rounded-4 py-3 bg-white fw-bold custom-date-input"
+                           onclick="this.showPicker()">
                 </div>
 
                 <!-- Conditional Title (Only for Adhoc) -->
@@ -100,10 +99,12 @@
                 </div>
             </div>
 
-            <!-- DATE & TIME -->
+            <!-- DATE & TIME (Colorful & Clickable) -->
             <div>
                 <label class="form-label small fw-bold text-muted ms-1">Payment Date & Time</label>
-                <input type="datetime-local" x-model="txnForm.paymentDate" class="form-control border-0 shadow-sm rounded-4 py-3 bg-white">
+                <input type="datetime-local" x-model="txnForm.paymentDate" 
+                       class="form-control border-0 shadow-sm rounded-4 py-3 bg-white custom-date-input"
+                       onclick="this.showPicker()">
             </div>
 
             <!-- PAYMENT METHOD -->
@@ -142,5 +143,16 @@
 
         </div>
     </template>
+
+    <!-- Custom CSS for Date Icons -->
+    <style>
+        /* Applies a blue filter to the native calendar icon */
+        .custom-date-input::-webkit-calendar-picker-indicator {
+            filter: invert(33%) sepia(96%) saturate(1494%) hue-rotate(202deg) brightness(96%) contrast(96%);
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+    </style>
 
 </div>
