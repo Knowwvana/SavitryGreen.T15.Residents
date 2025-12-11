@@ -1,34 +1,46 @@
-<div class="position-fixed bottom-0 start-0 w-100 bg-white border-top shadow-lg d-flex justify-content-around py-2" style="z-index: 1050;">
-    <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center" 
-            :class="view === 'home' ? 'text-primary fw-bold' : 'text-muted'"
-            @click="view = 'home'">
-        <i class="bi bi-grid-fill fs-5"></i>
-        <small style="font-size: 0.65rem;">Home</small>
-    </button>
+<div class="fixed-bottom bg-white border-top shadow-lg" style="z-index: 1030; padding-bottom: env(safe-area-inset-bottom);">
+    <div class="d-flex justify-content-around py-2">
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center" 
+                :class="view === 'home' ? 'text-primary fw-bold' : 'text-muted'"
+                @click="view = 'home'">
+            <i class="bi bi-grid-fill fs-5 mb-1" :class="view === 'home' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+            <span style="font-size: 0.65rem;">Dashboard</span>
+        </button>
 
-    <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center" 
-            :class="view === 'residents' || view === 'history' ? 'text-primary fw-bold' : 'text-muted'"
-            @click="view = 'residents'">
-        <i class="bi bi-people-fill fs-5"></i>
-        <small style="font-size: 0.65rem;">Residents</small>
-    </button>
-    
-    <!-- FAB (Add Button) -->
-    <div class="position-relative" style="top: -25px;">
-        <button class="btn btn-primary rounded-circle shadow d-flex align-items-center justify-content-center" 
-                style="width: 56px; height: 56px; border: 4px solid white;"
-                @click="view = 'add'">
-            <i class="bi bi-plus-lg fs-4"></i>
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center" 
+                :class="view === 'residents' || view === 'history' ? 'text-primary fw-bold' : 'text-muted'"
+                @click="view = 'residents'">
+            <i class="bi bi-people-fill fs-5 mb-1" :class="view === 'residents' || view === 'history' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+            <span style="font-size: 0.65rem;">Residents</span>
+        </button>
+
+        <div class="position-relative" style="margin-top: -25px;">
+            <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
+                    style="width: 56px; height: 56px; border: 4px solid white;"
+                    @click="view = 'add'">
+                <i class="bi bi-plus-lg fs-4 text-white"></i>
+            </button>
+        </div>
+
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center" 
+                :class="view === 'validate' ? 'text-primary fw-bold' : 'text-muted'"
+                @click="view = 'validate'">
+            <div class="position-relative">
+                <i class="bi bi-shield-check fs-5 mb-1" :class="view === 'validate' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+                <!-- Badge for Pending Validation Count -->
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white"
+                      style="font-size: 0.5rem; padding: 0.25em 0.4em;"
+                      x-show="pendingStats.count > 0"
+                      x-text="pendingStats.count">
+                </span>
+            </div>
+            <span style="font-size: 0.65rem;">Admin</span>
+        </button>
+
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center text-muted" 
+                @click="alert('Reports coming soon!')">
+            <i class="bi bi-file-earmark-bar-graph-fill fs-5 mb-1 text-secondary opacity-50"></i>
+            <span style="font-size: 0.65rem;">Reports</span>
         </button>
     </div>
-
-    <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center text-muted">
-        <i class="bi bi-bar-chart-fill fs-5"></i>
-        <small style="font-size: 0.65rem;">Reports</small>
-    </button>
-    
-    <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center text-muted">
-        <i class="bi bi-gear-fill fs-5"></i>
-        <small style="font-size: 0.65rem;">Settings</small>
-    </button>
 </div>
