@@ -57,7 +57,12 @@ body {
             rgba(255, 255, 255, 0)
         );
     }
-
+    .hover-scale:active { transform: scale(0.95); }
+    .transition-all { transition: all 0.2s ease; }
+    .hover-bg-light:hover { background-color: #f8f9fa; }
+    .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     @keyframes shimmer {
         100% { transform: translateX(100%); }
     }
