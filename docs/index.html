@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta name="generator" content="Hugo 0.152.2">
+	<meta name="generator" content="Hugo 0.152.2"><script src="/SavitryGreen.T15.Residents/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=SavitryGreen.T15.Residents/livereload" data-no-instant defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title></title>
@@ -104,7 +104,6 @@
                         </div>
                         <div>
                             <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Collections</small>
-                            
                             <h3 class="fw-bold text-success mb-0" x-text="'₹' + dashboardStats.totalCollection.toLocaleString('en-IN')"></h3>
                         </div>
                     </div>
@@ -209,7 +208,10 @@
                                 
                                 
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;" x-text="txn.type"></span>
+                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;">
+                                        <span x-text="txn.type"></span>
+                                        <span x-show="txn.isMonthly"> - <span x-text="txn.displayPaymentFor.replace(' ', '-')"></span></span>
+                                    </span>
                                     
                                     
                                     <span class="badge bg-light text-secondary border px-2 py-1 d-flex align-items-center gap-1" style="font-size: 0.65rem;">
@@ -225,20 +227,19 @@
                                        :class="txn.payerType === 'Tenant' ? 'text-warning' : 'text-success'"></i> 
                                     
                                     <span x-text="txn.displayResidentName"></span>
-                                    <span class="text-muted ms-1" style="font-size: 0.8rem;">(Flat No:<span x-text="txn.displayFlat"></span>)</span>
+                                    
+                                    
+                                    <span class="badge rounded-pill border ms-2" 
+                                          :class="txn.payerType === 'Tenant' ? 'bg-warning bg-opacity-10 text-warning border-warning' : 'bg-success bg-opacity-10 text-success border-success'"
+                                          style="font-size: 0.6rem; text-transform: uppercase;"
+                                          x-text="txn.payerType">
+                                    </span>
+
+                                    <span class="text-muted ms-2" style="font-size: 0.8rem;">(Flat No:<span x-text="txn.displayFlat"></span>)</span>
                                 </div>
                                 
                                 
                                 <div class="text-muted small mt-1 d-flex align-items-center flex-wrap gap-2" style="font-size: 0.7rem;">
-                                    
-                                    
-                                    <div class="d-flex align-items-center">
-                                         <i class="bi bi-calendar-check-fill text-secondary me-1" x-show="txn.isMonthly"></i>
-                                         <span x-text="txn.displayPaymentFor"></span>
-                                    </div>
-                                    
-                                    <span x-show="txn.isMonthly">•</span>
-
                                     
                                     <div class="d-flex align-items-center text-primary">
                                         <i class="bi bi-clock-fill me-1"></i>

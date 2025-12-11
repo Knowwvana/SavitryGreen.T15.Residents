@@ -2,12 +2,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://knowwvana.github.io/SavitryGreen.T15.Residents/</loc>
+    <loc>http://localhost:1313/SavitryGreen.T15.Residents/</loc>
   </url><url>
-    <loc>https://knowwvana.github.io/SavitryGreen.T15.Residents/test/</loc>
+    <loc>http://localhost:1313/SavitryGreen.T15.Residents/test/</loc>
   </url><url>
-    <loc>https://knowwvana.github.io/SavitryGreen.T15.Residents/categories/</loc>
+    <loc>http://localhost:1313/SavitryGreen.T15.Residents/categories/</loc>
   </url><url>
-    <loc>https://knowwvana.github.io/SavitryGreen.T15.Residents/tags/</loc>
+    <loc>http://localhost:1313/SavitryGreen.T15.Residents/tags/</loc>
   </url>
 </urlset>

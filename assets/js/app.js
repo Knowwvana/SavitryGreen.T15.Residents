@@ -6,9 +6,18 @@
 
 document.addEventListener('alpine:init', () => {
 
+    /**
+     * -----------------------------------------------------------------
+     * MODULE 1: APP SERVICES (Private Logic Layer)
+     * -----------------------------------------------------------------
+     */
     const AppServices = (() => {
+
+        // --- CONSTANTS ---
         const MONTHS_MAP = {jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11};
         const MONTHS_ARRAY = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        // --- UTILITIES ---
 
         const LocalTimeHelper = {
             getLocalISOString: function() {
@@ -20,50 +29,51 @@ document.addEventListener('alpine:init', () => {
 
         const safeString = (val) => String(val !== null && val !== undefined ? val : '').trim();
 
-        // Normalizes "001" -> "1", 1 -> "1"
         const normalizeFlat = (val) => {
             const s = safeString(val);
             const n = Number(s);
             return (s !== '' && !isNaN(n)) ? String(n) : s;
         };
 
+        // --- DOMAIN MODELS ---
+
         class Settings {
             constructor(data) {
                 this._config = {};
-                
+
                 const formatMonthString = (dateValue) => {
                     if (!dateValue) return 'Sep-2025';
                     if (typeof dateValue === 'string' && (dateValue.includes('T') || dateValue.includes('Z'))) {
                         try {
                             const d = new Date(dateValue);
-                            return `${MONTHS_ARRAY[d.getMonth()]}-${d.getFullYear()}`;
-                        } catch (e) { return String(dateValue); }
+                            const monthName = MONTHS_ARRAY[d.getMonth()];
+                            return `${monthName}-${d.getFullYear()}`;
+                        } catch (e) {
+                            return String(dateValue);
+                        }
                     }
                     return String(dateValue);
                 };
 
-                const processData = (d) => {
-                    if (Array.isArray(d)) {
-                        d.forEach(row => {
-                            const key = safeString(row.Key || row.key || row.Name || row.name);
-                            let val = row.Value || row.value;
-                            if (key.toLowerCase().includes('startfrom')) val = formatMonthString(val);
-                            if (key) {
-                                this._config[key] = val;
-                                this._config[key.toLowerCase()] = val;
-                            }
-                        });
-                    } else if (typeof d === 'object' && d !== null) {
-                        Object.keys(d).forEach(key => {
-                            const cleanKey = safeString(key);
-                            let val = d[key];
-                            if (cleanKey.toLowerCase().includes('startfrom')) val = formatMonthString(val);
-                            this._config[cleanKey] = val;
-                            this._config[cleanKey.toLowerCase()] = val;
-                        });
-                    }
-                };
-                processData(data);
+                if (Array.isArray(data)) {
+                    data.forEach(row => {
+                        const key = safeString(row.Key || row.key || row.Name || row.name);
+                        let val = row.Value || row.value;
+                        if (key.toLowerCase().includes('startfrom')) val = formatMonthString(val);
+                        if (key) {
+                            this._config[key] = val;
+                            this._config[key.toLowerCase()] = val;
+                        }
+                    });
+                } else if (typeof data === 'object' && data !== null) {
+                    Object.keys(data).forEach(key => {
+                        const cleanKey = safeString(key);
+                        let val = data[key];
+                        if (cleanKey.toLowerCase().includes('startfrom')) val = formatMonthString(val);
+                        this._config[cleanKey] = val;
+                        this._config[cleanKey.toLowerCase()] = val;
+                    });
+                }
             }
 
             get societyName() { return this._config['SocietyName'] || this._config['societyname'] || 'Green Valley Heights'; }
@@ -109,7 +119,7 @@ document.addEventListener('alpine:init', () => {
 
         class Resident {
             constructor(flatData, rawResidentData, paymentHistory) {
-                this.flat = normalizeFlat(flatData.FlatNo || flatData.flat);
+                this.flat = safeString(flatData.FlatNo || flatData.flat);
                 this.due = parseFloat(flatData.Due || flatData.Pending || 0);
                 this.occupants = (rawResidentData || []).map(r => ({
                     name: safeString(r.Name || r.name || 'Unknown'),
@@ -204,7 +214,8 @@ document.addEventListener('alpine:init', () => {
             async addPayment(formData) {
                 const paymentId = Date.now().toString(); 
                 const timestamp = new Date().toLocaleString();
-                const finalTitle = formData.category === 'Monthly' ? `Maint: ${formData.month}` : formData.title;
+                let finalTitle = formData.title;
+                if (formData.category === 'Monthly') finalTitle = `Maint: ${formData.month}`; 
 
                 const payload = {
                     PaymentID: paymentId,
@@ -275,13 +286,12 @@ document.addEventListener('alpine:init', () => {
                 totalCollection: 0,
                 monthlyCollection: 0,
                 adhocCollection: 0,
-                currMonthCollection: 0, // NEW
-                prevMonthCollection: 0, // NEW
+                currMonthCollection: 0, 
+                prevMonthCollection: 0, 
                 recentTransactions: [],
                 cashInHand: 0, expenses: 0
             };
 
-            // Count Occupants
             this.residents.forEach(r => {
                 r.occupants.forEach(o => {
                     if (o.type.toLowerCase() === 'owner') stats.ownersCount++;
@@ -289,11 +299,10 @@ document.addEventListener('alpine:init', () => {
                 });
             });
 
-            // Date Helpers for Collection Stats
+            // Date helpers
             const now = new Date();
             const currentY = now.getFullYear();
-            const currentM = now.getMonth(); // 0-11
-            
+            const currentM = now.getMonth();
             const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const prevY = prevDate.getFullYear();
             const prevM = prevDate.getMonth();
@@ -302,28 +311,22 @@ document.addEventListener('alpine:init', () => {
             
             allPayments.forEach(p => {
                 if (p.isPaidOrPendingValidation) { 
-                    // Aggregate Total
                     stats.totalCollection += p.amount;
-
-                    // Aggregate Categories
                     if (p.isMonthly) stats.monthlyCollection += p.amount;
                     else stats.adhocCollection += p.amount;
 
-                    // Aggregate Time-based Collections (Based on Payment Date)
                     try {
                         const pDate = new Date(p.rawDate);
                         if (!isNaN(pDate.getTime())) {
                             const pY = pDate.getFullYear();
-                            const pM = pDate.getMonth();
-                            
-                            if (pY === currentY && pM === currentM) stats.currMonthCollection += p.amount;
-                            if (pY === prevY && pM === prevM) stats.prevMonthCollection += p.amount;
+                            const pMonth = pDate.getMonth();
+                            if (pY === currentY && pMonth === currentM) stats.currMonthCollection += p.amount;
+                            if (pY === prevY && pMonth === prevM) stats.prevMonthCollection += p.amount;
                         }
                     } catch(e) {}
                 }
             });
 
-            // Recent Transactions Logic
             stats.recentTransactions = allPayments
                 .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate))
                 .slice(0, 5)
@@ -331,14 +334,12 @@ document.addEventListener('alpine:init', () => {
                     const resident = this.residents.find(r => r.flat === txn.flatNo);
                     
                     let displayResidentName = "Unknown Resident";
-                    let payerType = "Owner"; // Default for icon color
+                    let payerType = "Owner"; 
 
                     if (resident && resident.occupants.length > 0) {
-                        // Smart Name Logic: Prefer Tenant for Monthly payments
                         const tenant = resident.occupants.find(o => o.type.toLowerCase() === 'tenant');
                         const owner = resident.occupants.find(o => o.type.toLowerCase() === 'owner');
                         
-                        // If payment is monthly and tenant exists, assume tenant paid (or if only tenant exists)
                         if (txn.isMonthly && tenant) {
                             displayResidentName = tenant.name;
                             payerType = "Tenant";
@@ -379,6 +380,8 @@ document.addEventListener('alpine:init', () => {
 
                     return {
                         ...txn,
+                        // CRITICAL FIX: Explicitly pass the getter value so x-show works
+                        isMonthly: txn.isMonthly, 
                         displayFlat: resident ? resident.flat : txn.flatNo,
                         displayResidentName: displayResidentName,
                         displayPaymentFor: displayPaymentFor,
@@ -417,7 +420,6 @@ document.addEventListener('alpine:init', () => {
             const totalPaid = resident.history.filter(p => p.isPaidStrict).reduce((sum, p) => sum + p.amount, 0);
             const pendingVal = resident.history.filter(p => p.isInReview).reduce((sum, p) => sum + p.amount, 0);
             const pendingList = resident.getPendingMonthsList(this.settings);
-
             this.activeResident.stats = { totalPaid: totalPaid, pendingValidation: pendingVal, currentDue: resident.totalPendingDue };
             this.activeResident.pendingList = pendingList; 
             this.view = 'history';

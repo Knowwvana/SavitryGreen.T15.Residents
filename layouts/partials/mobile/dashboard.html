@@ -72,7 +72,6 @@
                         </div>
                         <div>
                             <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Collections</small>
-                            <!-- Green Color as requested -->
                             <h3 class="fw-bold text-success mb-0" x-text="'₹' + dashboardStats.totalCollection.toLocaleString('en-IN')"></h3>
                         </div>
                     </div>
@@ -175,9 +174,12 @@
                             <!-- Transaction Details -->
                             <div class="d-flex flex-column">
                                 
-                                <!-- Line 1: Type & Method -->
+                                <!-- Line 1: Type & Month & Method -->
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;" x-text="txn.type"></span>
+                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;">
+                                        <span x-text="txn.type"></span>
+                                        <span x-show="txn.isMonthly"> - <span x-text="txn.displayPaymentFor.replace(' ', '-')"></span></span>
+                                    </span>
                                     
                                     <!-- UPI/Method Logo & Badge -->
                                     <span class="badge bg-light text-secondary border px-2 py-1 d-flex align-items-center gap-1" style="font-size: 0.65rem;">
@@ -193,20 +195,19 @@
                                        :class="txn.payerType === 'Tenant' ? 'text-warning' : 'text-success'"></i> 
                                     
                                     <span x-text="txn.displayResidentName"></span>
-                                    <span class="text-muted ms-1" style="font-size: 0.8rem;">(Flat No:<span x-text="txn.displayFlat"></span>)</span>
+                                    
+                                    <!-- Payer Type Badge -->
+                                    <span class="badge rounded-pill border ms-2" 
+                                          :class="txn.payerType === 'Tenant' ? 'bg-warning bg-opacity-10 text-warning border-warning' : 'bg-success bg-opacity-10 text-success border-success'"
+                                          style="font-size: 0.6rem; text-transform: uppercase;"
+                                          x-text="txn.payerType">
+                                    </span>
+
+                                    <span class="text-muted ms-2" style="font-size: 0.8rem;">(Flat No:<span x-text="txn.displayFlat"></span>)</span>
                                 </div>
                                 
-                                <!-- Line 3: Month & Date -->
+                                <!-- Line 3: Date & Time -->
                                 <div class="text-muted small mt-1 d-flex align-items-center flex-wrap gap-2" style="font-size: 0.7rem;">
-                                    
-                                    <!-- Month -->
-                                    <div class="d-flex align-items-center">
-                                         <i class="bi bi-calendar-check-fill text-secondary me-1" x-show="txn.isMonthly"></i>
-                                         <span x-text="txn.displayPaymentFor"></span>
-                                    </div>
-                                    
-                                    <span x-show="txn.isMonthly">•</span>
-
                                     <!-- Colored Filled Date Logo -->
                                     <div class="d-flex align-items-center text-primary">
                                         <i class="bi bi-clock-fill me-1"></i>
