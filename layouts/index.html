@@ -10,7 +10,7 @@
         {{ partial "mobile/dashboard.html" . }}
     </div>
 
-    <!-- 2. RESIDENTS LIST VIEW (Uses the fix in the partial) -->
+    <!-- 2. RESIDENTS LIST VIEW -->
     <div x-show="view === 'residents'" class="app-view">
         {{ partial "mobile/residents-list.html" . }}
     </div>
@@ -23,6 +23,11 @@
     <!-- 4. ADD ENTRY VIEW -->
     <div x-show="view === 'add'" class="app-view">
         {{ partial "mobile/add-entry.html" . }}
+    </div>
+
+    <!-- 5. ADMIN VALIDATION VIEW -->
+    <div x-show="view === 'validate'" class="app-view">
+        {{ partial "mobile/validate.html" . }}
     </div>
 
     <!-- BOTTOM NAVIGATION -->

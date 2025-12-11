@@ -5,4 +5,4 @@ theme = [] # Crucial: We are NOT using a theme, we are building custom layouts.
 publishDir = "docs"
 [params]
   secretary_initials = "AG"
-  API_URL = "https://script.google.com/macros/s/AKfycbwvQvOSfTFF0hVkk3Q6m8ym2CSQNIWrL4IxoAAd-v9JSUjAlr8UhVUHjlTLzv_cgh6R0g/exec"
+  API_URL = "https://script.google.com/macros/s/AKfycbwRmUKf2JPyPk-vSGP2-kTYO9cyKpiTAJCMXzXQ2vlQq_L2Kxc4K2L7oxFD9_qmq1Er/exec"
