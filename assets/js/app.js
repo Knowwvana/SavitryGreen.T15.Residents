@@ -18,6 +18,7 @@ document.addEventListener('alpine:init', () => {
         const MONTHS_ARRAY = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         // --- UTILITIES ---
+
         const LocalTimeHelper = {
             getLocalISOString: function() {
                 const now = new Date();
@@ -40,7 +41,6 @@ document.addEventListener('alpine:init', () => {
             constructor(data) {
                 this._config = {};
 
-                // ... (Existing Date Parsing Logic) ...
                 const formatMonthString = (dateValue) => {
                     if (!dateValue) return 'Sep-2025';
                     if (typeof dateValue === 'string' && (dateValue.includes('T') || dateValue.includes('Z'))) {
@@ -97,6 +97,10 @@ document.addEventListener('alpine:init', () => {
                 this.category = safeString(data.Category || data.category || 'Maintenance');
                 this.remarks = safeString(data.Remarks || data.remarks);
                 this.method = safeString(data.PaymentMethod || data.method || 'UPI');
+                
+                // Admin Validation Data
+                this.validatedBy = safeString(data.ValidatedBy || data.validatedby);
+                this.validationTime = safeString(data.ValidationTime || data.validationtime);
                 
                 this.rawDate = data.PaymentDate || data.date;
                 this.rawMonth = data.Month || data.month;
@@ -163,7 +167,6 @@ document.addEventListener('alpine:init', () => {
 
                 while ((currY < endYear || (currY === endYear && currM <= endMonth)) && safety < 120) {
                     const monthKey = `${currY}-${String(currM + 1).padStart(2, '0')}`;
-
                     const isPaid = this.history.some(p => 
                         p.isMonthly && p.isPaidOrPendingValidation && p.monthKey === monthKey
                     );
@@ -186,7 +189,7 @@ document.addEventListener('alpine:init', () => {
             constructor(apiUrl) {
                 this.apiUrl = apiUrl;
                 this.residents = [];
-                this.admins = []; // New Store for Admins
+                this.admins = [];
                 this.settings = new Settings({});
                 this.isLoading = false;
             }
@@ -204,7 +207,7 @@ document.addEventListener('alpine:init', () => {
                     const rawPayments = result.payments || [];
                     
                     this.settings = new Settings(result.settings);
-                    this.admins = result.admins || []; // Hydrate admins list
+                    this.admins = result.admins || []; // Fetch admins from new sheet
 
                     const allPayments = (result.payments || []).map(p => new Payment(p));
                     
@@ -242,7 +245,6 @@ document.addEventListener('alpine:init', () => {
             }
 
             async addPayment(formData) {
-                // ... (Same as before)
                 const paymentId = Date.now().toString(); 
                 const timestamp = new Date().toLocaleString();
                 let finalTitle = formData.title;
@@ -275,11 +277,10 @@ document.addEventListener('alpine:init', () => {
                 }
             }
 
-            // NEW: Approve Payment (Update Status with Admin Info)
             async updatePaymentStatus(paymentId, newStatus, adminName, comments) {
                 const timestamp = new Date().toLocaleString();
                 const payload = {
-                    action: 'UPDATE',
+                    action: 'UPDATE', 
                     PaymentID: paymentId,
                     Status: newStatus,
                     ValidatedBy: adminName,
@@ -305,7 +306,11 @@ document.addEventListener('alpine:init', () => {
         return { SocietyRepository, LocalTimeHelper, Resident, Settings };
     })();
 
-    // --- VIEW MODEL ---
+    /**
+     * -----------------------------------------------------------------
+     * MODULE 2: VIEW MODEL (Alpine.js Component)
+     * -----------------------------------------------------------------
+     */
     window.societyApp = (api_url) => ({
         repository: new AppServices.SocietyRepository(api_url),
         getLocalISOString: AppServices.LocalTimeHelper.getLocalISOString,
@@ -330,7 +335,9 @@ document.addEventListener('alpine:init', () => {
             currentUser: null,
             username: '',
             password: '',
-            error: ''
+            error: '',
+            tab: 'pending', // 'pending' or 'history'
+            showSuccessModal: false
         },
 
         init() {
@@ -347,7 +354,7 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = false; 
         },
 
-        // --- DASHBOARD STATISTICS ---
+        // --- DASHBOARD LOGIC ---
         get dashboardStats() {
             const stats = {
                 flatsCount: this.residents.length,
@@ -404,8 +411,8 @@ document.addEventListener('alpine:init', () => {
             return stats;
         },
 
-        // --- ADMIN VALIDATION LOGIC ---
-        
+        // --- ADMIN VIEW LOGIC (Getters moved from HTML to JS) ---
+
         get pendingValidationList() {
             const allPayments = this.residents.flatMap(r => r.history);
             return allPayments
@@ -422,9 +429,24 @@ document.addEventListener('alpine:init', () => {
             };
         },
 
+        get adminHistoryList() {
+            const allPayments = this.residents.flatMap(r => r.history);
+            return allPayments
+                .filter(p => p.isPaidStrict) // Only approved/paid
+                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)) // Descending
+                .slice(0, 50) // Limit to recent 50 for performance
+                .map(txn => this.mapTransactionForDisplay(txn));
+        },
+
+        get adminHistoryTotal() {
+            // Calculate total of ALL paid items
+            return this.residents.flatMap(r => r.history)
+                .filter(p => p.isPaidStrict)
+                .reduce((sum, p) => sum + p.amount, 0);
+        },
+
         login() {
             this.admin.error = '';
-            // Match against repository.admins list
             const foundAdmin = this.repository.admins.find(
                 a => (a.AdminUserName || a.adminusername) === this.admin.username && 
                      (String(a.AdminPassword || a.adminpassword)) === this.admin.password
@@ -445,22 +467,27 @@ document.addEventListener('alpine:init', () => {
             this.view = 'home';
         },
 
-        async approvePayment(paymentId) {
+        async handleApprove(paymentId) {
             this.isSubmitting = true;
             const adminName = this.admin.currentUser || 'Admin';
             const success = await this.repository.updatePaymentStatus(paymentId, 'Paid', adminName, 'Approved via App');
             
             if (success) {
                 await this.fetchAndHydrate();
+                // Show Success Modal via State
+                this.admin.showSuccessModal = true;
+                setTimeout(() => { this.admin.showSuccessModal = false; }, 2000);
             } else {
                 alert("Failed to update status.");
             }
             this.isSubmitting = false;
         },
 
-        // UI HELPER
+        // --- SHARED UI HELPERS ---
+
         mapTransactionForDisplay(txn) {
             const resident = this.residents.find(r => r.flat === txn.flatNo);
+            
             let displayResidentName = "Unknown Resident";
             let payerType = "Owner"; 
 
