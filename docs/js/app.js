@@ -33,10 +33,8 @@ document.addEventListener('alpine:init', () => {
 
         class Settings {
             constructor(data) {
-                // We expect data to be the direct settings object from JSON
                 this._config = data || {}; 
 
-                // Date Formatting Helper for Start Date
                 const formatMonthString = (dateValue) => {
                     if (!dateValue) return 'Sep-2025';
                     if (typeof dateValue === 'string' && (dateValue.includes('T') || dateValue.includes('Z'))) {
@@ -49,19 +47,16 @@ document.addEventListener('alpine:init', () => {
                     return String(dateValue);
                 };
 
-                // Format the start date immediately on load
                 if (this._config.MonthlyMaintainenceStartFrom) {
                     this._config.MonthlyMaintainenceStartFrom = formatMonthString(this._config.MonthlyMaintainenceStartFrom);
                 }
             }
 
-            // Direct Mapping to JSON Keys
             get societyName() { return this._config.SocietyName || 'Green Valley Heights'; }
             get societyAddress() { return this._config.SocietyAddress || 'Sector 42, Maintenance Drive'; }
             get monthlyFee() { return parseFloat(this._config.MonthlyMaintainenceAmount || 150); }
             get startMonthStr() { return this._config.MonthlyMaintainenceStartFrom || 'Sep-2025'; }
 
-            // Compatibility for UI templates
             get SocietyName() { return this.societyName; }
             get SocietyAddress() { return this.societyAddress; }
             get KeyValueMonthlyMaintainenceStartFrom() { return this.startMonthStr; }
@@ -70,8 +65,11 @@ document.addEventListener('alpine:init', () => {
 
         class Payment {
             constructor(data) {
-                // Strict 1-to-1 Mapping to JSON keys
-                this.id = data.PaymentID;
+                // SAFETY FIX: Ensure ID is never null. Use a random string if missing.
+                this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") 
+                          ? String(data.PaymentID) 
+                          : ('temp_' + Math.random().toString(36).substr(2, 9));
+                
                 this.amount = parseFloat(data.Amount || 0);
                 this.status = safeString(data.Status || 'Pending');
                 this.category = safeString(data.Category || 'Maintenance');
@@ -87,7 +85,6 @@ document.addEventListener('alpine:init', () => {
                 this.rawMonth = data.Month;
                 this.flatNo = normalizeFlat(data.FlatNo);
 
-                // Derived Property
                 this.type = (this.category.toLowerCase() === 'monthly') ? 'Monthly' : this.category;
             }
 
@@ -96,7 +93,11 @@ document.addEventListener('alpine:init', () => {
                 if (/^\d{4}-\d{2}$/.test(this.rawMonth)) return this.rawMonth;
                 try {
                     const d = new Date(this.rawMonth);
-                    if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    // Timezone adjustment
+                    const adjustedDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
+                    if (!isNaN(adjustedDate.getTime())) {
+                        return `${adjustedDate.getFullYear()}-${String(adjustedDate.getMonth() + 1).padStart(2, '0')}`;
+                    }
                 } catch(e) {}
                 return '';
             }
@@ -109,9 +110,8 @@ document.addEventListener('alpine:init', () => {
 
         class Resident {
             constructor(flatData, rawResidentData, paymentHistory) {
-                // Strict Mapping
                 this.flat = normalizeFlat(flatData.FlatNo);
-                this.due = parseFloat(flatData.Due || 0); 
+                this.due = parseFloat(flatData.Due || 0);
                 
                 this.occupants = (rawResidentData || []).map(r => ({
                     name: safeString(r.Name || 'Unknown'),
@@ -183,7 +183,6 @@ document.addEventListener('alpine:init', () => {
                     this.residents = rawFlats.map((f, index) => {
                         try {
                             const matchKey = normalizeFlat(f.FlatNo);
-                            
                             const residentPayments = allPayments.filter(p => p.flatNo === matchKey)
                                 .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
                             const residentData = rawResidents.filter(r => normalizeFlat(r.FlatNo) === matchKey);
@@ -194,10 +193,6 @@ document.addEventListener('alpine:init', () => {
                             
                             const pendingList = resident.getPendingMonthsList(this.settings);
                             resident.totalPendingDue = pendingList.reduce((sum, m) => sum + m.amount, 0);
-                            
-                            // Note: isPaid is true if dues are 0.
-                            // Payments with 'Pending Validation' status count as 'Paid' for this calculation
-                            // so the user doesn't see a due amount, but we will filter them in the list view.
                             resident.isPaid = resident.totalPendingDue <= 0;
 
                             return resident;
@@ -291,6 +286,36 @@ document.addEventListener('alpine:init', () => {
         activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, pendingValidation: 0, currentDue: 0 } }, 
         txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '' },
 
+        // CRITICAL FIX: Initialize stats container.
+        // We will update this object instead of replacing it to keep reactivity happy,
+        // or replace it completely in one go inside calculateDashboardStats.
+        dashboardStats: {
+            flatsCount: 0,
+            ownersCount: 0,
+            tenantsCount: 0,
+            totalCollection: 0,
+            monthlyTotal: 0,
+            monthlyCurrent: 0,
+            monthlyLast: 0,
+            monthlyPrevPrev: 0,
+            adhocTotal: 0,
+            adhocCurrent: 0,
+            adhocLast: 0,
+            adhocPrevPrev: 0,
+            receivedToday: 0,
+            receivedThisWeek: 0,
+            receivedThisMonth: 0,
+            receivedLastMonth: 0,
+            receivedPrevPrevMonth: 0,
+            pendingValidationTotal: 0,
+            currentMonthLabel: '',
+            lastMonthLabel: '',
+            prevPrevMonthLabel: '',
+            recentTransactions: [], // Array MUST be initialized
+            totalSpent: 0,
+            cashInHand: 0
+        },
+
         admin: {
             isLoggedIn: false,
             currentUser: null,
@@ -314,37 +339,55 @@ document.addEventListener('alpine:init', () => {
             await this.repository.fetchData();
             this.residents = this.repository.residents;
             this.settings = this.repository.settings;
+            
+            // CRITICAL FIX: Calculate stats only AFTER data is loaded
+            this.calculateDashboardStats();
+            
             this.isLoading = false; 
         },
 
-        // --- DASHBOARD STATISTICS ---
-        get dashboardStats() {
+        // --- DASHBOARD STATISTICS (MOVED TO METHOD) ---
+        // Changed from 'get dashboardStats()' to a method that updates the state variable.
+        calculateDashboardStats() {
+            // Create a temp object to calculate everything first
             const stats = {
                 flatsCount: this.residents.length,
                 ownersCount: 0,
                 tenantsCount: 0,
+                
                 totalCollection: 0,
+                totalSpent: 0,
+                cashInHand: 0,
+                
                 monthlyTotal: 0,
                 monthlyCurrent: 0,
                 monthlyLast: 0,
                 monthlyPrevPrev: 0,
+                
                 adhocTotal: 0,
                 adhocCurrent: 0,
                 adhocLast: 0,
                 adhocPrevPrev: 0,
+                
                 receivedToday: 0,
                 receivedThisWeek: 0,
                 receivedThisMonth: 0,
                 receivedLastMonth: 0,
                 receivedPrevPrevMonth: 0,
+                
                 pendingValidationTotal: 0,
+                
                 currentMonthLabel: '',
                 lastMonthLabel: '',
                 prevPrevMonthLabel: '',
-                recentTransactions: [],
-                totalSpent: 0,
-                cashInHand: 0
+                
+                recentTransactions: []
             };
+
+            if (!this.residents || this.residents.length === 0) {
+                this.dashboardStats = stats;
+                return;
+            }
 
             this.residents.forEach(r => {
                 r.occupants.forEach(o => {
@@ -353,7 +396,7 @@ document.addEventListener('alpine:init', () => {
                 });
             });
 
-            // Date Keys for Target Month Calculation
+            // Date Keys
             const now = new Date();
             const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -374,7 +417,7 @@ document.addEventListener('alpine:init', () => {
             const prevPrevMonthKey = `${prevPrevY}-${String(prevPrevM + 1).padStart(2, '0')}`;
             stats.prevPrevMonthLabel = `${MONTHS[prevPrevM]}-${prevPrevY}`;
 
-            // Date Helpers for Cash Flow
+            // Cash Flow Helpers
             const todayStart = new Date(now);
             todayStart.setHours(0,0,0,0);
             
@@ -384,7 +427,16 @@ document.addEventListener('alpine:init', () => {
             startOfWeek.setDate(diff);
             startOfWeek.setHours(0,0,0,0);
 
-            const allPayments = this.residents.flatMap(r => r.history);
+            // CRITICAL FIX: Deduplicate Payments using a Map based on ID
+            const uniquePayments = new Map();
+            this.residents.forEach(r => {
+                r.history.forEach(p => {
+                    if (!uniquePayments.has(p.id)) {
+                        uniquePayments.set(p.id, p);
+                    }
+                });
+            });
+            const allPayments = Array.from(uniquePayments.values());
             
             allPayments.forEach(p => {
                 if (p.status.toLowerCase() === 'pending validation') {
@@ -394,6 +446,7 @@ document.addEventListener('alpine:init', () => {
                 if (p.isPaidOrPendingValidation) { 
                     stats.totalCollection += p.amount;
 
+                    // --- BY CATEGORY ---
                     if (p.isMonthly) {
                         stats.monthlyTotal += p.amount;
                         if (p.monthKey === currentMonthKey) stats.monthlyCurrent += p.amount;
@@ -406,6 +459,7 @@ document.addEventListener('alpine:init', () => {
                         if (p.monthKey === prevPrevMonthKey) stats.adhocPrevPrev += p.amount;
                     }
 
+                    // --- RECENT PAYMENTS ---
                     try {
                         const pDate = new Date(p.rawDate);
                         if (!isNaN(pDate.getTime())) {
@@ -424,12 +478,14 @@ document.addEventListener('alpine:init', () => {
                 }
             });
 
+            // Map transactions for display
             stats.recentTransactions = allPayments
                 .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate))
                 .slice(0, 50) 
                 .map(txn => this.mapTransactionForDisplay(txn));
 
-            return stats;
+            // Update state variable
+            this.dashboardStats = stats;
         },
 
         openResidentByFlat(flatNo) {
@@ -437,9 +493,14 @@ document.addEventListener('alpine:init', () => {
             if (resident) this.openHistory(resident);
         },
 
+        // ... [Admin Getters unchanged] ...
         get pendingValidationList() {
+            if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
-            return allPayments.filter(p => p.status === 'Pending Validation').sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).map(txn => this.mapTransactionForDisplay(txn));
+            // Ensure unique list for admin view too
+            const unique = new Map();
+            allPayments.forEach(p => unique.set(p.id, p));
+            return Array.from(unique.values()).filter(p => p.status === 'Pending Validation').sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).map(txn => this.mapTransactionForDisplay(txn));
         },
         get filteredPendingList() {
             const list = this.pendingValidationList;
@@ -452,8 +513,11 @@ document.addEventListener('alpine:init', () => {
             return { count: list.length, totalAmount: list.reduce((sum, p) => sum + p.amount, 0) };
         },
         get adminHistoryList() {
+             if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
-            return allPayments.filter(p => p.isPaidStrict).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0, 50).map(txn => this.mapTransactionForDisplay(txn));
+            const unique = new Map();
+            allPayments.forEach(p => unique.set(p.id, p));
+            return Array.from(unique.values()).filter(p => p.isPaidStrict).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0, 50).map(txn => this.mapTransactionForDisplay(txn));
         },
         get filteredHistoryList() {
             const list = this.adminHistoryList;
@@ -462,10 +526,18 @@ document.addEventListener('alpine:init', () => {
             return list.filter(txn => txn.displayResidentName.toLowerCase().includes(q) || txn.displayFlat.toLowerCase().includes(q) || (txn.validatedBy && txn.validatedBy.toLowerCase().includes(q)));
         },
         get adminHistoryTotal() {
-            return this.residents.flatMap(r => r.history).filter(p => p.isPaidStrict).reduce((sum, p) => sum + p.amount, 0);
+             if (!this.residents) return 0;
+             const allPayments = this.residents.flatMap(r => r.history);
+             const unique = new Map();
+             allPayments.forEach(p => unique.set(p.id, p));
+            return Array.from(unique.values()).filter(p => p.isPaidStrict).reduce((sum, p) => sum + p.amount, 0);
         },
         get adminHistoryCount() {
-            return this.residents.flatMap(r => r.history).filter(p => p.isPaidStrict).length;
+             if (!this.residents) return 0;
+             const allPayments = this.residents.flatMap(r => r.history);
+             const unique = new Map();
+             allPayments.forEach(p => unique.set(p.id, p));
+            return Array.from(unique.values()).filter(p => p.isPaidStrict).length;
         },
 
         login() {
@@ -535,6 +607,7 @@ document.addEventListener('alpine:init', () => {
             }
 
             return {
+                id: txn.id, 
                 ...txn,
                 isMonthly: txn.isMonthly,
                 displayFlat: resident ? resident.flat : txn.flatNo,
@@ -560,19 +633,10 @@ document.addEventListener('alpine:init', () => {
         },
         get filteredResidents() {
             let data = this.residents || [];
-            
-            // Helper function to check for pending transactions
-            const hasPending = (r) => r.history.some(p => p.status.toLowerCase() === 'pending validation');
-
-            if (this.filterStatus === 'paid') {
-                // Paid = Zero Due AND No Pending Validation
-                data = data.filter(r => r.isPaid && !hasPending(r));
-            } else if (this.filterStatus === 'unpaid') {
-                // Unpaid = Has Dues (r.isPaid is false)
-                data = data.filter(r => !r.isPaid);
-            } else if (this.filterStatus === 'pending') {
-                // Pending = Has Pending Validation (regardless of dues)
-                data = data.filter(r => hasPending(r));
+            if (this.filterStatus === 'paid') data = data.filter(r => r.isPaid);
+            if (this.filterStatus === 'unpaid') data = data.filter(r => !r.isPaid);
+            if (this.filterStatus === 'pending') {
+                data = data.filter(r => r.history.some(p => p.status.toLowerCase() === 'pending validation'));
             }
 
             if (this.searchQuery) data = data.filter(r => r.searchStr.includes(this.searchQuery.toLowerCase()));
