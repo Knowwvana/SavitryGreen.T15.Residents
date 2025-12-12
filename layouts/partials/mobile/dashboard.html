@@ -1,27 +1,10 @@
 <!-- 2. DATA LOADED STATE -->
 <template x-if="!isLoading">
     <div class="p-3 pb-5" style="margin-top: -35px; position: relative; z-index: 2;">
-
-        <!-- 0. STATS BADGES (Moved here from Header) -->
-        <div class="d-flex gap-2 overflow-auto pb-2 no-scrollbar mb-2">
-            <div class="badge bg-white text-dark shadow-sm border px-3 py-2 rounded-pill d-flex align-items-center">
-                <span class="text-muted small me-2">Flats</span>
-                <span class="fw-bold fs-6" x-text="dashboardStats.flatsCount"></span>
-            </div>
-            <div class="badge bg-white text-dark shadow-sm border px-3 py-2 rounded-pill d-flex align-items-center">
-                <span class="text-muted small me-2">Owners</span>
-                <span class="fw-bold fs-6" x-text="dashboardStats.ownersCount"></span>
-            </div>
-            <div class="badge bg-white text-dark shadow-sm border px-3 py-2 rounded-pill d-flex align-items-center">
-                <span class="text-muted small me-2">Tenants</span>
-                <span class="fw-bold fs-6" x-text="dashboardStats.tenantsCount"></span>
-            </div>
-        </div>
-
         <!-- 1. FINANCIAL DASHBOARD -->
         <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
             <div class="card-body p-0">
-                
+
                 <!-- Total Collections Header -->
                 <div class="p-4 bg-light bg-gradient border-bottom">
                     <div class="row g-3 text-center">

@@ -65,7 +65,11 @@ document.addEventListener('alpine:init', () => {
 
         class Payment {
             constructor(data) {
-                this.id = data.PaymentID ? String(data.PaymentID) : ('temp_' + Math.random().toString(36).substr(2, 9));
+                // Ensure unique ID to prevent UI crashes and calc errors
+                this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") 
+                          ? String(data.PaymentID) 
+                          : ('temp_' + Math.random().toString(36).substr(2, 9));
+                
                 this.amount = parseFloat(data.Amount || 0);
                 this.status = safeString(data.Status || 'Pending');
                 this.category = safeString(data.Category || 'Maintenance');
@@ -322,13 +326,18 @@ document.addEventListener('alpine:init', () => {
                 flatsCount: this.residents.length,
                 ownersCount: 0,
                 tenantsCount: 0,
+                
                 totalCollection: 0,
+                totalSpent: 0,
+                cashInHand: 0,
+                
                 monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
                 adhocTotal: 0, adhocCurrent: 0, adhocLast: 0, adhocPrevPrev: 0,
                 receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
                 pendingValidationTotal: 0,
+                
                 currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
-                recentTransactions: [], totalSpent: 0, cashInHand: 0
+                recentTransactions: []
             };
 
             if (!this.residents || this.residents.length === 0) {
@@ -343,23 +352,32 @@ document.addEventListener('alpine:init', () => {
                 });
             });
 
+            // Date Calcs
             const now = new Date();
             const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             const currentY = now.getFullYear();
             const currentM = now.getMonth();
             const currentMonthKey = `${currentY}-${String(currentM + 1).padStart(2, '0')}`;
             stats.currentMonthLabel = `${MONTHS[currentM]}-${currentY}`;
+
             const prevDate = new Date(currentY, currentM - 1, 1);
-            const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-            stats.lastMonthLabel = `${MONTHS[prevDate.getMonth()]}-${prevDate.getFullYear()}`;
+            const prevY = prevDate.getFullYear();
+            const prevM = prevDate.getMonth();
+            const prevMonthKey = `${prevY}-${String(prevM + 1).padStart(2, '0')}`;
+            stats.lastMonthLabel = `${MONTHS[prevM]}-${prevY}`;
+
             const prevPrevDate = new Date(currentY, currentM - 2, 1);
-            const prevPrevMonthKey = `${prevPrevDate.getFullYear()}-${String(prevPrevDate.getMonth() + 1).padStart(2, '0')}`;
-            stats.prevPrevMonthLabel = `${MONTHS[prevPrevDate.getMonth()]}-${prevPrevDate.getFullYear()}`;
+            const prevPrevY = prevPrevDate.getFullYear();
+            const prevPrevM = prevPrevDate.getMonth();
+            const prevPrevMonthKey = `${prevPrevY}-${String(prevPrevM + 1).padStart(2, '0')}`;
+            stats.prevPrevMonthLabel = `${MONTHS[prevPrevM]}-${prevPrevY}`;
+
             const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
             const day = now.getDay(); 
             const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
             const startOfWeek = new Date(now); startOfWeek.setDate(diff); startOfWeek.setHours(0,0,0,0);
 
+            // FIX: Deduplicate payments to prevent double counting
             const uniquePayments = new Map();
             this.residents.forEach(r => {
                 r.history.forEach(p => {
@@ -552,24 +570,12 @@ document.addEventListener('alpine:init', () => {
             const tempSettings = new AppServices.Settings({ MonthlyMaintainenceStartFrom: startStr, MonthlyMaintainenceAmount: amount });
             return tempResident.getPendingMonthsList(tempSettings);
         },
-
-        // UPDATED FILTER LOGIC: STRICT 'PAID'
         get filteredResidents() {
             let data = this.residents || [];
-            
-            // Helper to check for pending transactions
-            const hasPending = (r) => r.history.some(p => p.status.toLowerCase() === 'pending validation');
-
-            if (this.filterStatus === 'paid') {
-                // Paid = Zero Pending Dues AND No Pending Validation Transactions
-                data = data.filter(r => r.isPaid && !hasPending(r));
-            } else if (this.filterStatus === 'unpaid') {
-                // Unpaid = Has Dues (Ignore pending validation state here as they are technically unpaid until validated, but for UI grouping we usually separate them)
-                // If you want "Unpaid" to also show pending items, remove !r.isPaid check. But typically Unpaid means "Action required by user to pay".
-                data = data.filter(r => !r.isPaid);
-            } else if (this.filterStatus === 'pending') {
-                // Pending = Has Pending Validation items
-                data = data.filter(r => hasPending(r));
+            if (this.filterStatus === 'paid') data = data.filter(r => r.isPaid);
+            if (this.filterStatus === 'unpaid') data = data.filter(r => !r.isPaid);
+            if (this.filterStatus === 'pending') {
+                data = data.filter(r => r.history.some(p => p.status.toLowerCase() === 'pending validation'));
             }
 
             if (this.searchQuery) data = data.filter(r => r.searchStr.includes(this.searchQuery.toLowerCase()));

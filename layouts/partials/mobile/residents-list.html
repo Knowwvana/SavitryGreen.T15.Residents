@@ -1,7 +1,7 @@
 <!-- NOTE: Main Header is now handled by header.html -->
 
 <!-- LIST CONTROLS -->
-<div class="bg-white px-3 pt-3 pb-2 border-bottom" style="z-index: 1020;">
+<div class="bg-white px-3 pt-3 pb-2 sticky-top border-bottom" style="z-index: 1020; top: 70px;">
     
     <!-- Search Bar -->
     <div class="position-relative mb-3">
@@ -42,7 +42,6 @@
                 :class="filterStatus === 'paid' ? 'btn-success' : 'btn-light text-success border-success border-opacity-25'"
                 @click="filterStatus = 'paid'">
             Paid
-            <!-- Strict Count: No Dues AND No Pending Validation -->
             <span class="badge rounded-pill" 
                   :class="filterStatus === 'paid' ? 'bg-white text-success' : 'bg-success text-white'"
                   x-text="residents.filter(r => r.totalPendingDue <= 0 && !r.history.some(h => h.status.toLowerCase() === 'pending validation')).length"></span>
@@ -190,37 +189,40 @@
                                         </div>
                                     </div>
 
-                                    <!-- Row 2: LAST PAYMENT -->
+                                    <!-- Row 2: LAST PAYMENT / PENDING ITEM -->
                                     <div class="d-flex align-items-center justify-content-between mt-1" style="min-height: 24px;">
                                         <div class="d-flex align-items-center w-100">
                                             <span class="text-secondary fw-bold me-2" 
-                                                  style="font-size: 0.65rem; letter-spacing: 0.5px;">LAST PAYMENT</span>
+                                                  style="font-size: 0.65rem; letter-spacing: 0.5px;"
+                                                  x-text="filterStatus === 'pending' ? 'PENDING ITEM' : 'LAST PAYMENT'">
+                                            </span>
                                             
                                             <!-- Logic: Always show latest payment (r.lastPayment) -->
-                                            <template x-if="r.lastPayment">
-                                                <div class="d-flex align-items-center flex-wrap">
+                                            <template x-if="filterStatus === 'pending' ? (r.history.find(p => p.status.toLowerCase() === 'pending validation') || r.lastPayment) : r.lastPayment">
+                                                <div class="d-flex align-items-center flex-wrap" 
+                                                     x-data="{ pItem: filterStatus === 'pending' ? (r.history.find(p => p.status.toLowerCase() === 'pending validation') || r.lastPayment) : r.lastPayment }">
                                                     
                                                     <span class="fw-bold" 
-                                                          :class="r.lastPayment.status.toLowerCase() === 'paid' ? 'text-success' : 'text-warning'" 
+                                                          :class="pItem.status.toLowerCase() === 'paid' ? 'text-success' : 'text-warning'" 
                                                           style="font-size: 0.95rem;" 
-                                                          x-text="'₹' + r.lastPayment.amount.toLocaleString('en-IN')"></span>
+                                                          x-text="'₹' + pItem.amount.toLocaleString('en-IN')"></span>
                                                     
                                                     <span class="text-muted opacity-50 mx-2">|</span>
                                                     
                                                     <span class="text-dark fw-medium small text-nowrap" 
-                                                          x-text="new Date(r.lastPayment.rawDate).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'2-digit'})"></span>
+                                                          x-text="new Date(pItem.rawDate).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'2-digit'})"></span>
                                                     
                                                     <span class="text-muted opacity-50 mx-2">|</span>
 
                                                     <!-- Payment Mode with Icon and Text -->
                                                     <div class="d-flex align-items-center text-muted small me-2">
-                                                        <i class="bi" :class="(r.lastPayment.method || '').toLowerCase().includes('cash') ? 'bi-cash-stack text-success' : 'bi-phone-flip text-primary'" style="font-size: 0.75rem;"></i>
-                                                        <span class="ms-1 fw-bold text-dark" style="font-size: 0.65rem;" x-text="r.lastPayment.method"></span>
+                                                        <i class="bi" :class="(pItem.method || '').toLowerCase().includes('cash') ? 'bi-cash-stack text-success' : 'bi-phone-flip text-primary'" style="font-size: 0.75rem;"></i>
+                                                        <span class="ms-1 fw-bold text-dark" style="font-size: 0.65rem;" x-text="pItem.method"></span>
                                                     </div>
 
                                                     <div class="d-flex align-items-center px-2 py-0 rounded-pill border"
-                                                         :class="r.lastPayment.status.toLowerCase() === 'paid' ? 'bg-success bg-opacity-10 text-success border-success border-opacity-25' : 'bg-warning bg-opacity-10 text-warning border-warning border-opacity-25'">
-                                                        <span style="font-size: 0.6rem; text-transform: uppercase;" x-text="r.lastPayment.status === 'Pending Validation' ? 'Pending' : r.lastPayment.status"></span>
+                                                         :class="pItem.status.toLowerCase() === 'paid' ? 'bg-success bg-opacity-10 text-success border-success border-opacity-25' : 'bg-warning bg-opacity-10 text-warning border-warning border-opacity-25'">
+                                                        <span style="font-size: 0.6rem; text-transform: uppercase;" x-text="pItem.status === 'Pending Validation' ? 'Pending' : pItem.status"></span>
                                                     </div>
                                                 </div>
                                             </template>
