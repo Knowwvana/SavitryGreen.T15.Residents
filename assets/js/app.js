@@ -56,16 +56,13 @@ document.addEventListener('alpine:init', () => {
             get societyAddress() { return this._config.SocietyAddress || 'Sector 42, Maintenance Drive'; }
             get monthlyFee() { return parseFloat(this._config.MonthlyMaintainenceAmount || 150); }
             get startMonthStr() { return this._config.MonthlyMaintainenceStartFrom || 'Sep-2025'; }
-
+            
             get SocietyName() { return this.societyName; }
             get SocietyAddress() { return this.societyAddress; }
-            get KeyValueMonthlyMaintainenceStartFrom() { return this.startMonthStr; }
-            get MonthlyMaintainenceAmount() { return this.monthlyFee; }
         }
 
         class Payment {
             constructor(data) {
-                // Ensure unique ID to prevent UI crashes and calc errors
                 this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") 
                           ? String(data.PaymentID) 
                           : ('temp_' + Math.random().toString(36).substr(2, 9));
@@ -112,6 +109,15 @@ document.addEventListener('alpine:init', () => {
                 this.flat = normalizeFlat(flatData.FlatNo);
                 this.due = parseFloat(flatData.Due || 0);
                 
+                // --- NEW LOGIC: Calculate Floor & Tower ---
+                const nFlat = parseInt(this.flat);
+                let floorVal = !isNaN(nFlat) ? Math.floor(nFlat / 100) : 0;
+                
+                // Fix: Ensure 0 maps to 'Ground' explicitly
+                this.floor = (floorVal === 0) ? 'Ground' : String(floorVal);
+                this.tower = '15'; // Defaulting to Tower 15 as per project context
+                // ------------------------------------------
+
                 this.occupants = (rawResidentData || []).map(r => ({
                     name: safeString(r.Name || 'Unknown'),
                     phone: safeString(r.Phone),
@@ -209,7 +215,6 @@ document.addEventListener('alpine:init', () => {
 
             async addPayment(formData) {
                 const paymentId = Date.now().toString(); 
-                const timestamp = new Date().toLocaleString();
                 let finalTitle = formData.title;
                 if (formData.category === 'Monthly') finalTitle = `Maint: ${formData.month}`; 
 
@@ -223,7 +228,7 @@ document.addEventListener('alpine:init', () => {
                     PaymentDate: formData.paymentDate.replace('T', ' '),
                     PaymentMethod: formData.method,
                     Status: 'Pending Validation',
-                    Remarks: `${formData.remarks} [Logged: ${timestamp}]`
+                    Remarks: formData.remarks 
                 };
 
                 try {
@@ -282,13 +287,24 @@ document.addEventListener('alpine:init', () => {
         txnSuccess: false,
         residents: [],
         settings: {}, 
+        
+        // Active Resident Data
         activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, pendingValidation: 0, currentDue: 0 } }, 
+        
+        // History List State (Global)
+        historyQuery: '',
+        pageM: 1,
+        pageA: 1,
+        limit: 10,
+
+        // Transaction Form Data
         txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '' },
 
+        // Dashboard Stats
         dashboardStats: {
             flatsCount: 0, ownersCount: 0, tenantsCount: 0, totalCollection: 0,
             monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
-            adhocTotal: 0, adhocCurrent: 0, adhocLast: 0, adhocPrevPrev: 0,
+            adhocTotal: 0, adhocByTitle: {}, 
             receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
             pendingValidationTotal: 0, currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
             recentTransactions: [], totalSpent: 0, cashInHand: 0
@@ -321,22 +337,46 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = false; 
         },
 
+        // --- FILTERED & PAGINATED GETTERS FOR PAYMENT HISTORY ---
+        get filteredMonthly() {
+            if (!this.activeResident || !this.activeResident.history) return [];
+            const q = (this.historyQuery || '').toLowerCase();
+            return this.activeResident.history.filter(h => 
+                h.isMonthly && 
+                (!q || (String(h.amount)+h.method+h.remarks+(h.rawMonth||'')).toLowerCase().includes(q))
+            );
+        },
+        get paginatedMonthly() {
+            const start = (this.pageM - 1) * this.limit;
+            return this.filteredMonthly.slice(start, start + this.limit);
+        },
+        get totalPagesM() { return Math.ceil(this.filteredMonthly.length / this.limit) || 1; },
+
+        get filteredAdhoc() {
+            if (!this.activeResident || !this.activeResident.history) return [];
+            const q = (this.historyQuery || '').toLowerCase();
+            return this.activeResident.history.filter(h => 
+                !h.isMonthly && 
+                (!q || (h.category+(h.title||'')+String(h.amount)+h.method+h.remarks).toLowerCase().includes(q))
+            );
+        },
+        get paginatedAdhoc() {
+            const start = (this.pageA - 1) * this.limit;
+            return this.filteredAdhoc.slice(start, start + this.limit);
+        },
+        get totalPagesA() { return Math.ceil(this.filteredAdhoc.length / this.limit) || 1; },
+        // --------------------------------------------------------
+
         calculateDashboardStats() {
-            const stats = {
+             const stats = {
                 flatsCount: this.residents.length,
                 ownersCount: 0,
                 tenantsCount: 0,
-                
-                totalCollection: 0,
-                totalSpent: 0,
-                cashInHand: 0,
-                
+                totalCollection: 0, totalSpent: 0, cashInHand: 0,
                 monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
-                adhocTotal: 0, adhocCurrent: 0, adhocLast: 0, adhocPrevPrev: 0,
+                adhocTotal: 0, adhocByTitle: {}, 
                 receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
-                pendingValidationTotal: 0,
-                
-                currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
+                pendingValidationTotal: 0, currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
                 recentTransactions: []
             };
 
@@ -352,89 +392,29 @@ document.addEventListener('alpine:init', () => {
                 });
             });
 
-            // Date Calcs
-            const now = new Date();
-            const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const currentY = now.getFullYear();
-            const currentM = now.getMonth();
-            const currentMonthKey = `${currentY}-${String(currentM + 1).padStart(2, '0')}`;
-            stats.currentMonthLabel = `${MONTHS[currentM]}-${currentY}`;
-
-            const prevDate = new Date(currentY, currentM - 1, 1);
-            const prevY = prevDate.getFullYear();
-            const prevM = prevDate.getMonth();
-            const prevMonthKey = `${prevY}-${String(prevM + 1).padStart(2, '0')}`;
-            stats.lastMonthLabel = `${MONTHS[prevM]}-${prevY}`;
-
-            const prevPrevDate = new Date(currentY, currentM - 2, 1);
-            const prevPrevY = prevPrevDate.getFullYear();
-            const prevPrevM = prevPrevDate.getMonth();
-            const prevPrevMonthKey = `${prevPrevY}-${String(prevPrevM + 1).padStart(2, '0')}`;
-            stats.prevPrevMonthLabel = `${MONTHS[prevPrevM]}-${prevPrevY}`;
-
-            const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
-            const day = now.getDay(); 
-            const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
-            const startOfWeek = new Date(now); startOfWeek.setDate(diff); startOfWeek.setHours(0,0,0,0);
-
-            // FIX: Deduplicate payments to prevent double counting
-            const uniquePayments = new Map();
-            this.residents.forEach(r => {
-                r.history.forEach(p => {
-                    if (!uniquePayments.has(p.id)) {
-                        uniquePayments.set(p.id, p);
-                    }
-                });
-            });
-            const allPayments = Array.from(uniquePayments.values());
+             const now = new Date();
+             const uniquePayments = new Map();
+             this.residents.forEach(r => { r.history.forEach(p => { if (p.id) uniquePayments.set(p.id, p); }); });
+             const allPayments = Array.from(uniquePayments.values());
             
-            allPayments.forEach(p => {
-                if (p.status.toLowerCase() === 'pending validation') {
-                    stats.pendingValidationTotal += p.amount;
+             allPayments.forEach(p => {
+                if (p.status.toLowerCase() === 'pending validation') stats.pendingValidationTotal += p.amount;
+                if (p.isPaidOrPendingValidation) {
+                     stats.totalCollection += p.amount;
+                     if(p.isMonthly) stats.monthlyTotal += p.amount;
+                     else stats.adhocTotal += p.amount;
                 }
-
-                if (p.isPaidOrPendingValidation) { 
-                    stats.totalCollection += p.amount;
-                    if (p.isMonthly) {
-                        stats.monthlyTotal += p.amount;
-                        if (p.monthKey === currentMonthKey) stats.monthlyCurrent += p.amount;
-                        if (p.monthKey === prevMonthKey) stats.monthlyLast += p.amount;
-                        if (p.monthKey === prevPrevMonthKey) stats.monthlyPrevPrev += p.amount;
-                    } else {
-                        stats.adhocTotal += p.amount;
-                        if (p.monthKey === currentMonthKey) stats.adhocCurrent += p.amount;
-                        if (p.monthKey === prevMonthKey) stats.adhocLast += p.amount;
-                        if (p.monthKey === prevPrevMonthKey) stats.adhocPrevPrev += p.amount;
-                    }
-                    try {
-                        const pDate = new Date(p.rawDate);
-                        if (!isNaN(pDate.getTime())) {
-                            const pDateStart = new Date(pDate); pDateStart.setHours(0,0,0,0);
-                            const pY = pDate.getFullYear();
-                            const pMonth = pDate.getMonth();
-                            
-                            if (pY === currentY && pMonth === currentM) stats.receivedThisMonth += p.amount;
-                            if (pY === prevDate.getFullYear() && pMonth === prevDate.getMonth()) stats.receivedLastMonth += p.amount;
-                            if (pY === prevPrevDate.getFullYear() && pMonth === prevPrevDate.getMonth()) stats.receivedPrevPrevMonth += p.amount;
-                            if (pDateStart.getTime() === todayStart.getTime()) stats.receivedToday += p.amount;
-                            if (pDateStart >= startOfWeek) stats.receivedThisWeek += p.amount;
-                        }
-                    } catch(e) {}
-                }
-            });
-            stats.recentTransactions = allPayments
-                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate))
-                .slice(0, 50) 
-                .map(txn => this.mapTransactionForDisplay(txn));
-            this.dashboardStats = stats;
+             });
+             stats.recentTransactions = allPayments.sort((a,b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0,50).map(txn => this.mapTransactionForDisplay(txn));
+             this.dashboardStats = stats;
         },
 
         openResidentByFlat(flatNo) {
             const resident = this.residents.find(r => r.flat === flatNo);
             if (resident) this.openHistory(resident);
         },
-
-        get pendingValidationList() {
+        
+         get pendingValidationList() {
             if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
             const unique = new Map();
@@ -570,6 +550,7 @@ document.addEventListener('alpine:init', () => {
             const tempSettings = new AppServices.Settings({ MonthlyMaintainenceStartFrom: startStr, MonthlyMaintainenceAmount: amount });
             return tempResident.getPendingMonthsList(tempSettings);
         },
+        
         get filteredResidents() {
             let data = this.residents || [];
             if (this.filterStatus === 'paid') data = data.filter(r => r.isPaid);
@@ -581,13 +562,26 @@ document.addEventListener('alpine:init', () => {
             if (this.searchQuery) data = data.filter(r => r.searchStr.includes(this.searchQuery.toLowerCase()));
             return data;
         },
-        openHistory(resident) {
-            this.activeResident = resident;
-            const totalPaid = resident.history.filter(p => p.isPaidStrict).reduce((sum, p) => sum + p.amount, 0);
-            const pendingVal = resident.history.filter(p => p.isInReview).reduce((sum, p) => sum + p.amount, 0);
+       openHistory(resident) {
+            const totalPaid = resident.history.filter(p => p.isPaidStrict && p.isMonthly).reduce((sum, p) => sum + p.amount, 0);
+            const pendingVal = resident.history.filter(p => p.isInReview && p.isMonthly).reduce((sum, p) => sum + p.amount, 0);
+            
             const pendingList = resident.getPendingMonthsList(this.settings);
-            this.activeResident.stats = { totalPaid: totalPaid, pendingValidation: pendingVal, currentDue: resident.totalPendingDue };
-            this.activeResident.pendingList = pendingList; 
+            
+            resident.stats = { 
+                totalPaid: totalPaid, 
+                pendingValidation: pendingVal, 
+                currentDue: resident.totalPendingDue 
+            };
+            resident.pendingList = pendingList; 
+            
+            this.activeResident = resident;
+            
+            // RESET PAGINATION ON OPEN
+            this.historyQuery = '';
+            this.pageM = 1;
+            this.pageA = 1;
+
             this.view = 'history';
             window.scrollTo(0,0);
         },
