@@ -5,7 +5,10 @@
 -->
 <div x-data="societyApp('{{ .Site.Params.API_URL | default "" }}')" class="min-vh-100 bg-white" x-cloak>
 
-    <!-- 1. DASHBOARD VIEW -->
+    <!-- COMMON HEADER -->
+    {{ partial "mobile/header.html" . }}
+
+    <!-- 1. DASHBOARD VIEW (Content Only) -->
     <div x-show="view === 'home'" class="app-view">
         {{ partial "mobile/dashboard.html" . }}
     </div>

@@ -1,10 +1,4 @@
-<!-- HEADER -->
-<div class="px-3 pt-4 pb-2 d-flex align-items-center sticky-top bg-white border-bottom shadow-sm" style="z-index: 1020;">
-    <button class="btn btn-light rounded-circle p-2 me-3" @click="view = 'residents'; txnSuccess = false;">
-        <i class="bi bi-arrow-left fs-5"></i>
-    </button>
-    <h5 class="fw-bold mb-0">Record Payment</h5>
-</div>
+<!-- NOTE: Main Header is now handled by header.html -->
 
 <div class="p-3 pb-5 bg-light min-vh-100">
     
@@ -29,7 +23,6 @@
             </div>
         </div>
     </template>
-
 
     <!-- 2. FORM STATE VIEW -->
     <template x-if="!txnSuccess">
@@ -143,16 +136,4 @@
 
         </div>
     </template>
-
-    <!-- Custom CSS for Date Icons -->
-    <style>
-        /* Applies a blue filter to the native calendar icon */
-        .custom-date-input::-webkit-calendar-picker-indicator {
-            filter: invert(33%) sepia(96%) saturate(1494%) hue-rotate(202deg) brightness(96%) contrast(96%);
-            cursor: pointer;
-            width: 20px;
-            height: 20px;
-        }
-    </style>
-
 </div>

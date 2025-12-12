@@ -1,0 +1,99 @@
+<!-- HEADER CONTAINER (Removed sticky-top to fix z-index overlap issues) -->
+<div style="z-index: 1;">
+
+    <!-- 1. LOADING SKELETON -->
+    <template x-if="isLoading">
+        <div class="position-relative bg-dark shadow-sm overflow-hidden" 
+             style="min-height: 140px; border-bottom-left-radius: 2rem; border-bottom-right-radius: 2rem;">
+            <div class="p-3 d-flex flex-column h-100 justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="skeleton-box skeleton-dark rounded-circle" style="width: 32px; height: 32px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded-pill" style="width: 80px; height: 32px;"></div>
+                </div>
+                <div>
+                    <div class="skeleton-box skeleton-dark mb-2" style="width: 50%; height: 20px;"></div>
+                    <div class="skeleton-box skeleton-dark" style="width: 40%; height: 12px;"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 2. DATA LOADED HEADER -->
+    <template x-if="!isLoading">
+        <div class="position-relative bg-dark text-white shadow-sm overflow-hidden header-transition" 
+             :style="view === 'home' ? 'min-height: 140px; border-bottom-left-radius: 2rem; border-bottom-right-radius: 2rem;' : 'min-height: 70px; border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem;'">
+            
+            <!-- Background Image -->
+            <div class="position-absolute top-0 start-0 w-100 h-100" 
+                 style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(51, 65, 85, 0.9) 100%), url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; z-index: 0;">
+            </div>
+
+            <!-- Content Container -->
+            <div class="position-relative z-1 h-100">
+                
+                <!-- A. DASHBOARD VIEW (HOME) - Compact Layout -->
+                <div x-show="view === 'home'" class="p-3 d-flex flex-column h-100" x-transition.opacity>
+                    <!-- Top Row -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="bg-white bg-opacity-25 rounded-circle p-2 d-flex align-items-center justify-content-center border-0 text-white" 
+                                    style="width: 32px; height: 32px;"
+                                    @click="view = 'validate'">
+                                <i class="bi bi-shield-lock-fill"></i>
+                            </button>
+                            <small class="fw-medium text-white-50" style="font-size: 0.75rem;" x-text="currentDate"></small>
+                        </div>
+                        <button class="btn btn-sm btn-light rounded-pill px-3 fw-bold shadow-sm" @click="view = 'add'" style="font-size: 0.8rem;">
+                            <i class="bi bi-plus-lg me-1"></i> New
+                        </button>
+                    </div>
+
+                    <!-- Society Info (Bottom Aligned) -->
+                    <div class="mt-auto pb-3">
+                        <h5 class="fw-bold mb-0 text-truncate" x-text="settings.SocietyName || 'Loading...'"></h5>
+                        <div class="d-flex align-items-center text-white-50 small">
+                            <i class="bi bi-geo-alt-fill me-1 text-warning" style="font-size: 0.7rem;"></i>
+                            <span class="text-truncate" style="max-width: 300px; font-size: 0.75rem;" x-text="settings.SocietyAddress || ''"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- B. SUB-PAGE HEADER (Compact) -->
+                <div x-show="view !== 'home'" class="p-3 d-flex align-items-center h-100" style="min-height: 70px;" x-transition.opacity>
+                    
+                    <!-- Back Button -->
+                    <button class="btn btn-white bg-opacity-10 text-white rounded-circle p-2 me-3 border border-white border-opacity-25" 
+                            @click="view === 'history' ? view = 'residents' : view = 'home'">
+                        <i class="bi bi-arrow-left fs-5"></i>
+                    </button>
+
+                    <!-- Dynamic Title -->
+                    <div class="d-flex flex-column justify-content-center">
+                        <h5 class="fw-bold mb-0 text-white">
+                            <span x-show="view === 'residents'">Residents Directory</span>
+                            <span x-show="view === 'history'">Resident Details</span>
+                            <span x-show="view === 'add'">Record Payment</span>
+                            <span x-show="view === 'validate'">Admin Portal</span>
+                        </h5>
+                        
+                        <small class="text-white-50" style="font-size: 0.7rem;" x-show="view === 'history'" x-text="'Flat ' + activeResident.flat"></small>
+                        <small class="text-white-50" style="font-size: 0.7rem;" x-show="view === 'validate' && admin.isLoggedIn">Logged in as <span x-text="admin.currentUser"></span></small>
+                    </div>
+
+                    <!-- Right Side Actions -->
+                    <div class="ms-auto">
+                        <button x-show="view === 'validate' && admin.isLoggedIn" 
+                                @click="logout()" 
+                                class="btn btn-sm btn-danger rounded-pill px-3 fw-bold border-0 shadow-sm"
+                                style="font-size: 0.7rem;">
+                            Logout
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </template>
+
+</div>

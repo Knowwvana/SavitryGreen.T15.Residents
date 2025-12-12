@@ -1,15 +1,4 @@
 <div class="bg-light min-vh-100" x-data="{ searchPending: '', searchHistory: '' }">
-    
-    <!-- HEADER -->
-    <div class="px-3 pt-4 pb-2 d-flex align-items-center sticky-top bg-white border-bottom shadow-sm" style="z-index: 1020;">
-        <button class="btn btn-light rounded-circle p-2 me-3" @click="view = 'home'">
-            <i class="bi bi-arrow-left fs-5"></i>
-        </button>
-        <h5 class="fw-bold mb-0">Admin Portal</h5>
-        <button x-show="admin.isLoggedIn" @click="logout()" class="btn btn-sm btn-light border ms-auto rounded-pill px-3 text-danger fw-bold">
-            <i class="bi bi-box-arrow-right me-1"></i> Logout
-        </button>
-    </div>
 
     <!-- 1. LOGIN STATE -->
     <template x-if="!admin.isLoggedIn">

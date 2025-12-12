@@ -65,11 +65,7 @@ document.addEventListener('alpine:init', () => {
 
         class Payment {
             constructor(data) {
-                // SAFETY FIX: Ensure ID is never null. Use a random string if missing.
-                this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") 
-                          ? String(data.PaymentID) 
-                          : ('temp_' + Math.random().toString(36).substr(2, 9));
-                
+                this.id = data.PaymentID ? String(data.PaymentID) : ('temp_' + Math.random().toString(36).substr(2, 9));
                 this.amount = parseFloat(data.Amount || 0);
                 this.status = safeString(data.Status || 'Pending');
                 this.category = safeString(data.Category || 'Maintenance');
@@ -93,7 +89,6 @@ document.addEventListener('alpine:init', () => {
                 if (/^\d{4}-\d{2}$/.test(this.rawMonth)) return this.rawMonth;
                 try {
                     const d = new Date(this.rawMonth);
-                    // Timezone adjustment
                     const adjustedDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
                     if (!isNaN(adjustedDate.getTime())) {
                         return `${adjustedDate.getFullYear()}-${String(adjustedDate.getMonth() + 1).padStart(2, '0')}`;
@@ -286,34 +281,13 @@ document.addEventListener('alpine:init', () => {
         activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, pendingValidation: 0, currentDue: 0 } }, 
         txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '' },
 
-        // CRITICAL FIX: Initialize stats container.
-        // We will update this object instead of replacing it to keep reactivity happy,
-        // or replace it completely in one go inside calculateDashboardStats.
         dashboardStats: {
-            flatsCount: 0,
-            ownersCount: 0,
-            tenantsCount: 0,
-            totalCollection: 0,
-            monthlyTotal: 0,
-            monthlyCurrent: 0,
-            monthlyLast: 0,
-            monthlyPrevPrev: 0,
-            adhocTotal: 0,
-            adhocCurrent: 0,
-            adhocLast: 0,
-            adhocPrevPrev: 0,
-            receivedToday: 0,
-            receivedThisWeek: 0,
-            receivedThisMonth: 0,
-            receivedLastMonth: 0,
-            receivedPrevPrevMonth: 0,
-            pendingValidationTotal: 0,
-            currentMonthLabel: '',
-            lastMonthLabel: '',
-            prevPrevMonthLabel: '',
-            recentTransactions: [], // Array MUST be initialized
-            totalSpent: 0,
-            cashInHand: 0
+            flatsCount: 0, ownersCount: 0, tenantsCount: 0, totalCollection: 0,
+            monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
+            adhocTotal: 0, adhocCurrent: 0, adhocLast: 0, adhocPrevPrev: 0,
+            receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
+            pendingValidationTotal: 0, currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
+            recentTransactions: [], totalSpent: 0, cashInHand: 0
         },
 
         admin: {
@@ -339,49 +313,22 @@ document.addEventListener('alpine:init', () => {
             await this.repository.fetchData();
             this.residents = this.repository.residents;
             this.settings = this.repository.settings;
-            
-            // CRITICAL FIX: Calculate stats only AFTER data is loaded
-            this.calculateDashboardStats();
-            
+            this.calculateDashboardStats(); 
             this.isLoading = false; 
         },
 
-        // --- DASHBOARD STATISTICS (MOVED TO METHOD) ---
-        // Changed from 'get dashboardStats()' to a method that updates the state variable.
         calculateDashboardStats() {
-            // Create a temp object to calculate everything first
             const stats = {
                 flatsCount: this.residents.length,
                 ownersCount: 0,
                 tenantsCount: 0,
-                
                 totalCollection: 0,
-                totalSpent: 0,
-                cashInHand: 0,
-                
-                monthlyTotal: 0,
-                monthlyCurrent: 0,
-                monthlyLast: 0,
-                monthlyPrevPrev: 0,
-                
-                adhocTotal: 0,
-                adhocCurrent: 0,
-                adhocLast: 0,
-                adhocPrevPrev: 0,
-                
-                receivedToday: 0,
-                receivedThisWeek: 0,
-                receivedThisMonth: 0,
-                receivedLastMonth: 0,
-                receivedPrevPrevMonth: 0,
-                
+                monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
+                adhocTotal: 0, adhocCurrent: 0, adhocLast: 0, adhocPrevPrev: 0,
+                receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
                 pendingValidationTotal: 0,
-                
-                currentMonthLabel: '',
-                lastMonthLabel: '',
-                prevPrevMonthLabel: '',
-                
-                recentTransactions: []
+                currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
+                recentTransactions: [], totalSpent: 0, cashInHand: 0
             };
 
             if (!this.residents || this.residents.length === 0) {
@@ -396,38 +343,23 @@ document.addEventListener('alpine:init', () => {
                 });
             });
 
-            // Date Keys
             const now = new Date();
             const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
             const currentY = now.getFullYear();
             const currentM = now.getMonth();
             const currentMonthKey = `${currentY}-${String(currentM + 1).padStart(2, '0')}`;
             stats.currentMonthLabel = `${MONTHS[currentM]}-${currentY}`;
-
             const prevDate = new Date(currentY, currentM - 1, 1);
-            const prevY = prevDate.getFullYear();
-            const prevM = prevDate.getMonth();
-            const prevMonthKey = `${prevY}-${String(prevM + 1).padStart(2, '0')}`;
-            stats.lastMonthLabel = `${MONTHS[prevM]}-${prevY}`;
-
+            const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+            stats.lastMonthLabel = `${MONTHS[prevDate.getMonth()]}-${prevDate.getFullYear()}`;
             const prevPrevDate = new Date(currentY, currentM - 2, 1);
-            const prevPrevY = prevPrevDate.getFullYear();
-            const prevPrevM = prevPrevDate.getMonth();
-            const prevPrevMonthKey = `${prevPrevY}-${String(prevPrevM + 1).padStart(2, '0')}`;
-            stats.prevPrevMonthLabel = `${MONTHS[prevPrevM]}-${prevPrevY}`;
-
-            // Cash Flow Helpers
-            const todayStart = new Date(now);
-            todayStart.setHours(0,0,0,0);
-            
+            const prevPrevMonthKey = `${prevPrevDate.getFullYear()}-${String(prevPrevDate.getMonth() + 1).padStart(2, '0')}`;
+            stats.prevPrevMonthLabel = `${MONTHS[prevPrevDate.getMonth()]}-${prevPrevDate.getFullYear()}`;
+            const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
             const day = now.getDay(); 
             const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(diff);
-            startOfWeek.setHours(0,0,0,0);
+            const startOfWeek = new Date(now); startOfWeek.setDate(diff); startOfWeek.setHours(0,0,0,0);
 
-            // CRITICAL FIX: Deduplicate Payments using a Map based on ID
             const uniquePayments = new Map();
             this.residents.forEach(r => {
                 r.history.forEach(p => {
@@ -445,8 +377,6 @@ document.addEventListener('alpine:init', () => {
 
                 if (p.isPaidOrPendingValidation) { 
                     stats.totalCollection += p.amount;
-
-                    // --- BY CATEGORY ---
                     if (p.isMonthly) {
                         stats.monthlyTotal += p.amount;
                         if (p.monthKey === currentMonthKey) stats.monthlyCurrent += p.amount;
@@ -458,33 +388,26 @@ document.addEventListener('alpine:init', () => {
                         if (p.monthKey === prevMonthKey) stats.adhocLast += p.amount;
                         if (p.monthKey === prevPrevMonthKey) stats.adhocPrevPrev += p.amount;
                     }
-
-                    // --- RECENT PAYMENTS ---
                     try {
                         const pDate = new Date(p.rawDate);
                         if (!isNaN(pDate.getTime())) {
+                            const pDateStart = new Date(pDate); pDateStart.setHours(0,0,0,0);
                             const pY = pDate.getFullYear();
                             const pMonth = pDate.getMonth();
-                            const pDateStart = new Date(pDate);
-                            pDateStart.setHours(0,0,0,0);
                             
                             if (pY === currentY && pMonth === currentM) stats.receivedThisMonth += p.amount;
-                            if (pY === prevY && pMonth === prevM) stats.receivedLastMonth += p.amount;
-                            if (pY === prevPrevY && pMonth === prevPrevM) stats.receivedPrevPrevMonth += p.amount;
+                            if (pY === prevDate.getFullYear() && pMonth === prevDate.getMonth()) stats.receivedLastMonth += p.amount;
+                            if (pY === prevPrevDate.getFullYear() && pMonth === prevPrevDate.getMonth()) stats.receivedPrevPrevMonth += p.amount;
                             if (pDateStart.getTime() === todayStart.getTime()) stats.receivedToday += p.amount;
                             if (pDateStart >= startOfWeek) stats.receivedThisWeek += p.amount;
                         }
                     } catch(e) {}
                 }
             });
-
-            // Map transactions for display
             stats.recentTransactions = allPayments
                 .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate))
                 .slice(0, 50) 
                 .map(txn => this.mapTransactionForDisplay(txn));
-
-            // Update state variable
             this.dashboardStats = stats;
         },
 
@@ -493,11 +416,9 @@ document.addEventListener('alpine:init', () => {
             if (resident) this.openHistory(resident);
         },
 
-        // ... [Admin Getters unchanged] ...
         get pendingValidationList() {
             if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
-            // Ensure unique list for admin view too
             const unique = new Map();
             allPayments.forEach(p => unique.set(p.id, p));
             return Array.from(unique.values()).filter(p => p.status === 'Pending Validation').sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).map(txn => this.mapTransactionForDisplay(txn));
@@ -631,12 +552,24 @@ document.addEventListener('alpine:init', () => {
             const tempSettings = new AppServices.Settings({ MonthlyMaintainenceStartFrom: startStr, MonthlyMaintainenceAmount: amount });
             return tempResident.getPendingMonthsList(tempSettings);
         },
+
+        // UPDATED FILTER LOGIC: STRICT 'PAID'
         get filteredResidents() {
             let data = this.residents || [];
-            if (this.filterStatus === 'paid') data = data.filter(r => r.isPaid);
-            if (this.filterStatus === 'unpaid') data = data.filter(r => !r.isPaid);
-            if (this.filterStatus === 'pending') {
-                data = data.filter(r => r.history.some(p => p.status.toLowerCase() === 'pending validation'));
+            
+            // Helper to check for pending transactions
+            const hasPending = (r) => r.history.some(p => p.status.toLowerCase() === 'pending validation');
+
+            if (this.filterStatus === 'paid') {
+                // Paid = Zero Pending Dues AND No Pending Validation Transactions
+                data = data.filter(r => r.isPaid && !hasPending(r));
+            } else if (this.filterStatus === 'unpaid') {
+                // Unpaid = Has Dues (Ignore pending validation state here as they are technically unpaid until validated, but for UI grouping we usually separate them)
+                // If you want "Unpaid" to also show pending items, remove !r.isPaid check. But typically Unpaid means "Action required by user to pay".
+                data = data.filter(r => !r.isPaid);
+            } else if (this.filterStatus === 'pending') {
+                // Pending = Has Pending Validation items
+                data = data.filter(r => hasPending(r));
             }
 
             if (this.searchQuery) data = data.filter(r => r.searchStr.includes(this.searchQuery.toLowerCase()));
