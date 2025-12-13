@@ -109,14 +109,10 @@ document.addEventListener('alpine:init', () => {
                 this.flat = normalizeFlat(flatData.FlatNo);
                 this.due = parseFloat(flatData.Due || 0);
                 
-                // --- NEW LOGIC: Calculate Floor & Tower ---
                 const nFlat = parseInt(this.flat);
                 let floorVal = !isNaN(nFlat) ? Math.floor(nFlat / 100) : 0;
-                
-                // Fix: Ensure 0 maps to 'Ground' explicitly
                 this.floor = (floorVal === 0) ? 'Ground' : String(floorVal);
-                this.tower = '15'; // Defaulting to Tower 15 as per project context
-                // ------------------------------------------
+                this.tower = '15'; 
 
                 this.occupants = (rawResidentData || []).map(r => ({
                     name: safeString(r.Name || 'Unknown'),
@@ -287,39 +283,36 @@ document.addEventListener('alpine:init', () => {
         txnSuccess: false,
         residents: [],
         settings: {}, 
-        
-        // Active Resident Data
         activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, pendingValidation: 0, currentDue: 0 } }, 
-        
-        // History List State (Global)
         historyQuery: '',
         pageM: 1,
         pageA: 1,
         limit: 10,
-
-        // Transaction Form Data
         txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '' },
 
-        // Dashboard Stats
+        // --- UPDATED DASHBOARD STATS STRUCTURE ---
         dashboardStats: {
             flatsCount: 0, ownersCount: 0, tenantsCount: 0, totalCollection: 0,
-            monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
-            adhocTotal: 0, adhocByTitle: {}, 
-            receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
-            pendingValidationTotal: 0, currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
-            recentTransactions: [], totalSpent: 0, cashInHand: 0
+            
+            // Monthly Section
+            monthlyTotal: 0,
+            monthlyBreakdown: [], // [{ label: 'Oct 2025', amount: 5000 }]
+            monthlySpent: 0,
+            monthlyCashInHand: 0,
+
+            // Adhoc Section
+            adhocTotal: 0,
+            adhocBreakdown: [], // [{ label: 'Renovation', amount: 2000 }]
+            adhocSpent: 0,
+            adhocCashInHand: 0,
+
+            pendingValidationTotal: 0,
+            recentTransactions: [], 
+            totalSpent: 0, cashInHand: 0
         },
 
         admin: {
-            isLoggedIn: false,
-            currentUser: null,
-            username: '',
-            password: '',
-            error: '',
-            tab: 'pending', 
-            showSuccessModal: false,
-            searchPending: '',
-            searchHistory: ''
+            isLoggedIn: false, currentUser: null, username: '', password: '', error: '', tab: 'pending', showSuccessModal: false, searchPending: '', searchHistory: ''
         },
 
         init() {
@@ -337,14 +330,11 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = false; 
         },
 
-        // --- FILTERED & PAGINATED GETTERS FOR PAYMENT HISTORY ---
+        // Getters for History
         get filteredMonthly() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history.filter(h => 
-                h.isMonthly && 
-                (!q || (String(h.amount)+h.method+h.remarks+(h.rawMonth||'')).toLowerCase().includes(q))
-            );
+            return this.activeResident.history.filter(h => h.isMonthly && (!q || (String(h.amount)+h.method+h.remarks+(h.rawMonth||'')).toLowerCase().includes(q)));
         },
         get paginatedMonthly() {
             const start = (this.pageM - 1) * this.limit;
@@ -355,29 +345,24 @@ document.addEventListener('alpine:init', () => {
         get filteredAdhoc() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history.filter(h => 
-                !h.isMonthly && 
-                (!q || (h.category+(h.title||'')+String(h.amount)+h.method+h.remarks).toLowerCase().includes(q))
-            );
+            return this.activeResident.history.filter(h => !h.isMonthly && (!q || (h.category+(h.title||'')+String(h.amount)+h.method+h.remarks).toLowerCase().includes(q)));
         },
         get paginatedAdhoc() {
             const start = (this.pageA - 1) * this.limit;
             return this.filteredAdhoc.slice(start, start + this.limit);
         },
         get totalPagesA() { return Math.ceil(this.filteredAdhoc.length / this.limit) || 1; },
-        // --------------------------------------------------------
 
         calculateDashboardStats() {
              const stats = {
                 flatsCount: this.residents.length,
-                ownersCount: 0,
-                tenantsCount: 0,
+                ownersCount: 0, tenantsCount: 0,
                 totalCollection: 0, totalSpent: 0, cashInHand: 0,
-                monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
-                adhocTotal: 0, adhocByTitle: {}, 
-                receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
-                pendingValidationTotal: 0, currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
-                recentTransactions: []
+                
+                monthlyTotal: 0, monthlyBreakdown: [], monthlySpent: 0, monthlyCashInHand: 0,
+                adhocTotal: 0, adhocBreakdown: [], adhocSpent: 0, adhocCashInHand: 0,
+                
+                pendingValidationTotal: 0, recentTransactions: []
             };
 
             if (!this.residents || this.residents.length === 0) {
@@ -392,19 +377,51 @@ document.addEventListener('alpine:init', () => {
                 });
             });
 
-             const now = new Date();
              const uniquePayments = new Map();
              this.residents.forEach(r => { r.history.forEach(p => { if (p.id) uniquePayments.set(p.id, p); }); });
              const allPayments = Array.from(uniquePayments.values());
             
+             // Helpers for breakdown
+             const monthlyMap = {};
+             const adhocMap = {};
+
              allPayments.forEach(p => {
                 if (p.status.toLowerCase() === 'pending validation') stats.pendingValidationTotal += p.amount;
                 if (p.isPaidOrPendingValidation) {
                      stats.totalCollection += p.amount;
-                     if(p.isMonthly) stats.monthlyTotal += p.amount;
-                     else stats.adhocTotal += p.amount;
+                     if(p.isMonthly) {
+                        stats.monthlyTotal += p.amount;
+                        // Aggregate Monthly
+                        let mLabel = "Unknown";
+                        try {
+                            if (p.rawMonth) {
+                                const d = new Date(p.rawMonth);
+                                mLabel = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); 
+                            } else {
+                                const d = new Date(p.rawDate);
+                                mLabel = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+                            }
+                        } catch(e) {}
+                        monthlyMap[mLabel] = (monthlyMap[mLabel] || 0) + p.amount;
+                     }
+                     else {
+                        stats.adhocTotal += p.amount;
+                        // Aggregate Adhoc by Title/Category
+                        const title = p.title || p.category || 'Other';
+                        adhocMap[title] = (adhocMap[title] || 0) + p.amount;
+                     }
                 }
              });
+
+             // Convert Maps to Arrays for Dashboard
+             stats.monthlyBreakdown = Object.keys(monthlyMap).map(k => ({ label: k, amount: monthlyMap[k] }));
+             stats.adhocBreakdown = Object.keys(adhocMap).map(k => ({ label: k, amount: adhocMap[k] }));
+
+             // Calc Cash in Hand (Assuming 0 expense for now, or update if expense logic exists)
+             stats.monthlyCashInHand = stats.monthlyTotal - stats.monthlySpent;
+             stats.adhocCashInHand = stats.adhocTotal - stats.adhocSpent;
+             stats.cashInHand = stats.monthlyCashInHand + stats.adhocCashInHand;
+
              stats.recentTransactions = allPayments.sort((a,b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0,50).map(txn => this.mapTransactionForDisplay(txn));
              this.dashboardStats = stats;
         },
@@ -413,7 +430,7 @@ document.addEventListener('alpine:init', () => {
             const resident = this.residents.find(r => r.flat === flatNo);
             if (resident) this.openHistory(resident);
         },
-        
+        // ... (Keep other getters/methods like pendingValidationList, login, etc. SAME as before) ...
          get pendingValidationList() {
             if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);

@@ -30,55 +30,46 @@
 <div x-data="societyApp('https://script.google.com/macros/s/AKfycbwRmUKf2JPyPk-vSGP2-kTYO9cyKpiTAJCMXzXQ2vlQq_L2Kxc4K2L7oxFD9_qmq1Er/exec')" class="min-vh-100 bg-white" x-cloak>
 
     
-    
-<div class="sticky-top" style="z-index: 1040;">
+    <div class="sticky-top" style="z-index: 1040;">
 
-    
     <template x-if="isLoading">
         <div class="position-relative bg-dark shadow-sm overflow-hidden" 
-             style="min-height: 200px; border-bottom-left-radius: 2rem; border-bottom-right-radius: 2rem;">
-            <div class="p-4 d-flex flex-column h-100 justify-content-between">
+             style="min-height: 150px; border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem;">
+            <div class="p-3 d-flex flex-column h-100 justify-content-between">
                 <div>
-                    <div class="skeleton-box skeleton-dark rounded mb-2" style="width: 70%; height: 28px;"></div>
-                    <div class="skeleton-box skeleton-dark rounded" style="width: 50%; height: 16px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded mb-2" style="width: 70%; height: 24px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded" style="width: 50%; height: 14px;"></div>
                 </div>
                 <div class="d-flex gap-2">
-                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 50px;"></div>
-                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 50px;"></div>
-                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 50px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 40px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 40px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 40px;"></div>
                 </div>
             </div>
         </div>
     </template>
 
-    
     <template x-if="!isLoading">
         <div class="position-relative bg-dark text-white shadow-sm overflow-hidden header-transition" 
-             :style="view === 'home' ? 'min-height: 200px; border-bottom-left-radius: 2rem; border-bottom-right-radius: 2rem;' : 'min-height: 90px; border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem;'">
-            
+             :style="view === 'home' ? 'min-height: 150px; border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem;' : 'min-height: 80px; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;'">
             
             <div class="position-absolute top-0 start-0 w-100 h-100" 
-                 style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.9) 100%), url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; z-index: 0;">
+                 style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.92) 100%), url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; z-index: 0;">
             </div>
 
-            
-            <div class="position-relative z-1 h-100 p-4 d-flex flex-column justify-content-between">
-                
+            <div class="position-relative z-1 h-100 p-3 d-flex flex-column justify-content-between">
                 
                 <div class="d-flex justify-content-between align-items-start">
                     
-                    
                     <div class="d-flex align-items-center gap-2">
-                        
                         <button x-show="view !== 'home'" 
                                 class="btn btn-white bg-opacity-10 text-white rounded-circle p-0 border border-white border-opacity-25 d-flex align-items-center justify-content-center" 
-                                style="width: 36px; height: 36px;"
+                                style="width: 32px; height: 32px;"
                                 @click="view === 'history' ? view = 'residents' : view = 'home'">
                             <i class="bi bi-arrow-left fs-6"></i>
                         </button>
                         
-                        
-                        <h6 x-show="view !== 'home'" class="mb-0 fw-bold text-white text-nowrap">
+                        <h6 x-show="view !== 'home'" class="mb-0 fw-bold text-white text-nowrap" style="font-size: 0.9rem;">
                             <span x-show="view === 'residents'">Residents Directory</span>
                             <span x-show="view === 'history'">Resident Details</span>
                             <span x-show="view === 'add'">Record Payment</span>
@@ -86,50 +77,43 @@
                         </h6>
                     </div>
 
-                    
                     <div>
-                        
                         <div x-show="view === 'home'" class="d-flex align-items-center">
-                            
-                            <small class="text-white fw-bold" 
-                                   style="font-size: 0.65rem; letter-spacing: 0.5px; text-transform: uppercase;" 
-                                   x-text="new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).replace(/ /g, '.')">
+                            <small class="text-white fw-bold opacity-75" 
+                                   style="font-size: 0.6rem; letter-spacing: 0.5px; text-transform: uppercase;" 
+                                   x-text="new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/ /g, ' ')">
                             </small>
                         </div>
 
-                        
                         <button x-show="view === 'validate' && admin.isLoggedIn" 
                                 @click="logout()" 
                                 class="btn btn-sm btn-danger rounded-pill px-3 fw-bold border-0 shadow-sm"
-                                style="font-size: 0.7rem;">
+                                style="font-size: 0.65rem; padding-top: 2px; padding-bottom: 2px;">
                             Logout
                         </button>
                     </div>
                 </div>
 
-                
-                <div class="mt-3">
-                    <h4 class="fw-bold mb-1 text-white" style="font-size: 1.4rem;" x-text="settings.SocietyName || 'Loading...'"></h4>
-                    
-                    <div class="d-flex align-items-center text-white opacity-75 small">
-                        <i class="bi bi-geo-alt-fill me-1 text-warning"></i>
-                        <span style="font-size: 0.75rem; line-height: 1.2;" x-text="settings.SocietyAddress || ''"></span>
+                <div class="mt-2">
+                    <h5 class="fw-bold mb-0 text-white text-truncate" style="font-size: 1.1rem;" x-text="settings.SocietyName || 'Loading...'"></h5>
+                    <div class="d-flex align-items-center text-white opacity-75 small mt-1">
+                        <i class="bi bi-geo-alt-fill me-1 text-warning" style="font-size: 0.7rem;"></i>
+                        <span style="font-size: 0.7rem; line-height: 1.2;" class="text-truncate" x-text="settings.SocietyAddress || ''"></span>
                     </div>
                 </div>
 
-                
-                <div class="d-flex gap-2 overflow-auto pb-1 no-scrollbar mt-3">
-                    <div class="header-badge badge-flats text-white rounded-3 px-3 py-2 d-flex flex-column align-items-center justify-content-center flex-fill">
-                        <span class="text-white-50 small" style="font-size: 0.6rem; text-transform: uppercase;">Flats</span>
-                        <span class="fw-bold fs-5 lh-1" x-text="dashboardStats.flatsCount"></span>
+                <div class="d-flex gap-2 overflow-auto pb-0 no-scrollbar mt-2">
+                    <div class="header-badge badge-flats text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                        <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Flats</span>
+                        <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.flatsCount"></span>
                     </div>
-                    <div class="header-badge badge-owners text-white rounded-3 px-3 py-2 d-flex flex-column align-items-center justify-content-center flex-fill">
-                        <span class="text-white-50 small" style="font-size: 0.6rem; text-transform: uppercase;">Owners</span>
-                        <span class="fw-bold fs-5 lh-1" x-text="dashboardStats.ownersCount"></span>
+                    <div class="header-badge badge-owners text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                        <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Owners</span>
+                        <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.ownersCount"></span>
                     </div>
-                    <div class="header-badge badge-tenants text-white rounded-3 px-3 py-2 d-flex flex-column align-items-center justify-content-center flex-fill">
-                        <span class="text-white-50 small" style="font-size: 0.6rem; text-transform: uppercase;">Tenants</span>
-                        <span class="fw-bold fs-5 lh-1" x-text="dashboardStats.tenantsCount"></span>
+                    <div class="header-badge badge-tenants text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                        <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Tenants</span>
+                        <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.tenantsCount"></span>
                     </div>
                 </div>
 
@@ -157,50 +141,150 @@
     <div class="p-3 pb-5" style="margin-top: 5px; position: relative; z-index: 2;">
 
         <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white overflow-hidden">
-            <div class="card-body p-0">
-                
-                <div class="bg-light bg-gradient border-bottom py-2 text-center">
-                    <span class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 1.2px;">Total Collections Till Date</span>
+            <div class="bg-primary bg-opacity-10 border-bottom py-2 px-3 d-flex align-items-center gap-2">
+                <i class="bi bi-building-fill text-primary"></i>
+                <span class="text-primary fw-bold small text-uppercase" style="letter-spacing: 1px;">Monthly Maintenance</span>
+            </div>
+
+            <div class="p-3">
+                <div class="row g-2 mb-3 text-center">
+                    <div class="col-4 border-end">
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.55rem;">Collected</small>
+                        <div class="fw-bold text-dark small" x-text="'₹' + dashboardStats.monthlyTotal.toLocaleString('en-IN')"></div>
+                    </div>
+                    <div class="col-4 border-end">
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.55rem;">Spent</small>
+                        <div class="fw-bold text-danger small" x-text="'₹' + dashboardStats.monthlySpent.toLocaleString('en-IN')"></div>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.55rem;">Balance</small>
+                        <div class="fw-bold text-success small" x-text="'₹' + dashboardStats.monthlyCashInHand.toLocaleString('en-IN')"></div>
+                    </div>
                 </div>
 
-                <div class="p-4">
-                    <div class="row g-0 align-items-center mb-4">
-                        <div class="col-6 text-center border-end">
-                            <div class="d-flex align-items-center justify-content-center gap-1 mb-1">
-                                <i class="bi bi-building-fill text-primary" style="font-size: 0.8rem;"></i>
-                                <span class="text-muted small fw-bold">Monthly</span>
-                            </div>
-                            <h3 class="fw-bold text-dark mb-0" x-text="'₹' + dashboardStats.monthlyTotal.toLocaleString('en-IN')"></h3>
+                <hr class="border-light my-2">
+
+                <div class="row g-0">
+                    
+                    <div class="col-6 border-end pe-2">
+                        <div class="text-center mb-2">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1">
+                                <i class="bi bi-arrow-down-circle-fill me-1"></i>Collections
+                            </span>
                         </div>
                         
-                        <div class="col-6 text-center">
-                            <div class="d-flex align-items-center justify-content-center gap-1 mb-1">
-                                <i class="bi bi-stars text-warning" style="font-size: 0.8rem;"></i>
-                                <span class="text-muted small fw-bold">Adhoc</span>
-                            </div>
-                            <h3 class="fw-bold text-dark mb-0" x-text="'₹' + dashboardStats.adhocTotal.toLocaleString('en-IN')"></h3>
+                        <div class="d-flex justify-content-between px-2 mb-1 bg-light rounded py-1">
+                            <small class="fw-bold text-muted text-uppercase" style="font-size: 0.5rem;">Month</small>
+                            <small class="fw-bold text-muted text-uppercase" style="font-size: 0.5rem;">Amount</small>
+                        </div>
+
+                        <div class="d-flex flex-column gap-1">
+                            <template x-for="m in dashboardStats.monthlyBreakdown">
+                                <div class="d-flex justify-content-between align-items-center pb-1 border-bottom border-light last:border-0 px-1">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <i class="bi bi-calendar-check-fill text-success" style="font-size: 0.6rem;"></i>
+                                        <span class="fw-bold text-dark small" style="font-size: 0.65rem;" x-text="m.label"></span>
+                                    </div>
+                                    <span class="fw-bold text-success" style="font-size: 0.65rem;" x-text="'₹' + m.amount.toLocaleString('en-IN')"></span>
+                                </div>
+                            </template>
+                            <div x-show="dashboardStats.monthlyBreakdown.length === 0" class="text-muted small fst-italic text-center" style="font-size: 0.6rem;">No collections</div>
                         </div>
                     </div>
 
-                    <div class="position-relative mb-4">
-                         <hr class="border-secondary opacity-10 my-0">
-                         <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small fw-bold" style="font-size: 0.6rem;">NET STATUS</span>
+                    <div class="col-6 ps-2">
+                        <div class="text-center mb-2">
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1">
+                                <i class="bi bi-arrow-up-circle-fill me-1"></i>Expenditure
+                            </span>
+                        </div>
+
+                        <div class="row g-0 px-1 mb-1 bg-light rounded py-1">
+                            <div class="col-5"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Category</small></div>
+                            <div class="col-3 text-center"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Date</small></div>
+                            <div class="col-4 text-end"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Amt</small></div>
+                        </div>
+
+                        <div class="d-flex flex-column gap-1">
+                            
+                            <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
+                                <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;">Repair</div>
+                                <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;">10 Jan</div>
+                                <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;">₹500</div>
+                            </div>
+
+                            <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
+                                <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;">Bulb Repl.</div>
+                                <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;">15 Jan</div>
+                                <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;">₹250</div>
+                            </div>
+
+                            <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
+                                <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;">Cleaning</div>
+                                <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;">20 Jan</div>
+                                <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;">₹1,000</div>
+                            </div>
+
+                            <template x-for="exp in dashboardStats.monthlyExpenditureBreakdown">
+                                <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
+                                    <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;" x-text="exp.category"></div>
+                                    <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;" x-text="exp.date"></div>
+                                    <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;" x-text="'₹' + exp.amount.toLocaleString('en-IN')"></div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
 
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <div class="bg-danger bg-opacity-10 rounded-3 p-2 text-center border border-danger border-opacity-10">
-                                <small class="d-block text-danger text-uppercase fw-bold mb-1" style="font-size: 0.6rem;">Total Expenditure</small>
-                                <h5 class="fw-bold text-danger mb-0" x-text="'₹' + dashboardStats.totalSpent.toLocaleString('en-IN')"></h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
+            <div class="bg-warning bg-opacity-10 border-bottom py-2 px-3 d-flex align-items-center gap-2">
+                <i class="bi bi-stars text-warning"></i>
+                <span class="text-warning text-dark fw-bold small text-uppercase" style="letter-spacing: 1px;">Adhoc / Events</span>
+            </div>
+
+            <div class="p-3">
+                <div class="row g-2 mb-3 text-center">
+                    <div class="col-4 border-end">
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.55rem;">Collected</small>
+                        <div class="fw-bold text-dark small" x-text="'₹' + dashboardStats.adhocTotal.toLocaleString('en-IN')"></div>
+                    </div>
+                    <div class="col-4 border-end">
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.55rem;">Spent</small>
+                        <div class="fw-bold text-danger small" x-text="'₹' + dashboardStats.adhocSpent.toLocaleString('en-IN')"></div>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.55rem;">Balance</small>
+                        <div class="fw-bold text-success small" x-text="'₹' + dashboardStats.adhocCashInHand.toLocaleString('en-IN')"></div>
+                    </div>
+                </div>
+
+                <hr class="border-light my-2">
+
+                <div class="d-flex flex-column">
+                    <template x-for="adhoc in dashboardStats.adhocBreakdown">
+                        <div class="d-flex justify-content-between align-items-center py-3 border-bottom border-light last:border-0">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center flex-shrink-0" 
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-star-fill fs-5"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0 text-break" style="font-size: 0.95rem;" x-text="adhoc.label"></h6>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Event / Fund</small>
+                                </div>
+                            </div>
+                            
+                            <div class="text-end">
+                                <h5 class="fw-bold text-dark mb-0" x-text="'₹' + adhoc.amount.toLocaleString('en-IN')"></h5>
                             </div>
                         </div>
-                        
-                        <div class="col-6">
-                            <div class="bg-success bg-opacity-10 rounded-3 p-2 text-center border border-success border-opacity-10">
-                                <small class="d-block text-success text-uppercase fw-bold mb-1" style="font-size: 0.6rem;">Cash in Hand</small>
-                                <h5 class="fw-bold text-success mb-0" x-text="'₹' + dashboardStats.cashInHand.toLocaleString('en-IN')"></h5>
-                            </div>
-                        </div>
+                    </template>
+
+                    <div x-show="dashboardStats.adhocBreakdown.length === 0" class="text-center text-muted small fst-italic py-3">
+                        No adhoc records found
                     </div>
                 </div>
             </div>
@@ -295,7 +379,7 @@
         
 
 
-<div class="bg-white px-3 pt-3 pb-2 sticky-top border-bottom" style="z-index: 1020; top: 70px;">
+<div class="bg-white px-3 pt-3 pb-2 border-bottom" style="z-index: 1020; top: 70px;">
     
     
     <div class="position-relative mb-3">
@@ -573,28 +657,46 @@
                 </div>
             </div>
 
-
             <div class="col-7 ps-3">
                 <h6 class="text-secondary small fw-bold mb-2 text-uppercase">Resident(s) Details</h6>
-                <div class="d-flex flex-column gap-2 overflow-auto" style="max-height: 140px;">
+                
+                <div class="d-flex flex-column gap-2 overflow-auto" style="max-height: 220px;">
                     <template x-for="p in activeResident.occupants">
-                        <div class="d-flex align-items-center justify-content-between bg-light rounded-3 p-2 border">
-                            <div class="d-flex align-items-center gap-2 overflow-hidden" style="min-width: 0;">
-                                <span class="fw-bold small text-uppercase"
-                                    :class="p.type.toLowerCase() === 'owner' ? 'text-success' : 'text-danger'"
-                                    style="font-size: 0.75rem;" x-text="p.type"></span>
-                                <div class="flex-shrink-0">
-                                    <i class="bi"
-                                        :class="p.type.toLowerCase() === 'owner' ? 'bi-house-fill text-success' : 'bi-person-fill text-warning'"></i>
+                        <div class="bg-light rounded-3 p-2 border w-100">
+                            
+                            <div class="d-flex align-items-start gap-2 mb-1">
+                                <div class="flex-shrink-0 mt-1">
+                                    <i class="bi" :class="p.type.toLowerCase() === 'owner' ? 'bi-house-fill text-success' : 'bi-person-fill text-warning'"></i>
                                 </div>
-                                <div class="fw-bold text-dark small text-truncate" x-text="p.name"></div>
+                                <div>
+                                    <span class="fw-bold small text-uppercase d-block lh-1 mb-1"
+                                          :class="p.type.toLowerCase() === 'owner' ? 'text-success' : 'text-danger'"
+                                          style="font-size: 0.65rem;" x-text="p.type"></span>
+                                    <div class="fw-bold text-dark small text-wrap lh-sm" x-text="p.name"></div>
+                                </div>
                             </div>
-                            <div class="d-flex gap-2 ms-1 flex-shrink-0">
-                                <a :href="'tel:' + p.phone" class="text-primary"><i
-                                        class="bi bi-telephone-fill"></i></a>
-                                <a :href="'https://wa.me/91' + p.phone" class="text-success"><i
-                                        class="bi bi-whatsapp"></i></a>
+
+                            <div class="d-flex align-items-center gap-2 mt-2" x-show="p.phone">
+                                <div class="flex-shrink-0 text-center" style="width: 16px;">
+                                    <i class="bi bi-phone-fill text-primary" style="font-size: 0.9rem;"></i>
+                                </div>
+                                <div class="small text-muted fw-medium flex-grow-1 text-break" x-text="p.phone"></div>
+                                <div class="d-flex gap-3 flex-shrink-0">
+                                    <a :href="'tel:' + p.phone" class="text-primary text-decoration-none"><i class="bi bi-telephone-fill"></i></a>
+                                    <a :href="'https://wa.me/91' + p.phone" class="text-success text-decoration-none"><i class="bi bi-whatsapp"></i></a>
+                                </div>
                             </div>
+
+                            <div class="d-flex align-items-center gap-2 mt-2" x-show="p.email">
+                                <div class="flex-shrink-0 text-center" style="width: 16px;">
+                                    <i class="bi bi-envelope-fill text-secondary" style="font-size: 0.9rem;"></i>
+                                </div>
+                                <div class="small text-muted fw-medium text-break flex-grow-1" style="font-size: 0.75rem; line-height: 1.2;" x-text="p.email"></div>
+                                <div class="flex-shrink-0">
+                                    <a :href="'mailto:' + p.email" class="text-danger text-decoration-none"><i class="bi bi-envelope-at-fill"></i></a>
+                                </div>
+                            </div>
+
                         </div>
                     </template>
                 </div>
@@ -611,8 +713,7 @@
             </div>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="card-body p-0 d-flex">
-                    <div
-                        class="flex-fill p-2 border-end bg-success bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
+                    <div class="flex-fill p-2 border-end bg-success bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
                         <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center shadow-sm"
                             style="width: 32px; height: 32px;">
                             <i class="bi bi-check-circle-fill"></i>
@@ -625,8 +726,7 @@
                             </div>
                         </div>
                     </div>
-                    <div
-                        class="flex-fill p-2 border-end bg-warning bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
+                    <div class="flex-fill p-2 border-end bg-warning bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
                         <div class="rounded-circle bg-white text-warning d-flex align-items-center justify-content-center shadow-sm"
                             style="width: 32px; height: 32px;">
                             <i class="bi bi-hourglass-split"></i>
@@ -639,8 +739,7 @@
                             </div>
                         </div>
                     </div>
-                    <div
-                        class="flex-fill p-2 bg-danger bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
+                    <div class="flex-fill p-2 bg-danger bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
                         <div class="rounded-circle bg-white text-danger d-flex align-items-center justify-content-center shadow-sm"
                             style="width: 32px; height: 32px;">
                             <i class="bi bi-exclamation-circle-fill"></i>
