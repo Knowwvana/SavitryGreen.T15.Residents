@@ -1,68 +1,104 @@
-<!-- HEADER SECTION -->
-<div class="bg-white px-3 pt-4 pb-0 sticky-top shadow-sm" style="z-index: 1000;">
-    <!-- Title & Date -->
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <div class="d-flex align-items-center">
-            <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                <i class="bi bi-building"></i>
-            </div>
-            <div>
-                <h5 class="fw-bold mb-0 text-dark">Resident List</h5>
-                <small class="text-muted fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;" x-text="currentDate"></small>
-            </div>
-        </div>
-    </div>
+<!-- NOTE: Main Header is now handled by header.html -->
 
+<!-- LIST CONTROLS -->
+<div class="bg-white px-3 pt-3 pb-2 sticky-top border-bottom" style="z-index: 1020; top: 70px;">
+    
     <!-- Search Bar -->
     <div class="position-relative mb-3">
         <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-        <input type="text" x-model="searchQuery" class="form-control ps-5 border-light bg-light rounded-3 shadow-sm" placeholder="Search flat or name..." style="height: 48px;">
+        <input type="text" x-model="searchQuery" class="form-control ps-5 border-light bg-light rounded-pill shadow-sm" placeholder="Search flat or name..." style="height: 45px;">
     </div>
 
     <!-- Stats Row -->
-    <div class="d-flex gap-2 mb-3 overflow-auto pb-1" style="scrollbar-width: none; -ms-overflow-style: none;">
+    <div class="d-flex gap-2 mb-3 overflow-auto pb-1 no-scrollbar">
         <div class="badge bg-light text-dark border fw-medium d-flex align-items-center px-3 py-2 flex-shrink-0">
             <span class="text-muted me-2">Flats</span>
-            <span class="fw-bold" x-text="filteredResidents.length"></span>
+            <span class="fw-bold" x-text="residents.length"></span>
         </div>
         <div class="badge bg-light text-dark border fw-medium d-flex align-items-center px-3 py-2 flex-shrink-0">
             <span class="text-muted me-2">Residents</span>
-            <span class="fw-bold" x-text="filteredResidents.reduce((acc, r) => acc + (r.occupants ? r.occupants.length : 0), 0)"></span>
+            <span class="fw-bold" x-text="residents.reduce((acc, r) => acc + (r.occupants ? r.occupants.length : 0), 0)"></span>
         </div>
         <div class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-medium d-flex align-items-center px-3 py-2 flex-shrink-0">
             <span class="me-2">Owners</span>
-            <span class="fw-bold" x-text="filteredResidents.reduce((acc, r) => acc + (r.occupants ? r.occupants.filter(o => o.type === 'Owner').length : 0), 0)"></span>
+            <span class="fw-bold" x-text="residents.reduce((acc, r) => acc + (r.occupants ? r.occupants.filter(o => o.type.toLowerCase() === 'owner').length : 0), 0)"></span>
         </div>
         <div class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 fw-medium d-flex align-items-center px-3 py-2 flex-shrink-0">
             <span class="me-2">Tenants</span>
-            <span class="fw-bold" x-text="filteredResidents.reduce((acc, r) => acc + (r.occupants ? r.occupants.filter(o => o.type === 'Tenant').length : 0), 0)"></span>
+            <span class="fw-bold" x-text="residents.reduce((acc, r) => acc + (r.occupants ? r.occupants.filter(o => o.type.toLowerCase() === 'tenant').length : 0), 0)"></span>
         </div>
     </div>
 
-    <!-- Filter Chips -->
-    <div class="d-flex gap-2 pb-3 overflow-auto">
-        <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
-                :class="filterStatus === 'all' ? 'bg-dark text-white border-dark' : 'bg-white text-muted border'"
-                @click="filterStatus = 'all'">All</button>
-        <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
-                :class="filterStatus === 'paid' ? 'bg-success text-white border-success' : 'bg-success bg-opacity-10 text-success border-0'"
-                @click="filterStatus = 'paid'">Paid</button>
-        <button class="btn btn-sm rounded-pill px-4 fw-bold transition-all shadow-sm"
-                :class="filterStatus === 'unpaid' ? 'bg-danger text-white border-danger' : 'bg-danger bg-opacity-10 text-danger border-0'"
-                @click="filterStatus = 'unpaid'">Unpaid</button>
+    <!-- Filter Chips with Counts -->
+    <div class="d-flex gap-2 pb-2 overflow-auto no-scrollbar">
+        <button class="btn btn-sm rounded-pill px-3 fw-bold transition-all d-flex align-items-center gap-2"
+                :class="filterStatus === 'all' ? 'btn-dark' : 'btn-light border text-muted'"
+                @click="filterStatus = 'all'">
+            All
+            <span class="badge rounded-pill bg-secondary bg-opacity-25 text-white" x-text="residents.length"></span>
+        </button>
+        
+        <button class="btn btn-sm rounded-pill px-3 fw-bold transition-all d-flex align-items-center gap-2"
+                :class="filterStatus === 'paid' ? 'btn-success' : 'btn-light text-success border-success border-opacity-25'"
+                @click="filterStatus = 'paid'">
+            Paid
+            <span class="badge rounded-pill" 
+                  :class="filterStatus === 'paid' ? 'bg-white text-success' : 'bg-success text-white'"
+                  x-text="residents.filter(r => r.totalPendingDue <= 0 && !r.history.some(h => h.status.toLowerCase() === 'pending validation')).length"></span>
+        </button>
+        
+        <button class="btn btn-sm rounded-pill px-3 fw-bold transition-all d-flex align-items-center gap-2"
+                :class="filterStatus === 'unpaid' ? 'btn-danger' : 'btn-light text-danger border-danger border-opacity-25'"
+                @click="filterStatus = 'unpaid'">
+            Unpaid
+            <span class="badge rounded-pill" 
+                  :class="filterStatus === 'unpaid' ? 'bg-white text-danger' : 'bg-danger text-white'"
+                  x-text="residents.filter(r => r.totalPendingDue > 0).length"></span>
+        </button>
+        
+        <button class="btn btn-sm rounded-pill px-3 fw-bold transition-all text-nowrap d-flex align-items-center gap-2"
+                :class="filterStatus === 'pending' ? 'btn-warning text-dark' : 'btn-light text-warning border-warning border-opacity-25'"
+                @click="filterStatus = 'pending'">
+            Pending Admin Validation
+            <span class="badge rounded-pill" 
+                  :class="filterStatus === 'pending' ? 'bg-white text-dark' : 'bg-warning text-dark'"
+                  x-text="residents.filter(r => r.history.some(h => h.status.toLowerCase() === 'pending validation')).length"></span>
+        </button>
     </div>
 </div>
 
 <!-- LIST SECTION -->
-<div class="p-3 d-flex flex-column gap-3 pb-5 bg-light min-vh-100">
+<div class="p-3 d-flex flex-column gap-2 pb-5 bg-light min-vh-100">
     
+    <!-- SKELETON LOADER STATE -->
     <template x-if="isLoading">
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary mb-2" role="status"></div>
-            <p class="text-muted small">Loading residents...</p>
+        <div class="d-flex flex-column gap-2">
+            <template x-for="i in 5">
+                <div class="card shadow-sm rounded-4 overflow-hidden bg-white mb-2 border-0">
+                    <div class="position-absolute top-0 start-0 bottom-0 bg-light" style="width: 4px;"></div>
+                    <div class="card-body p-3 ps-4">
+                        <div class="d-flex w-100 align-items-stretch">
+                            <div class="skeleton-shimmer rounded-3 me-3 flex-shrink-0" style="width: 50px; height: 50px;"></div>
+                            <div class="flex-grow-1" style="min-width: 0;">
+                                <div class="skeleton-shimmer rounded mb-2" style="width: 60%; height: 20px;"></div>
+                                <div class="skeleton-shimmer rounded mb-2" style="width: 40%; height: 14px;"></div>
+                                <hr class="border-light my-2">
+                                <div class="d-flex flex-column gap-2">
+                                    <div class="skeleton-shimmer rounded" style="width: 80%; height: 16px;"></div>
+                                    <div class="skeleton-shimmer rounded" style="width: 50%; height: 16px;"></div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center ps-2 border-start ms-3 flex-shrink-0" style="width: 40px;">
+                                <div class="skeleton-shimmer rounded-circle" style="width: 36px; height: 36px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
         </div>
     </template>
 
+    <!-- DATA LOADED STATE -->
     <template x-if="!isLoading">
         <template x-for="(r, index) in filteredResidents" :key="r.flat">
             
@@ -75,36 +111,65 @@
                      style="width: 4px;"></div>
 
                 <div class="card-body p-3 ps-4">
-                    <div class="d-flex w-100 align-items-stretch">
+                    <div class="d-flex w-100 align-items-center">
                         
-                        <!-- 1. LEFT: Flat Number -->
+                        <!-- 1. LEFT: Flat Number & Content Wrapper -->
                         <div class="flex-grow-1 d-flex align-items-start" style="min-width: 0;">
+                            <!-- Flat Box -->
                             <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 flex-shrink-0" 
                                  style="width: 50px; height: 50px; font-weight: 800; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);">
                                 <span x-text="r.flat"></span>
                             </div>
 
+                            <!-- Content Column -->
                             <div class="flex-grow-1" style="min-width: 0;">
-                                <!-- Occupants -->
-                                <div class="d-flex flex-column gap-1 mb-2">
+                                
+                                <!-- Occupant Loop -->
+                                <div class="d-flex flex-column gap-3 mb-2">
                                     <template x-if="r.occupants.length > 0">
                                         <template x-for="p in r.occupants">
-                                            <div class="d-flex flex-column">
-                                                <h6 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 1rem;" x-text="p.name"></h6>
-                                                <div class="d-flex align-items-center gap-3 mt-1">
-                                                    <div class="d-flex align-items-center small fw-medium"
-                                                         :class="p.type === 'Owner' ? 'text-success' : 'text-danger'">
-                                                        <i class="bi me-1" :class="p.type === 'Owner' ? 'bi-house-fill' : 'bi-person-badge-fill'"></i>
-                                                        <span x-text="p.type"></span>
-                                                    </div>
-                                                    <div class="d-flex align-items-center small fw-medium text-muted">
-                                                        <i class="bi bi-telephone-fill me-1 text-primary"></i>
-                                                        <span x-text="p.phone"></span>
+                                            <div class="d-flex justify-content-between align-items-center border-bottom border-light pb-2 last:border-0 last:pb-0">
+                                                
+                                                <!-- Left: Details -->
+                                                <div class="d-flex flex-column" style="min-width: 0;">
+                                                    <h6 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 1rem;" x-text="p.name"></h6>
+                                                    <div class="d-flex align-items-center gap-2 mt-1">
+                                                        <!-- Type Badge -->
+                                                        <span class="d-flex align-items-center small fw-bold text-uppercase"
+                                                              :class="p.type.toLowerCase() === 'owner' ? 'text-success' : 'text-warning'" style="font-size: 0.65rem;">
+                                                            <i class="bi me-1" :class="p.type.toLowerCase() === 'owner' ? 'bi-house-fill' : 'bi-house-heart-fill'"></i>
+                                                            <span x-text="p.type"></span>
+                                                        </span>
+                                                        
+                                                        <!-- Phone & Email (Updated with Email) -->
+                                                        <div class="d-flex flex-wrap align-items-center small text-muted gap-2">
+                                                            <div class="d-flex align-items-center" x-show="p.phone">
+                                                                <i class="bi bi-telephone-fill me-1 text-primary" style="font-size: 0.7rem;"></i>
+                                                                <span x-text="p.phone"></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center" x-show="p.email">
+                                                                <span class="text-light-gray me-2" x-show="p.phone">|</span>
+                                                                <i class="bi bi-envelope-fill me-1 text-secondary" style="font-size: 0.7rem;"></i>
+                                                                <span x-text="p.email" class="text-truncate" style="max-width: 140px;"></span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
+
+                                                <!-- Right: Actions -->
+                                                <div class="d-flex gap-2 ms-2">
+                                                    <a :href="'https://wa.me/91' + p.phone" @click.stop class="btn btn-success rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px;">
+                                                        <i class="bi bi-whatsapp" style="font-size: 0.9rem;"></i>
+                                                    </a>
+                                                    <a :href="'tel:' + p.phone" @click.stop class="btn btn-primary rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px;">
+                                                        <i class="bi bi-telephone-fill" style="font-size: 0.8rem;"></i>
+                                                    </a>
+                                                </div>
+
                                             </div>
                                         </template>
                                     </template>
+                                    
                                     <template x-if="r.occupants.length === 0">
                                         <span class="text-muted fst-italic small">No occupant info</span>
                                     </template>
@@ -112,47 +177,65 @@
                                 
                                 <hr class="border-light my-2">
                                 
-                                <!-- Financial Summary (Uses Calculated Models!) -->
-                                <div class="d-flex flex-column gap-2 pt-1">
+                                <!-- Financial Summary -->
+                                <div class="d-flex flex-column gap-1 pt-1">
                                     
-                                    <!-- Row 1: PENDING DUES (Cleaned) -->
-                                    <div class="d-flex align-items-center">
-                                        <span class="text-secondary fw-bold me-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">PENDING DUES</span>
-                                        <span class="fw-bold fs-6" 
-                                              :class="r.totalPendingDue > 0 ? 'text-danger' : 'text-dark'" 
-                                              x-text="'₹' + r.totalPendingDue.toLocaleString('en-IN')">
-                                        </span>
-                                        <i x-show="r.totalPendingDue > 0" class="bi bi-exclamation-circle-fill ms-2 text-danger" style="font-size: 0.9rem;"></i>
+                                    <!-- Row 1: PENDING DUES -->
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <span class="text-secondary fw-bold me-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">PENDING DUES</span>
+                                            <span class="fw-bold fs-6" :class="r.totalPendingDue > 0 ? 'text-danger' : 'text-dark'" x-text="'₹' + r.totalPendingDue.toLocaleString('en-IN')"></span>
+                                            <i x-show="r.totalPendingDue > 0" class="bi bi-exclamation-circle-fill ms-2 text-danger" style="font-size: 0.9rem;"></i>
+                                        </div>
                                     </div>
 
-                                    <!-- Row 2: LAST PAYMENT -->
-                                    <div class="d-flex align-items-center flex-wrap" style="min-height: 24px;">
-                                        <span class="text-secondary fw-bold me-2" style="font-size: 0.65rem; letter-spacing: 0.5px;">LAST PAYMENT</span>
-                                        
-                                        <template x-if="r.lastPayment">
-                                            <div class="d-flex align-items-center">
-                                                <span class="fw-bold text-success" style="font-size: 0.95rem;" x-text="'₹' + r.lastPayment.amount.toLocaleString('en-IN')"></span>
-                                                <span class="text-muted opacity-50 mx-2">|</span>
-                                                
-                                                <span class="text-dark fw-medium small text-nowrap" 
-                                                      x-text="new Date(r.lastPayment.rawDate).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'numeric'})"></span>
-                                                <span class="text-muted opacity-50 mx-2">|</span>
-                                                
-                                                <div class="d-flex align-items-center px-2 py-0 rounded-pill border"
-                                                     :class="r.lastPayment.status.toLowerCase() === 'paid' ? 'bg-success bg-opacity-10 border-success border-opacity-25 text-success' : 'bg-warning bg-opacity-10 border-warning border-opacity-25 text-warning'">
-                                                    <span style="font-size: 0.65rem; text-transform: uppercase;" x-text="r.lastPayment.status"></span>
+                                    <!-- Row 2: LAST PAYMENT / PENDING ITEM -->
+                                    <div class="d-flex align-items-center justify-content-between mt-1" style="min-height: 24px;">
+                                        <div class="d-flex align-items-center w-100">
+                                            <span class="text-secondary fw-bold me-2" 
+                                                  style="font-size: 0.65rem; letter-spacing: 0.5px;"
+                                                  x-text="filterStatus === 'pending' ? 'PENDING ITEM' : 'LAST PAYMENT'">
+                                            </span>
+                                            
+                                            <!-- Logic: Always show latest payment (r.lastPayment) -->
+                                            <template x-if="filterStatus === 'pending' ? (r.history.find(p => p.status.toLowerCase() === 'pending validation') || r.lastPayment) : r.lastPayment">
+                                                <div class="d-flex align-items-center flex-wrap" 
+                                                     x-data="{ pItem: filterStatus === 'pending' ? (r.history.find(p => p.status.toLowerCase() === 'pending validation') || r.lastPayment) : r.lastPayment }">
+                                                    
+                                                    <span class="fw-bold" 
+                                                          :class="pItem.status.toLowerCase() === 'paid' ? 'text-success' : 'text-warning'" 
+                                                          style="font-size: 0.95rem;" 
+                                                          x-text="'₹' + pItem.amount.toLocaleString('en-IN')"></span>
+                                                    
+                                                    <span class="text-muted opacity-50 mx-2">|</span>
+                                                    
+                                                    <span class="text-dark fw-medium small text-nowrap" 
+                                                          x-text="new Date(pItem.rawDate).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year:'2-digit'})"></span>
+                                                    
+                                                    <span class="text-muted opacity-50 mx-2">|</span>
+
+                                                    <!-- Payment Mode with Icon and Text -->
+                                                    <div class="d-flex align-items-center text-muted small me-2">
+                                                        <i class="bi" :class="(pItem.method || '').toLowerCase().includes('cash') ? 'bi-cash-stack text-success' : 'bi-phone-flip text-primary'" style="font-size: 0.75rem;"></i>
+                                                        <span class="ms-1 fw-bold text-dark" style="font-size: 0.65rem;" x-text="pItem.method"></span>
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center px-2 py-0 rounded-pill border"
+                                                         :class="pItem.status.toLowerCase() === 'paid' ? 'bg-success bg-opacity-10 text-success border-success border-opacity-25' : 'bg-warning bg-opacity-10 text-warning border-warning border-opacity-25'">
+                                                        <span style="font-size: 0.6rem; text-transform: uppercase;" x-text="pItem.status === 'Pending Validation' ? 'Pending' : pItem.status"></span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </template>
-                                        <template x-if="!r.lastPayment">
-                                            <small class="text-muted fw-medium fst-italic" style="font-size: 0.75rem;">None recorded</small>
-                                        </template>
+                                            </template>
+                                            <template x-if="!r.lastPayment">
+                                                <small class="text-muted fw-medium fst-italic" style="font-size: 0.75rem;">None</small>
+                                            </template>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 2. RIGHT: Vertical Arrow -->
+                        <!-- 2. RIGHT: Vertical Arrow Column -->
                         <div class="d-flex align-items-center justify-content-center ps-2 border-start ms-3 flex-shrink-0" style="width: 40px;">
                             <button class="btn btn-light rounded-circle shadow-sm border-0 d-flex align-items-center justify-content-center" 
                                     style="width: 36px; height: 36px;"

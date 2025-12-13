@@ -11,57 +11,114 @@ body {
 }
 
 /* Utility to hide elements before Alpine loads */
-[x-cloak] { 
-    display: none !important; 
+[x-cloak] {
+    display: none !important;
 }
 
 /* Optional: Smooth View Transitions */
 .app-view {
     animation: fadeIn 0.2s ease-in-out;
 }
+
 /* Base Skeleton Animation */
-    .skeleton-box {
-        position: relative;
-        overflow: hidden;
-        background-color: #e2e8f0; /* Light gray */
-        border-radius: 0.5rem;
-    }
-    .skeleton-box::after {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        transform: translateX(-100%);
-        background-image: linear-gradient(
-            90deg,
+.skeleton-box {
+    background: #f0f2f5;
+    background-image: linear-gradient(to right, #f0f2f5 0%, #e6e8eb 20%, #f0f2f5 40%, #f0f2f5 100%);
+    position: relative;
+    overflow: hidden;
+    background-color: #e2e8f0;
+    border-radius: 0.5rem;
+    animation: shimmer 1.5s infinite linear forwards;
+    border-radius: 8px;
+    background-repeat: no-repeat;
+    background-size: 800px 100%;
+}
+
+.skeleton-box::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg,
             rgba(255, 255, 255, 0) 0,
             rgba(255, 255, 255, 0.4) 20%,
             rgba(255, 255, 255, 0.7) 60%,
-            rgba(255, 255, 255, 0)
-        );
-        animation: shimmer 2s infinite;
-        content: '';
-    }
+            rgba(255, 255, 255, 0));
+    animation: shimmer 1.5s infinite;
+    content: '';
+}
 
-    /* Dark Theme Skeleton (For Header) */
-    .skeleton-dark {
-        background-color: #334155; /* Slate 700 */
-    }
-    .skeleton-dark::after {
-        background-image: linear-gradient(
-            90deg,
+/* Dark Theme Skeleton (For Header) */
+.skeleton-dark {
+    background: #1e293b;
+    background-image: linear-gradient(to right, #1e293b 0%, #334155 20%, #1e293b 40%, #1e293b 100%);
+}
+
+.skeleton-dark::after {
+    background-image: linear-gradient(90deg,
             rgba(255, 255, 255, 0) 0,
             rgba(255, 255, 255, 0.05) 20%,
             rgba(255, 255, 255, 0.1) 60%,
-            rgba(255, 255, 255, 0)
-        );
-    }
-
-    @keyframes shimmer {
-        100% { transform: translateX(100%); }
-    }
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+            rgba(255, 255, 255, 0));
 }
+
+.hover-scale:active {
+    transform: scale(0.95);
+}
+
+.transition-all {
+    transition: all 0.2s ease;
+}
+
+.hover-bg-light:hover {
+    background-color: #f8f9fa;
+}
+
+.text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+@keyframes shimmer {
+    0% { background-position: -468px 0; }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header-transition {
+    transition: min-height 0.3s ease-in-out, border-radius 0.3s ease-in-out;
+}
+
+/* Glass effect for badges in header */
+.header-badge {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Badge Colors */
+.badge-flats { background: rgba(13, 110, 253, 0.25); }   /* Blue-ish */
+.badge-owners { background: rgba(25, 135, 84, 0.25); }  /* Green-ish */
+.badge-tenants { background: rgba(255, 193, 7, 0.25); } /* Yellow-ish */

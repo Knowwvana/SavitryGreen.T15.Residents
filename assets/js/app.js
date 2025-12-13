@@ -6,11 +6,6 @@
 
 document.addEventListener('alpine:init', () => {
 
-    /**
-     * -----------------------------------------------------------------
-     * MODULE 1: APP SERVICES (Private Logic Layer)
-     * -----------------------------------------------------------------
-     */
     const AppServices = (() => {
 
         // --- CONSTANTS ---
@@ -18,7 +13,6 @@ document.addEventListener('alpine:init', () => {
         const MONTHS_ARRAY = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         // --- UTILITIES ---
-
         const LocalTimeHelper = {
             getLocalISOString: function() {
                 const now = new Date();
@@ -39,7 +33,7 @@ document.addEventListener('alpine:init', () => {
 
         class Settings {
             constructor(data) {
-                this._config = {};
+                this._config = data || {}; 
 
                 const formatMonthString = (dateValue) => {
                     if (!dateValue) return 'Sep-2025';
@@ -48,63 +42,47 @@ document.addEventListener('alpine:init', () => {
                             const d = new Date(dateValue);
                             const monthName = MONTHS_ARRAY[d.getMonth()];
                             return `${monthName}-${d.getFullYear()}`;
-                        } catch (e) {
-                            return String(dateValue);
-                        }
+                        } catch (e) { return String(dateValue); }
                     }
                     return String(dateValue);
                 };
 
-                if (Array.isArray(data)) {
-                    data.forEach(row => {
-                        const key = safeString(row.Key || row.key || row.Name || row.name);
-                        let val = row.Value || row.value;
-                        if (key.toLowerCase().includes('startfrom')) val = formatMonthString(val);
-                        if (key) {
-                            this._config[key] = val;
-                            this._config[key.toLowerCase()] = val;
-                        }
-                    });
-                } else if (typeof data === 'object' && data !== null) {
-                    Object.keys(data).forEach(key => {
-                        const cleanKey = safeString(key);
-                        let val = data[key];
-                        if (cleanKey.toLowerCase().includes('startfrom')) val = formatMonthString(val);
-                        this._config[cleanKey] = val;
-                        this._config[cleanKey.toLowerCase()] = val;
-                    });
+                if (this._config.MonthlyMaintainenceStartFrom) {
+                    this._config.MonthlyMaintainenceStartFrom = formatMonthString(this._config.MonthlyMaintainenceStartFrom);
                 }
             }
 
-            get societyName() { return this._config['SocietyName'] || this._config['societyname'] || 'Green Valley Heights'; }
-            get societyAddress() { return this._config['SocietyAddress'] || this._config['societyaddress'] || 'Sector 42, Maintenance Drive'; }
-            get monthlyFee() { return parseFloat(this._config['MonthlyMaintainenceAmount'] || this._config['monthlymaintainenceamount'] || 150); }
-            get startMonthStr() { return this._config['MonthlyMaintainenceStartFrom'] || this._config['monthlymaintainencestartfrom'] || 'Sep-2025'; }
+            get societyName() { return this._config.SocietyName || 'Green Valley Heights'; }
+            get societyAddress() { return this._config.SocietyAddress || 'Sector 42, Maintenance Drive'; }
+            get monthlyFee() { return parseFloat(this._config.MonthlyMaintainenceAmount || 150); }
+            get startMonthStr() { return this._config.MonthlyMaintainenceStartFrom || 'Sep-2025'; }
             
-            // Compatibility
             get SocietyName() { return this.societyName; }
             get SocietyAddress() { return this.societyAddress; }
-            get KeyValueMonthlyMaintainenceStartFrom() { return this.startMonthStr; }
-            get MonthlyMaintainenceAmount() { return this.monthlyFee; }
         }
 
         class Payment {
             constructor(data) {
-                this.id = data.PaymentID || data.id;
-                this.amount = parseFloat(data.Amount || data.amount || 0);
-                this.status = safeString(data.Status || data.status || 'Pending');
-                this.type = safeString(data.Type || data.type || 'Monthly');
-                this.category = safeString(data.Category || data.category || 'Maintenance');
-                this.remarks = safeString(data.Remarks || data.remarks);
-                this.method = safeString(data.PaymentMethod || data.method || 'UPI');
+                this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") 
+                          ? String(data.PaymentID) 
+                          : ('temp_' + Math.random().toString(36).substr(2, 9));
                 
-                // Admin Validation Data
-                this.validatedBy = safeString(data.ValidatedBy || data.validatedby);
-                this.validationTime = safeString(data.ValidationTime || data.validationtime);
+                this.amount = parseFloat(data.Amount || 0);
+                this.status = safeString(data.Status || 'Pending');
+                this.category = safeString(data.Category || 'Maintenance');
+                this.title = safeString(data.Title);
+                this.remarks = safeString(data.Remarks);
+                this.method = safeString(data.PaymentMethod || 'UPI');
                 
-                this.rawDate = data.PaymentDate || data.date;
-                this.rawMonth = data.Month || data.month;
-                this.flatNo = normalizeFlat(data.FlatNo || data.flat);
+                this.validatedBy = safeString(data.ValidatedBy);
+                this.validationTime = safeString(data.ValidationTime);
+                this.validationComments = safeString(data.ValidationComments);
+                
+                this.rawDate = data.PaymentDate;
+                this.rawMonth = data.Month;
+                this.flatNo = normalizeFlat(data.FlatNo);
+
+                this.type = (this.category.toLowerCase() === 'monthly') ? 'Monthly' : this.category;
             }
 
             get monthKey() {
@@ -112,8 +90,9 @@ document.addEventListener('alpine:init', () => {
                 if (/^\d{4}-\d{2}$/.test(this.rawMonth)) return this.rawMonth;
                 try {
                     const d = new Date(this.rawMonth);
-                    if (!isNaN(d.getTime())) {
-                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    const adjustedDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
+                    if (!isNaN(adjustedDate.getTime())) {
+                        return `${adjustedDate.getFullYear()}-${String(adjustedDate.getMonth() + 1).padStart(2, '0')}`;
                     }
                 } catch(e) {}
                 return '';
@@ -121,23 +100,29 @@ document.addEventListener('alpine:init', () => {
 
             get isPaidStrict() { return this.status.toLowerCase() === 'paid'; }
             get isInReview() { const s = this.status.toLowerCase(); return s !== 'paid' && s !== 'rejected'; }
-            get isPaidOrPendingValidation() { 
-                const s = this.status.toLowerCase();
-                return s === 'paid' || s === 'pending validation'; 
-            }
-            get isMonthly() { return this.type.toLowerCase() === 'monthly' || this.category.toLowerCase() === 'monthly'; }
+            get isPaidOrPendingValidation() { const s = this.status.toLowerCase(); return s === 'paid' || s === 'pending validation'; }
+            get isMonthly() { return this.category.toLowerCase() === 'monthly'; }
         }
 
         class Resident {
             constructor(flatData, rawResidentData, paymentHistory) {
-                this.flat = normalizeFlat(flatData.FlatNo || flatData.flat);
-                this.due = parseFloat(flatData.Due || flatData.Pending || 0);
+                this.flat = normalizeFlat(flatData.FlatNo);
+                this.due = parseFloat(flatData.Due || 0);
                 
+                // --- NEW LOGIC: Calculate Floor & Tower ---
+                const nFlat = parseInt(this.flat);
+                let floorVal = !isNaN(nFlat) ? Math.floor(nFlat / 100) : 0;
+                
+                // Fix: Ensure 0 maps to 'Ground' explicitly
+                this.floor = (floorVal === 0) ? 'Ground' : String(floorVal);
+                this.tower = '15'; // Defaulting to Tower 15 as per project context
+                // ------------------------------------------
+
                 this.occupants = (rawResidentData || []).map(r => ({
-                    name: safeString(r.Name || r.name || 'Unknown'),
-                    phone: safeString(r.Phone || r.Mobile),
-                    email: safeString(r.Email || r.email), 
-                    type: safeString(r.Type || r.ResidentType || 'Owner')
+                    name: safeString(r.Name || 'Unknown'),
+                    phone: safeString(r.Phone),
+                    email: safeString(r.Email), 
+                    type: safeString(r.ResidentType || 'Owner')
                 }));
 
                 this.history = paymentHistory || []; 
@@ -147,13 +132,11 @@ document.addEventListener('alpine:init', () => {
             getPendingMonthsList(settings) {
                 const startStr = settings.startMonthStr;
                 const monthlyAmount = settings.monthlyFee;
-
                 const parts = startStr.split('-');
                 if (parts.length !== 2) return [];
 
                 let startMonth = MONTHS_MAP[parts[0].trim().toLowerCase().substring(0, 3)];
                 let startYear = parseInt(parts[1]);
-
                 if (startMonth === undefined) return [];
                 
                 const now = new Date();
@@ -167,14 +150,8 @@ document.addEventListener('alpine:init', () => {
 
                 while ((currY < endYear || (currY === endYear && currM <= endMonth)) && safety < 120) {
                     const monthKey = `${currY}-${String(currM + 1).padStart(2, '0')}`;
-                    const isPaid = this.history.some(p => 
-                        p.isMonthly && p.isPaidOrPendingValidation && p.monthKey === monthKey
-                    );
-
-                    if (!isPaid) {
-                        list.push({ label: `${MONTHS_ARRAY[currM]} ${currY}`, value: monthKey, amount: monthlyAmount });
-                    }
-
+                    const isPaid = this.history.some(p => p.isMonthly && p.isPaidOrPendingValidation && p.monthKey === monthKey);
+                    if (!isPaid) list.push({ label: `${MONTHS_ARRAY[currM]} ${currY}`, value: monthKey, amount: monthlyAmount });
                     currM++;
                     if (currM > 11) { currM = 0; currY++; }
                     safety++;
@@ -182,8 +159,6 @@ document.addEventListener('alpine:init', () => {
                 return list.reverse(); 
             }
         }
-
-        // --- REPOSITORY LAYER ---
 
         class SocietyRepository {
             constructor(apiUrl) {
@@ -198,7 +173,6 @@ document.addEventListener('alpine:init', () => {
                 this.isLoading = true;
                 try {
                     if (!this.apiUrl) throw new Error("API URL Missing");
-
                     const response = await fetch(this.apiUrl + '?action=getData'); 
                     const result = await response.json();
 
@@ -207,21 +181,18 @@ document.addEventListener('alpine:init', () => {
                     const rawPayments = result.payments || [];
                     
                     this.settings = new Settings(result.settings);
-                    this.admins = result.admins || []; // Fetch admins from new sheet
+                    this.admins = result.admins || []; 
 
-                    const allPayments = (result.payments || []).map(p => new Payment(p));
+                    const allPayments = rawPayments.map(p => new Payment(p));
                     
-                    this.residents = (rawFlats || []).map((f, index) => {
+                    this.residents = rawFlats.map((f, index) => {
                         try {
-                            const matchKey = normalizeFlat(f.FlatNo || f.flat);
-                            
-                            const residentPayments = allPayments
-                                .filter(p => p.flatNo === matchKey)
+                            const matchKey = normalizeFlat(f.FlatNo);
+                            const residentPayments = allPayments.filter(p => p.flatNo === matchKey)
                                 .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
-
-                            const residentData = rawResidents.filter(r => normalizeFlat(r.FlatNo || r.flat) === matchKey);
+                            const residentData = rawResidents.filter(r => normalizeFlat(r.FlatNo) === matchKey);
                             const resident = new Resident(f, residentData, residentPayments);
-
+                            
                             resident.id = index;
                             resident.searchStr = `${resident.flat} ${resident.occupants.map(o => o.name).join(' ')}`.toLowerCase();
                             
@@ -230,9 +201,7 @@ document.addEventListener('alpine:init', () => {
                             resident.isPaid = resident.totalPendingDue <= 0;
 
                             return resident;
-                        } catch (e) {
-                            return null;
-                        }
+                        } catch (e) { return null; }
                     }).filter(r => r !== null);
 
                     return true;
@@ -246,7 +215,6 @@ document.addEventListener('alpine:init', () => {
 
             async addPayment(formData) {
                 const paymentId = Date.now().toString(); 
-                const timestamp = new Date().toLocaleString();
                 let finalTitle = formData.title;
                 if (formData.category === 'Monthly') finalTitle = `Maint: ${formData.month}`; 
 
@@ -260,7 +228,7 @@ document.addEventListener('alpine:init', () => {
                     PaymentDate: formData.paymentDate.replace('T', ' '),
                     PaymentMethod: formData.method,
                     Status: 'Pending Validation',
-                    Remarks: `${formData.remarks} [Logged: ${timestamp}]`
+                    Remarks: formData.remarks 
                 };
 
                 try {
@@ -306,11 +274,6 @@ document.addEventListener('alpine:init', () => {
         return { SocietyRepository, LocalTimeHelper, Resident, Settings };
     })();
 
-    /**
-     * -----------------------------------------------------------------
-     * MODULE 2: VIEW MODEL (Alpine.js Component)
-     * -----------------------------------------------------------------
-     */
     window.societyApp = (api_url) => ({
         repository: new AppServices.SocietyRepository(api_url),
         getLocalISOString: AppServices.LocalTimeHelper.getLocalISOString,
@@ -322,22 +285,41 @@ document.addEventListener('alpine:init', () => {
         isLoading: true, 
         isSubmitting: false,
         txnSuccess: false,
-        
         residents: [],
         settings: {}, 
         
+        // Active Resident Data
         activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, pendingValidation: 0, currentDue: 0 } }, 
+        
+        // History List State (Global)
+        historyQuery: '',
+        pageM: 1,
+        pageA: 1,
+        limit: 10,
+
+        // Transaction Form Data
         txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '' },
 
-        // ADMIN STATE
+        // Dashboard Stats
+        dashboardStats: {
+            flatsCount: 0, ownersCount: 0, tenantsCount: 0, totalCollection: 0,
+            monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
+            adhocTotal: 0, adhocByTitle: {}, 
+            receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
+            pendingValidationTotal: 0, currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
+            recentTransactions: [], totalSpent: 0, cashInHand: 0
+        },
+
         admin: {
             isLoggedIn: false,
             currentUser: null,
             username: '',
             password: '',
             error: '',
-            tab: 'pending', // 'pending' or 'history'
-            showSuccessModal: false
+            tab: 'pending', 
+            showSuccessModal: false,
+            searchPending: '',
+            searchHistory: ''
         },
 
         init() {
@@ -351,23 +333,57 @@ document.addEventListener('alpine:init', () => {
             await this.repository.fetchData();
             this.residents = this.repository.residents;
             this.settings = this.repository.settings;
+            this.calculateDashboardStats(); 
             this.isLoading = false; 
         },
 
-        // --- DASHBOARD LOGIC ---
-        get dashboardStats() {
-            const stats = {
+        // --- FILTERED & PAGINATED GETTERS FOR PAYMENT HISTORY ---
+        get filteredMonthly() {
+            if (!this.activeResident || !this.activeResident.history) return [];
+            const q = (this.historyQuery || '').toLowerCase();
+            return this.activeResident.history.filter(h => 
+                h.isMonthly && 
+                (!q || (String(h.amount)+h.method+h.remarks+(h.rawMonth||'')).toLowerCase().includes(q))
+            );
+        },
+        get paginatedMonthly() {
+            const start = (this.pageM - 1) * this.limit;
+            return this.filteredMonthly.slice(start, start + this.limit);
+        },
+        get totalPagesM() { return Math.ceil(this.filteredMonthly.length / this.limit) || 1; },
+
+        get filteredAdhoc() {
+            if (!this.activeResident || !this.activeResident.history) return [];
+            const q = (this.historyQuery || '').toLowerCase();
+            return this.activeResident.history.filter(h => 
+                !h.isMonthly && 
+                (!q || (h.category+(h.title||'')+String(h.amount)+h.method+h.remarks).toLowerCase().includes(q))
+            );
+        },
+        get paginatedAdhoc() {
+            const start = (this.pageA - 1) * this.limit;
+            return this.filteredAdhoc.slice(start, start + this.limit);
+        },
+        get totalPagesA() { return Math.ceil(this.filteredAdhoc.length / this.limit) || 1; },
+        // --------------------------------------------------------
+
+        calculateDashboardStats() {
+             const stats = {
                 flatsCount: this.residents.length,
                 ownersCount: 0,
                 tenantsCount: 0,
-                totalCollection: 0,
-                monthlyCollection: 0,
-                adhocCollection: 0,
-                currMonthCollection: 0, 
-                prevMonthCollection: 0, 
-                recentTransactions: [],
-                cashInHand: 0, expenses: 0
+                totalCollection: 0, totalSpent: 0, cashInHand: 0,
+                monthlyTotal: 0, monthlyCurrent: 0, monthlyLast: 0, monthlyPrevPrev: 0,
+                adhocTotal: 0, adhocByTitle: {}, 
+                receivedToday: 0, receivedThisWeek: 0, receivedThisMonth: 0, receivedLastMonth: 0, receivedPrevPrevMonth: 0,
+                pendingValidationTotal: 0, currentMonthLabel: '', lastMonthLabel: '', prevPrevMonthLabel: '',
+                recentTransactions: []
             };
+
+            if (!this.residents || this.residents.length === 0) {
+                this.dashboardStats = stats;
+                return;
+            }
 
             this.residents.forEach(r => {
                 r.occupants.forEach(o => {
@@ -376,145 +392,111 @@ document.addEventListener('alpine:init', () => {
                 });
             });
 
-            const now = new Date();
-            const currentY = now.getFullYear();
-            const currentM = now.getMonth();
-            const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const prevY = prevDate.getFullYear();
-            const prevM = prevDate.getMonth();
-
-            const allPayments = this.residents.flatMap(r => r.history);
+             const now = new Date();
+             const uniquePayments = new Map();
+             this.residents.forEach(r => { r.history.forEach(p => { if (p.id) uniquePayments.set(p.id, p); }); });
+             const allPayments = Array.from(uniquePayments.values());
             
-            allPayments.forEach(p => {
-                if (p.isPaidOrPendingValidation) { 
-                    stats.totalCollection += p.amount;
-                    if (p.isMonthly) stats.monthlyCollection += p.amount;
-                    else stats.adhocCollection += p.amount;
-
-                    try {
-                        const pDate = new Date(p.rawDate);
-                        if (!isNaN(pDate.getTime())) {
-                            const pY = pDate.getFullYear();
-                            const pMonth = pDate.getMonth();
-                            if (pY === currentY && pMonth === currentM) stats.currMonthCollection += p.amount;
-                            if (pY === prevY && pMonth === prevM) stats.prevMonthCollection += p.amount;
-                        }
-                    } catch(e) {}
+             allPayments.forEach(p => {
+                if (p.status.toLowerCase() === 'pending validation') stats.pendingValidationTotal += p.amount;
+                if (p.isPaidOrPendingValidation) {
+                     stats.totalCollection += p.amount;
+                     if(p.isMonthly) stats.monthlyTotal += p.amount;
+                     else stats.adhocTotal += p.amount;
                 }
-            });
-
-            stats.recentTransactions = allPayments
-                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate))
-                .slice(0, 5)
-                .map(txn => this.mapTransactionForDisplay(txn));
-
-            return stats;
+             });
+             stats.recentTransactions = allPayments.sort((a,b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0,50).map(txn => this.mapTransactionForDisplay(txn));
+             this.dashboardStats = stats;
         },
 
-        // --- ADMIN VIEW LOGIC (Getters moved from HTML to JS) ---
-
-        get pendingValidationList() {
+        openResidentByFlat(flatNo) {
+            const resident = this.residents.find(r => r.flat === flatNo);
+            if (resident) this.openHistory(resident);
+        },
+        
+         get pendingValidationList() {
+            if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
-            return allPayments
-                .filter(p => p.status === 'Pending Validation')
-                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate))
-                .map(txn => this.mapTransactionForDisplay(txn));
+            const unique = new Map();
+            allPayments.forEach(p => unique.set(p.id, p));
+            return Array.from(unique.values()).filter(p => p.status === 'Pending Validation').sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).map(txn => this.mapTransactionForDisplay(txn));
         },
-
+        get filteredPendingList() {
+            const list = this.pendingValidationList;
+            const q = (this.admin.searchPending || '').toLowerCase();
+            if (!q) return list;
+            return list.filter(txn => txn.displayResidentName.toLowerCase().includes(q) || txn.displayFlat.toLowerCase().includes(q) || txn.remarks.toLowerCase().includes(q));
+        },
         get pendingStats() {
             const list = this.pendingValidationList;
-            return {
-                count: list.length,
-                totalAmount: list.reduce((sum, p) => sum + p.amount, 0)
-            };
+            return { count: list.length, totalAmount: list.reduce((sum, p) => sum + p.amount, 0) };
         },
-
         get adminHistoryList() {
+             if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
-            return allPayments
-                .filter(p => p.isPaidStrict) // Only approved/paid
-                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)) // Descending
-                .slice(0, 50) // Limit to recent 50 for performance
-                .map(txn => this.mapTransactionForDisplay(txn));
+            const unique = new Map();
+            allPayments.forEach(p => unique.set(p.id, p));
+            return Array.from(unique.values()).filter(p => p.isPaidStrict).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0, 50).map(txn => this.mapTransactionForDisplay(txn));
         },
-
+        get filteredHistoryList() {
+            const list = this.adminHistoryList;
+            const q = (this.admin.searchHistory || '').toLowerCase();
+            if (!q) return list;
+            return list.filter(txn => txn.displayResidentName.toLowerCase().includes(q) || txn.displayFlat.toLowerCase().includes(q) || (txn.validatedBy && txn.validatedBy.toLowerCase().includes(q)));
+        },
         get adminHistoryTotal() {
-            // Calculate total of ALL paid items
-            return this.residents.flatMap(r => r.history)
-                .filter(p => p.isPaidStrict)
-                .reduce((sum, p) => sum + p.amount, 0);
+             if (!this.residents) return 0;
+             const allPayments = this.residents.flatMap(r => r.history);
+             const unique = new Map();
+             allPayments.forEach(p => unique.set(p.id, p));
+            return Array.from(unique.values()).filter(p => p.isPaidStrict).reduce((sum, p) => sum + p.amount, 0);
+        },
+        get adminHistoryCount() {
+             if (!this.residents) return 0;
+             const allPayments = this.residents.flatMap(r => r.history);
+             const unique = new Map();
+             allPayments.forEach(p => unique.set(p.id, p));
+            return Array.from(unique.values()).filter(p => p.isPaidStrict).length;
         },
 
         login() {
             this.admin.error = '';
-            const foundAdmin = this.repository.admins.find(
-                a => (a.AdminUserName || a.adminusername) === this.admin.username && 
-                     (String(a.AdminPassword || a.adminpassword)) === this.admin.password
-            );
-
-            if (foundAdmin) {
-                this.admin.isLoggedIn = true;
-                this.admin.currentUser = this.admin.username;
-                this.admin.password = ''; 
-            } else {
-                this.admin.error = 'Invalid Credentials';
-            }
+            const foundAdmin = this.repository.admins.find(a => (a.AdminUserName) === this.admin.username && (String(a.AdminPassword)) === this.admin.password);
+            if (foundAdmin) { this.admin.isLoggedIn = true; this.admin.currentUser = this.admin.username; this.admin.password = ''; } 
+            else { this.admin.error = 'Invalid Credentials'; }
         },
-
-        logout() {
-            this.admin.isLoggedIn = false;
-            this.admin.currentUser = null;
-            this.view = 'home';
-        },
-
+        logout() { this.admin.isLoggedIn = false; this.admin.currentUser = null; this.view = 'home'; },
         async handleApprove(paymentId) {
             this.isSubmitting = true;
             const adminName = this.admin.currentUser || 'Admin';
             const success = await this.repository.updatePaymentStatus(paymentId, 'Paid', adminName, 'Approved via App');
-            
-            if (success) {
-                await this.fetchAndHydrate();
-                // Show Success Modal via State
-                this.admin.showSuccessModal = true;
-                setTimeout(() => { this.admin.showSuccessModal = false; }, 2000);
-            } else {
-                alert("Failed to update status.");
-            }
+            if (success) { await this.fetchAndHydrate(); this.admin.showSuccessModal = true; setTimeout(() => { this.admin.showSuccessModal = false; }, 2000); } 
+            else { alert("Failed to update status."); }
             this.isSubmitting = false;
         },
 
-        // --- SHARED UI HELPERS ---
-
         mapTransactionForDisplay(txn) {
             const resident = this.residents.find(r => r.flat === txn.flatNo);
-            
-            let displayResidentName = "Unknown Resident";
+            let displayResidentName = "Unknown";
             let payerType = "Owner"; 
+            let residentPhone = ""; 
 
             if (resident && resident.occupants.length > 0) {
                 const tenant = resident.occupants.find(o => o.type.toLowerCase() === 'tenant');
                 const owner = resident.occupants.find(o => o.type.toLowerCase() === 'owner');
-                
-                if (txn.isMonthly && tenant) {
-                    displayResidentName = tenant.name;
-                    payerType = "Tenant";
-                } else if (owner) {
-                    displayResidentName = owner.name;
-                    payerType = "Owner";
-                } else {
-                    displayResidentName = resident.occupants[0].name;
-                }
+                if (txn.isMonthly && tenant) { displayResidentName = tenant.name; payerType = "Tenant"; residentPhone = tenant.phone; } 
+                else if (owner) { displayResidentName = owner.name; payerType = "Owner"; residentPhone = owner.phone; } 
+                else { displayResidentName = resident.occupants[0].name; residentPhone = resident.occupants[0].phone; }
             } else if (resident) {
-                displayResidentName = `Flat ${resident.flat}`;
+                displayResidentName = "Unknown";
             }
 
             let displayPaymentFor = txn.category;
             if (txn.isMonthly) {
                 try {
                     const d = new Date(txn.rawMonth);
-                    if (!isNaN(d.getTime())) {
-                        displayPaymentFor = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-                    } else {
+                    if (!isNaN(d.getTime())) displayPaymentFor = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                    else {
                         const parts = txn.monthKey.split('-');
                         if (parts.length === 2) {
                             const temp = new Date(parseInt(parts[0]), parseInt(parts[1])-1, 1);
@@ -525,18 +507,37 @@ document.addEventListener('alpine:init', () => {
             }
 
             const fullDateTime = new Date(txn.rawDate).toLocaleString('en-GB', {
-                day: 'numeric', month: 'short', year: 'numeric', 
-                hour: '2-digit', minute: '2-digit', hour12: true
+                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
             }).toUpperCase();
 
+            let methodIcon = 'bi-credit-card-2-front-fill';
+            let methodColor = 'text-primary';
+            const m = txn.method.toLowerCase();
+            if(m.includes('upi') || m.includes('gpay') || m.includes('paytm')) { methodIcon = 'bi-qr-code'; methodColor = 'text-primary'; } 
+            else if (m.includes('cash')) { methodIcon = 'bi-cash-stack'; methodColor = 'text-success'; } 
+            else if (m.includes('bank') || m.includes('neft') || m.includes('cheque')) { methodIcon = 'bi-bank2'; methodColor = 'text-secondary'; }
+
+            let displayValidationTime = txn.validationTime || 'N/A';
+            if (txn.validationTime) {
+                try {
+                    const vDate = new Date(txn.validationTime);
+                    if (!isNaN(vDate.getTime())) displayValidationTime = vDate.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                } catch (e) {}
+            }
+
             return {
+                id: txn.id, 
                 ...txn,
                 isMonthly: txn.isMonthly,
                 displayFlat: resident ? resident.flat : txn.flatNo,
                 displayResidentName: displayResidentName,
                 displayPaymentFor: displayPaymentFor,
                 fullDateTime: fullDateTime,
-                payerType: payerType
+                displayValidationTime: displayValidationTime,
+                payerType: payerType,
+                residentPhone: residentPhone, 
+                methodIcon: methodIcon, 
+                methodColor: methodColor 
             };
         },
 
@@ -544,35 +545,46 @@ document.addEventListener('alpine:init', () => {
             const date = new Date();
             this.currentDate = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
         },
-
         calculatePendingMonths(startStr, amount, history) {
             const tempResident = new AppServices.Resident({}, [], history);
-            const tempSettings = new AppServices.Settings({
-                MonthlyMaintainenceStartFrom: startStr,
-                MonthlyMaintainenceAmount: amount
-            });
+            const tempSettings = new AppServices.Settings({ MonthlyMaintainenceStartFrom: startStr, MonthlyMaintainenceAmount: amount });
             return tempResident.getPendingMonthsList(tempSettings);
         },
-
+        
         get filteredResidents() {
             let data = this.residents || [];
             if (this.filterStatus === 'paid') data = data.filter(r => r.isPaid);
             if (this.filterStatus === 'unpaid') data = data.filter(r => !r.isPaid);
+            if (this.filterStatus === 'pending') {
+                data = data.filter(r => r.history.some(p => p.status.toLowerCase() === 'pending validation'));
+            }
+
             if (this.searchQuery) data = data.filter(r => r.searchStr.includes(this.searchQuery.toLowerCase()));
             return data;
         },
-
-        openHistory(resident) {
-            this.activeResident = resident;
-            const totalPaid = resident.history.filter(p => p.isPaidStrict).reduce((sum, p) => sum + p.amount, 0);
-            const pendingVal = resident.history.filter(p => p.isInReview).reduce((sum, p) => sum + p.amount, 0);
+       openHistory(resident) {
+            const totalPaid = resident.history.filter(p => p.isPaidStrict && p.isMonthly).reduce((sum, p) => sum + p.amount, 0);
+            const pendingVal = resident.history.filter(p => p.isInReview && p.isMonthly).reduce((sum, p) => sum + p.amount, 0);
+            
             const pendingList = resident.getPendingMonthsList(this.settings);
-            this.activeResident.stats = { totalPaid: totalPaid, pendingValidation: pendingVal, currentDue: resident.totalPendingDue };
-            this.activeResident.pendingList = pendingList; 
+            
+            resident.stats = { 
+                totalPaid: totalPaid, 
+                pendingValidation: pendingVal, 
+                currentDue: resident.totalPendingDue 
+            };
+            resident.pendingList = pendingList; 
+            
+            this.activeResident = resident;
+            
+            // RESET PAGINATION ON OPEN
+            this.historyQuery = '';
+            this.pageM = 1;
+            this.pageA = 1;
+
             this.view = 'history';
             window.scrollTo(0,0);
         },
-
         payPending(monthIso, amount) {
             this.resetTxnForm();
             this.txnForm.flatNo = this.activeResident.flat;
@@ -581,7 +593,6 @@ document.addEventListener('alpine:init', () => {
             this.txnForm.amount = amount;
             this.view = 'add';
         },
-
         resetTxnForm() {
             this.txnSuccess = false;
             this.txnForm.amount = '';
@@ -591,7 +602,6 @@ document.addEventListener('alpine:init', () => {
             this.txnForm.paymentDate = iso.slice(0, 16);
             this.txnForm.month = iso.slice(0, 7);
         },
-
         async saveTransaction() {
             this.isSubmitting = true;
             const success = await this.repository.addPayment(this.txnForm);
