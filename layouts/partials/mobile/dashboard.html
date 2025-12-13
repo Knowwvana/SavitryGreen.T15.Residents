@@ -39,18 +39,16 @@
 
                 <div class="row g-0">
                     
-                    <div class="col-5 border-end pe-1">
+                    <div class="col-6 border-end pe-2">
                         <div class="text-center mb-2">
                             <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1">
                                 <i class="bi bi-arrow-down-circle-fill me-1"></i>Collections
                             </span>
                         </div>
-                        
-                        <div class="d-flex justify-content-between px-1 mb-1 bg-light rounded py-1">
+                        <div class="d-flex justify-content-between px-2 mb-1 bg-light rounded py-1">
                             <small class="fw-bold text-muted text-uppercase" style="font-size: 0.5rem;">Month</small>
                             <small class="fw-bold text-muted text-uppercase" style="font-size: 0.5rem;">Amount</small>
                         </div>
-
                         <div class="d-flex flex-column gap-1">
                             <template x-for="m in dashboardStats.monthlyBreakdown">
                                 <div class="d-flex justify-content-between align-items-center pb-1 border-bottom border-light last:border-0 px-1">
@@ -65,25 +63,23 @@
                         </div>
                     </div>
 
-                    <div class="col-7 ps-1">
+                    <div class="col-6 ps-2">
                         <div class="text-center mb-2">
                             <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1">
                                 <i class="bi bi-arrow-up-circle-fill me-1"></i>Expenditure
                             </span>
                         </div>
-
                         <div class="row g-0 px-1 mb-1 bg-light rounded py-1">
                             <div class="col-5"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Title</small></div>
-                            <div class="col-4 text-center"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Date</small></div>
-                            <div class="col-3 text-end"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Amt</small></div>
+                            <div class="col-3 text-center"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Date</small></div>
+                            <div class="col-4 text-end"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Amt</small></div>
                         </div>
-
                         <div class="d-flex flex-column gap-1">
                             <template x-for="exp in dashboardStats.monthlyExpenditureBreakdown">
                                 <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
-                                    <div class="col-5 fw-bold text-dark text-wrap" style="font-size: 0.6rem; line-height: 1.1;" x-text="exp.category"></div>
-                                    <div class="col-4 text-center text-muted small" style="font-size: 0.55rem;" x-text="exp.date"></div>
-                                    <div class="col-3 text-end fw-bold text-danger" style="font-size: 0.65rem;" x-text="'₹' + exp.amount.toLocaleString('en-IN')"></div>
+                                    <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;" x-text="exp.category"></div>
+                                    <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;" x-text="exp.date"></div>
+                                    <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;" x-text="'₹' + exp.amount.toLocaleString('en-IN')"></div>
                                 </div>
                             </template>
                             <div x-show="dashboardStats.monthlyExpenditureBreakdown.length === 0" class="text-muted small fst-italic text-center" style="font-size: 0.6rem;">No expenditure records</div>
@@ -97,7 +93,7 @@
         <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
             <div class="bg-warning bg-opacity-10 border-bottom py-2 px-3 d-flex align-items-center gap-2">
                 <i class="bi bi-stars text-warning"></i>
-                <span class="text-warning text-dark fw-bold small text-uppercase" style="letter-spacing: 1px;">Adhoc / Events</span>
+                <span class="text-warning text-dark fw-bold small text-uppercase" style="letter-spacing: 1px;">Adhoc Event Summary</span>
             </div>
 
             <div class="p-3">
@@ -118,30 +114,38 @@
 
                 <hr class="border-light my-2">
 
-                <div class="d-flex flex-column">
-                    <template x-for="adhoc in dashboardStats.adhocBreakdown">
-                        <div class="d-flex justify-content-between align-items-center py-3 border-bottom border-light last:border-0">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center flex-shrink-0" 
-                                     style="width: 40px; height: 40px;">
-                                    <i class="bi bi-star-fill fs-5"></i>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold text-dark mb-0 text-break" style="font-size: 0.95rem;" x-text="adhoc.label"></h6>
-                                    <small class="text-muted" style="font-size: 0.7rem;">Event / Fund</small>
-                                </div>
-                            </div>
-                            
-                            <div class="text-end">
-                                <h5 class="fw-bold text-dark mb-0" x-text="'₹' + adhoc.amount.toLocaleString('en-IN')"></h5>
-                            </div>
-                        </div>
-                    </template>
+                <div>
+                     <div class="row g-0 bg-light rounded py-1 px-1 mb-1">
+                        <div class="col-3"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.65rem;">Purpose</small></div>
+                        <div class="col-3 text-center"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.65rem;">Date</small></div>
+                        <div class="col-2 text-end"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.65rem;">Collection</small></div>
+                        <div class="col-2 text-end"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.65rem;">Expenses</small></div>
+                        <div class="col-2 text-end"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.65rem;">Balance</small></div>
+                    </div>
 
-                    <div x-show="dashboardStats.adhocBreakdown.length === 0" class="text-center text-muted small fst-italic py-3">
-                        No adhoc records found
+                    <div class="d-flex flex-column gap-1">
+                        <template x-for="event in dashboardStats.adhocBreakdown">
+                            <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
+                                <div class="col-3 d-flex align-items-center gap-1 overflow-hidden">
+                                    <i class="bi bi-tag-fill text-warning flex-shrink-0" style="font-size: 0.65rem;"></i>
+                                    <div class="fw-bold text-dark text-wrap small" style="font-size: 0.75rem; line-height: 1.1;" x-text="event.title"></div>
+                                </div>
+                                <div class="col-3 text-center text-muted small" style="font-size: 0.7rem;" x-text="event.date"></div>
+                                <div class="col-2 text-end fw-bold text-dark" style="font-size: 0.75rem;" x-text="'₹' + event.collected.toLocaleString('en-IN')"></div>
+                                <div class="col-2 text-end fw-bold text-danger" style="font-size: 0.75rem;" x-text="'₹' + event.spent.toLocaleString('en-IN')"></div>
+                                <div class="col-2 text-end fw-bold" 
+                                     :class="event.balance >= 0 ? 'text-success' : 'text-danger'" 
+                                     style="font-size: 0.75rem;" 
+                                     x-text="'₹' + event.balance.toLocaleString('en-IN')"></div>
+                            </div>
+                        </template>
+
+                        <div x-show="dashboardStats.adhocBreakdown.length === 0" class="text-center text-muted small fst-italic py-2">
+                            No adhoc events found
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
 
