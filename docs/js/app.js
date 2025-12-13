@@ -34,7 +34,6 @@ document.addEventListener('alpine:init', () => {
         class Settings {
             constructor(data) {
                 this._config = data || {}; 
-
                 const formatMonthString = (dateValue) => {
                     if (!dateValue) return 'Sep-2025';
                     if (typeof dateValue === 'string' && (dateValue.includes('T') || dateValue.includes('Z'))) {
@@ -46,12 +45,10 @@ document.addEventListener('alpine:init', () => {
                     }
                     return String(dateValue);
                 };
-
                 if (this._config.MonthlyMaintainenceStartFrom) {
                     this._config.MonthlyMaintainenceStartFrom = formatMonthString(this._config.MonthlyMaintainenceStartFrom);
                 }
             }
-
             get societyName() { return this._config.SocietyName || 'Green Valley Heights'; }
             get societyAddress() { return this._config.SocietyAddress || 'Sector 42, Maintenance Drive'; }
             get monthlyFee() { return parseFloat(this._config.MonthlyMaintainenceAmount || 150); }
@@ -59,6 +56,30 @@ document.addEventListener('alpine:init', () => {
             
             get SocietyName() { return this.societyName; }
             get SocietyAddress() { return this.societyAddress; }
+        }
+
+        // --- UPDATED EXPENSE CLASS ---
+        class Expense {
+            constructor(data) {
+                this.id = safeString(data.ExpenseID);
+                this.title = safeString(data.Title || 'Expense');
+                this.type = safeString(data.Type || 'Monthly'); 
+                this.amount = parseFloat(data.Amount || 0);
+                this.date = data.Date; 
+                this.remarks = safeString(data.Remarks);
+            }
+
+            // Updated Format: 15.Oct.2025
+            get formattedDate() {
+                try {
+                    const d = new Date(this.date);
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '.');
+                } catch(e) { return ''; }
+            }
+            
+            get rawDateObj() {
+                return new Date(this.date);
+            }
         }
 
         class Payment {
@@ -73,7 +94,6 @@ document.addEventListener('alpine:init', () => {
                 this.title = safeString(data.Title);
                 this.remarks = safeString(data.Remarks);
                 this.method = safeString(data.PaymentMethod || 'UPI');
-                
                 this.validatedBy = safeString(data.ValidatedBy);
                 this.validationTime = safeString(data.ValidationTime);
                 this.validationComments = safeString(data.ValidationComments);
@@ -87,7 +107,6 @@ document.addEventListener('alpine:init', () => {
 
             get monthKey() {
                 if (!this.rawMonth) return '';
-                if (/^\d{4}-\d{2}$/.test(this.rawMonth)) return this.rawMonth;
                 try {
                     const d = new Date(this.rawMonth);
                     const adjustedDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
@@ -161,6 +180,7 @@ document.addEventListener('alpine:init', () => {
                 this.apiUrl = apiUrl;
                 this.residents = [];
                 this.admins = [];
+                this.expenditures = []; 
                 this.settings = new Settings({});
                 this.isLoading = false;
             }
@@ -175,9 +195,12 @@ document.addEventListener('alpine:init', () => {
                     const rawFlats = result.flats || [];
                     const rawResidents = result.residents || [];
                     const rawPayments = result.payments || [];
+                    const rawExpenses = result.expenditure || []; 
                     
                     this.settings = new Settings(result.settings);
                     this.admins = result.admins || []; 
+                    
+                    this.expenditures = rawExpenses.map(e => new Expense(e));
 
                     const allPayments = rawPayments.map(p => new Payment(p));
                     
@@ -194,8 +217,7 @@ document.addEventListener('alpine:init', () => {
                             
                             const pendingList = resident.getPendingMonthsList(this.settings);
                             resident.totalPendingDue = pendingList.reduce((sum, m) => sum + m.amount, 0);
-                            resident.isPaid = resident.totalPendingDue <= 0;
-
+                            
                             return resident;
                         } catch (e) { return null; }
                     }).filter(r => r !== null);
@@ -213,7 +235,6 @@ document.addEventListener('alpine:init', () => {
                 const paymentId = Date.now().toString(); 
                 let finalTitle = formData.title;
                 if (formData.category === 'Monthly') finalTitle = `Maint: ${formData.month}`; 
-
                 const payload = {
                     PaymentID: paymentId,
                     FlatNo: formData.flatNo,
@@ -226,7 +247,6 @@ document.addEventListener('alpine:init', () => {
                     Status: 'Pending Validation',
                     Remarks: formData.remarks 
                 };
-
                 try {
                     const response = await fetch(this.apiUrl + '?action=addPayment', {
                         method: 'POST',
@@ -235,10 +255,7 @@ document.addEventListener('alpine:init', () => {
                     });
                     const result = await response.json();
                     return result.success;
-                } catch (error) {
-                    console.error("Add Payment Error:", error);
-                    return false;
-                }
+                } catch (error) { return false; }
             }
 
             async updatePaymentStatus(paymentId, newStatus, adminName, comments) {
@@ -251,7 +268,6 @@ document.addEventListener('alpine:init', () => {
                     ValidationTime: timestamp,
                     ValidationComments: comments || ''
                 };
-
                 try {
                     const response = await fetch(this.apiUrl + '?action=updatePayment', {
                         method: 'POST',
@@ -260,10 +276,7 @@ document.addEventListener('alpine:init', () => {
                     });
                     const result = await response.json();
                     return result.success;
-                } catch (error) {
-                    console.error("Update Payment Error:", error);
-                    return false;
-                }
+                } catch (error) { return false; }
             }
         }
         
@@ -290,30 +303,15 @@ document.addEventListener('alpine:init', () => {
         limit: 10,
         txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '' },
 
-        // --- UPDATED DASHBOARD STATS STRUCTURE ---
+        // --- DASHBOARD STATS ---
         dashboardStats: {
             flatsCount: 0, ownersCount: 0, tenantsCount: 0, totalCollection: 0,
-            
-            // Monthly Section
-            monthlyTotal: 0,
-            monthlyBreakdown: [], // [{ label: 'Oct 2025', amount: 5000 }]
-            monthlySpent: 0,
-            monthlyCashInHand: 0,
-
-            // Adhoc Section
-            adhocTotal: 0,
-            adhocBreakdown: [], // [{ label: 'Renovation', amount: 2000 }]
-            adhocSpent: 0,
-            adhocCashInHand: 0,
-
-            pendingValidationTotal: 0,
-            recentTransactions: [], 
-            totalSpent: 0, cashInHand: 0
+            monthlyTotal: 0, monthlyBreakdown: [], monthlyExpenditureBreakdown: [], monthlySpent: 0, monthlyCashInHand: 0,
+            adhocTotal: 0, adhocBreakdown: [], adhocSpent: 0, adhocCashInHand: 0,
+            pendingValidationTotal: 0, recentTransactions: [], totalSpent: 0, cashInHand: 0
         },
 
-        admin: {
-            isLoggedIn: false, currentUser: null, username: '', password: '', error: '', tab: 'pending', showSuccessModal: false, searchPending: '', searchHistory: ''
-        },
+        admin: { isLoggedIn: false, currentUser: null, username: '', password: '', error: '', tab: 'pending', showSuccessModal: false, searchPending: '', searchHistory: '' },
 
         init() {
             this.updateDate();
@@ -330,7 +328,6 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = false; 
         },
 
-        // Getters for History
         get filteredMonthly() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
@@ -353,15 +350,14 @@ document.addEventListener('alpine:init', () => {
         },
         get totalPagesA() { return Math.ceil(this.filteredAdhoc.length / this.limit) || 1; },
 
+        // --- UPDATED STATS CALCULATION ---
         calculateDashboardStats() {
              const stats = {
                 flatsCount: this.residents.length,
                 ownersCount: 0, tenantsCount: 0,
                 totalCollection: 0, totalSpent: 0, cashInHand: 0,
-                
-                monthlyTotal: 0, monthlyBreakdown: [], monthlySpent: 0, monthlyCashInHand: 0,
+                monthlyTotal: 0, monthlyBreakdown: [], monthlyExpenditureBreakdown: [], monthlySpent: 0, monthlyCashInHand: 0,
                 adhocTotal: 0, adhocBreakdown: [], adhocSpent: 0, adhocCashInHand: 0,
-                
                 pendingValidationTotal: 0, recentTransactions: []
             };
 
@@ -381,43 +377,72 @@ document.addEventListener('alpine:init', () => {
              this.residents.forEach(r => { r.history.forEach(p => { if (p.id) uniquePayments.set(p.id, p); }); });
              const allPayments = Array.from(uniquePayments.values());
             
-             // Helpers for breakdown
-             const monthlyMap = {};
+             // MAPs for aggregation
+             const monthlyMap = new Map(); // Key: YYYY-MM, Value: Amount
              const adhocMap = {};
-
+             
+             // 1. Calculate Income (From Payments)
              allPayments.forEach(p => {
                 if (p.status.toLowerCase() === 'pending validation') stats.pendingValidationTotal += p.amount;
                 if (p.isPaidOrPendingValidation) {
                      stats.totalCollection += p.amount;
                      if(p.isMonthly) {
                         stats.monthlyTotal += p.amount;
-                        // Aggregate Monthly
-                        let mLabel = "Unknown";
-                        try {
-                            if (p.rawMonth) {
-                                const d = new Date(p.rawMonth);
-                                mLabel = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }); 
-                            } else {
-                                const d = new Date(p.rawDate);
-                                mLabel = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-                            }
-                        } catch(e) {}
-                        monthlyMap[mLabel] = (monthlyMap[mLabel] || 0) + p.amount;
+                        
+                        // Use monthKey (YYYY-MM) for sorting correctly
+                        const key = p.monthKey || 'Unknown';
+                        let current = monthlyMap.get(key) || { amount: 0, label: '' };
+                        
+                        // Generate Label if missing
+                        if (!current.label) {
+                            try {
+                                const d = p.rawMonth ? new Date(p.rawMonth) : new Date(p.rawDate);
+                                current.label = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+                            } catch(e) { current.label = 'Unknown'; }
+                        }
+                        
+                        current.amount += p.amount;
+                        monthlyMap.set(key, current);
                      }
                      else {
                         stats.adhocTotal += p.amount;
-                        // Aggregate Adhoc by Title/Category
                         const title = p.title || p.category || 'Other';
                         adhocMap[title] = (adhocMap[title] || 0) + p.amount;
                      }
                 }
              });
 
-             // Convert Maps to Arrays for Dashboard
-             stats.monthlyBreakdown = Object.keys(monthlyMap).map(k => ({ label: k, amount: monthlyMap[k] }));
+             // 2. Calculate Expenses (From Expenditures Sheet)
+             if (this.repository.expenditures && this.repository.expenditures.length > 0) {
+                 // Sort expenses by date descending for list view
+                 const sortedExpenses = this.repository.expenditures.sort((a,b) => b.rawDateObj - a.rawDateObj);
+
+                 sortedExpenses.forEach(exp => {
+                     stats.totalSpent += exp.amount;
+                     if (exp.type.toLowerCase() === 'monthly') {
+                         stats.monthlySpent += exp.amount;
+                         // Add to breakdown list
+                         stats.monthlyExpenditureBreakdown.push({
+                             category: exp.title, 
+                             date: exp.formattedDate,
+                             amount: exp.amount
+                         });
+                     } else {
+                         stats.adhocSpent += exp.amount;
+                     }
+                 });
+             }
+
+             // Convert Income Maps to Arrays & SORT
+             
+             // Sort Monthly Breakdown by Date Descending
+             const sortedMonthlyKeys = Array.from(monthlyMap.keys()).sort().reverse(); // YYYY-MM sorts alphabetically correctly
+             stats.monthlyBreakdown = sortedMonthlyKeys.map(key => monthlyMap.get(key));
+
+             // Adhoc breakdown (no date key usually, so standard object map)
              stats.adhocBreakdown = Object.keys(adhocMap).map(k => ({ label: k, amount: adhocMap[k] }));
 
-             // Calc Cash in Hand (Assuming 0 expense for now, or update if expense logic exists)
+             // Calc Cash in Hand
              stats.monthlyCashInHand = stats.monthlyTotal - stats.monthlySpent;
              stats.adhocCashInHand = stats.adhocTotal - stats.adhocSpent;
              stats.cashInHand = stats.monthlyCashInHand + stats.adhocCashInHand;
@@ -425,13 +450,13 @@ document.addEventListener('alpine:init', () => {
              stats.recentTransactions = allPayments.sort((a,b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0,50).map(txn => this.mapTransactionForDisplay(txn));
              this.dashboardStats = stats;
         },
-
+        
+        // ... (Remaining methods unchanged) ...
         openResidentByFlat(flatNo) {
             const resident = this.residents.find(r => r.flat === flatNo);
             if (resident) this.openHistory(resident);
         },
-        // ... (Keep other getters/methods like pendingValidationList, login, etc. SAME as before) ...
-         get pendingValidationList() {
+        get pendingValidationList() {
             if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
             const unique = new Map();

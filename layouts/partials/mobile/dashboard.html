@@ -39,14 +39,14 @@
 
                 <div class="row g-0">
                     
-                    <div class="col-6 border-end pe-2">
+                    <div class="col-5 border-end pe-1">
                         <div class="text-center mb-2">
                             <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1">
                                 <i class="bi bi-arrow-down-circle-fill me-1"></i>Collections
                             </span>
                         </div>
                         
-                        <div class="d-flex justify-content-between px-2 mb-1 bg-light rounded py-1">
+                        <div class="d-flex justify-content-between px-1 mb-1 bg-light rounded py-1">
                             <small class="fw-bold text-muted text-uppercase" style="font-size: 0.5rem;">Month</small>
                             <small class="fw-bold text-muted text-uppercase" style="font-size: 0.5rem;">Amount</small>
                         </div>
@@ -65,7 +65,7 @@
                         </div>
                     </div>
 
-                    <div class="col-6 ps-2">
+                    <div class="col-7 ps-1">
                         <div class="text-center mb-2">
                             <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1">
                                 <i class="bi bi-arrow-up-circle-fill me-1"></i>Expenditure
@@ -73,38 +73,20 @@
                         </div>
 
                         <div class="row g-0 px-1 mb-1 bg-light rounded py-1">
-                            <div class="col-5"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Category</small></div>
-                            <div class="col-3 text-center"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Date</small></div>
-                            <div class="col-4 text-end"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Amt</small></div>
+                            <div class="col-5"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Title</small></div>
+                            <div class="col-4 text-center"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Date</small></div>
+                            <div class="col-3 text-end"><small class="fw-bold text-muted text-uppercase d-block" style="font-size: 0.5rem;">Amt</small></div>
                         </div>
 
                         <div class="d-flex flex-column gap-1">
-                            
-                            <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
-                                <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;">Repair</div>
-                                <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;">10 Jan</div>
-                                <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;">₹500</div>
-                            </div>
-
-                            <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
-                                <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;">Bulb Repl.</div>
-                                <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;">15 Jan</div>
-                                <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;">₹250</div>
-                            </div>
-
-                            <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
-                                <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;">Cleaning</div>
-                                <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;">20 Jan</div>
-                                <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;">₹1,000</div>
-                            </div>
-
                             <template x-for="exp in dashboardStats.monthlyExpenditureBreakdown">
                                 <div class="row g-0 align-items-center pb-1 border-bottom border-light px-1">
-                                    <div class="col-5 fw-bold text-dark text-truncate" style="font-size: 0.65rem;" x-text="exp.category"></div>
-                                    <div class="col-3 text-center text-muted small" style="font-size: 0.55rem;" x-text="exp.date"></div>
-                                    <div class="col-4 text-end fw-bold text-danger" style="font-size: 0.65rem;" x-text="'₹' + exp.amount.toLocaleString('en-IN')"></div>
+                                    <div class="col-5 fw-bold text-dark text-wrap" style="font-size: 0.6rem; line-height: 1.1;" x-text="exp.category"></div>
+                                    <div class="col-4 text-center text-muted small" style="font-size: 0.55rem;" x-text="exp.date"></div>
+                                    <div class="col-3 text-end fw-bold text-danger" style="font-size: 0.65rem;" x-text="'₹' + exp.amount.toLocaleString('en-IN')"></div>
                                 </div>
                             </template>
+                            <div x-show="dashboardStats.monthlyExpenditureBreakdown.length === 0" class="text-muted small fst-italic text-center" style="font-size: 0.6rem;">No expenditure records</div>
                         </div>
                     </div>
 
