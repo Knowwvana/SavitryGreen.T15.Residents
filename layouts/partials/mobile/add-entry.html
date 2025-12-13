@@ -1,8 +1,5 @@
-<!-- NOTE: Main Header is now handled by header.html -->
-
 <div class="p-3 pb-5 bg-light min-vh-100">
     
-    <!-- 1. SUCCESS STATE VIEW -->
     <template x-if="txnSuccess">
         <div class="d-flex flex-column align-items-center justify-content-center text-center pt-5 mt-4 page-animate">
             <div class="mb-4 bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
@@ -10,25 +7,24 @@
             </div>
             
             <h3 class="fw-bold text-dark mb-2">Saved Successfully!</h3>
-            <p class="text-muted mb-5 px-4">The payment has been recorded and is pending validation.</p>
+            <p class="text-muted mb-5 px-4" x-text="admin.isLoggedIn ? 'Payment recorded and marked as Paid.' : 'The payment has been recorded and is pending validation.'"></p>
 
             <div class="w-100 px-2 d-flex flex-column gap-3">
                 <button class="btn btn-primary btn-lg rounded-pill py-3 fw-bold shadow-sm" @click="resetTxnForm()">
                     <i class="bi bi-plus-lg me-2"></i> Add New Entry
                 </button>
                 
-                <button class="btn btn-white btn-lg rounded-pill py-3 fw-bold border shadow-sm text-muted" @click="view = 'residents'; txnSuccess = false;">
+                <button class="btn btn-white btn-lg rounded-pill py-3 fw-bold border shadow-sm text-muted" 
+                        @click="view = admin.isLoggedIn ? 'validate' : 'residents'; txnSuccess = false;">
                     Close Form
                 </button>
             </div>
         </div>
     </template>
 
-    <!-- 2. FORM STATE VIEW -->
     <template x-if="!txnSuccess">
         <div class="d-flex flex-column gap-3">
             
-            <!-- HERO AMOUNT INPUT -->
             <div class="card border-0 shadow-sm rounded-4 mb-2 overflow-hidden">
                 <div class="card-body p-4 text-center bg-white">
                     <label class="text-uppercase fw-bold text-muted small mb-2" style="letter-spacing: 1px;">Amount Received</label>
@@ -42,7 +38,6 @@
                 </div>
             </div>
 
-            <!-- FLAT SELECTION -->
             <div>
                 <label class="form-label small fw-bold text-muted ms-1">Resident / Flat</label>
                 <div class="card border-0 shadow-sm rounded-4">
@@ -58,7 +53,6 @@
                 </div>
             </div>
 
-            <!-- CATEGORY TOGGLE (Radio Style) -->
             <div>
                 <label class="form-label small fw-bold text-muted ms-1">Payment Category</label>
                 <div class="bg-white p-1 rounded-4 border shadow-sm d-flex">
@@ -75,9 +69,7 @@
                 </div>
             </div>
 
-            <!-- MONTH & TITLE LOGIC -->
             <div class="row g-3">
-                <!-- Month Picker (Colorful & Clickable) -->
                 <div class="col-12">
                     <label class="form-label small fw-bold text-muted ms-1">For Month</label>
                     <input type="month" x-model="txnForm.month" 
@@ -85,14 +77,12 @@
                            onclick="this.showPicker()">
                 </div>
 
-                <!-- Conditional Title (Only for Adhoc) -->
                 <div class="col-12" x-show="txnForm.category === 'Adhoc'" x-transition>
                     <label class="form-label small fw-bold text-muted ms-1">Title / Purpose</label>
                     <input type="text" x-model="txnForm.title" class="form-control border-0 shadow-sm rounded-4 py-3 bg-white" placeholder="e.g. Diwali Donation">
                 </div>
             </div>
 
-            <!-- DATE & TIME (Colorful & Clickable) -->
             <div>
                 <label class="form-label small fw-bold text-muted ms-1">Payment Date & Time</label>
                 <input type="datetime-local" x-model="txnForm.paymentDate" 
@@ -100,7 +90,6 @@
                        onclick="this.showPicker()">
             </div>
 
-            <!-- PAYMENT METHOD -->
             <div>
                 <label class="form-label small fw-bold text-muted ms-1">Method</label>
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -113,13 +102,11 @@
                 </div>
             </div>
 
-            <!-- REMARKS -->
             <div>
                 <label class="form-label small fw-bold text-muted ms-1">Remarks</label>
                 <textarea x-model="txnForm.remarks" class="form-control border-0 shadow-sm rounded-4 p-3 bg-white" rows="2" placeholder="Any additional notes..."></textarea>
             </div>
 
-            <!-- SUBMIT BUTTON -->
             <div class="pt-2 pb-4">
                 <button class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2"
                         :disabled="isSubmitting || !txnForm.amount || !txnForm.flatNo"
