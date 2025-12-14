@@ -22,6 +22,7 @@ document.addEventListener('alpine:init', () => {
         };
 
         const safeString = (val) => String(val !== null && val !== undefined ? val : '').trim();
+
         const normalizeFlat = (val) => {
             const s = safeString(val);
             const n = Number(s);
@@ -29,6 +30,7 @@ document.addEventListener('alpine:init', () => {
         };
 
         // --- DOMAIN MODELS ---
+
         class Settings {
             constructor(data) {
                 this._config = data || {}; 
@@ -47,13 +49,11 @@ document.addEventListener('alpine:init', () => {
                     this._config.MonthlyMaintainenceStartFrom = formatMonthString(this._config.MonthlyMaintainenceStartFrom);
                 }
             }
-            // Getters for internal logic
             get societyName() { return this._config.SocietyName || 'Green Valley Heights'; }
             get societyAddress() { return this._config.SocietyAddress || 'Sector 42, Maintenance Drive'; }
             get monthlyFee() { return parseFloat(this._config.MonthlyMaintainenceAmount || 150); }
             get startMonthStr() { return this._config.MonthlyMaintainenceStartFrom || 'Sep-2025'; }
             
-            // --- FIX: Expose Uppercase properties for HTML (header.html) ---
             get SocietyName() { return this.societyName; }
             get SocietyAddress() { return this.societyAddress; }
         }
@@ -67,18 +67,25 @@ document.addEventListener('alpine:init', () => {
                 this.date = data.Date; 
                 this.remarks = safeString(data.Remarks);
             }
+
             get formattedDate() {
                 try {
                     const d = new Date(this.date);
                     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '.');
                 } catch(e) { return ''; }
             }
-            get rawDateObj() { return new Date(this.date); }
+            
+            get rawDateObj() {
+                return new Date(this.date);
+            }
         }
 
         class Payment {
             constructor(data) {
-                this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") ? String(data.PaymentID) : ('temp_' + Math.random().toString(36).substr(2, 9));
+                this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") 
+                          ? String(data.PaymentID) 
+                          : ('temp_' + Math.random().toString(36).substr(2, 9));
+                
                 this.amount = parseFloat(data.Amount || 0);
                 this.status = safeString(data.Status || 'Pending');
                 this.category = safeString(data.Category || 'Maintenance');
@@ -87,11 +94,15 @@ document.addEventListener('alpine:init', () => {
                 this.method = safeString(data.PaymentMethod || 'UPI');
                 this.validatedBy = safeString(data.ValidatedBy);
                 this.validationTime = safeString(data.ValidationTime);
+                this.validationComments = safeString(data.ValidationComments);
+                
                 this.rawDate = data.PaymentDate;
                 this.rawMonth = data.Month;
                 this.flatNo = normalizeFlat(data.FlatNo);
+
                 this.type = (this.category.toLowerCase() === 'monthly') ? 'Monthly' : this.category;
             }
+
             get monthKey() {
                 if (!this.rawMonth) return '';
                 try {
@@ -103,6 +114,7 @@ document.addEventListener('alpine:init', () => {
                 } catch(e) {}
                 return '';
             }
+
             get isPaidStrict() { return this.status.toLowerCase() === 'paid'; }
             get isInReview() { const s = this.status.toLowerCase(); return s !== 'paid' && s !== 'rejected'; }
             get isPaidOrPendingValidation() { const s = this.status.toLowerCase(); return s === 'paid' || s === 'pending validation'; }
@@ -113,34 +125,42 @@ document.addEventListener('alpine:init', () => {
             constructor(flatData, rawResidentData, paymentHistory) {
                 this.flat = normalizeFlat(flatData.FlatNo);
                 this.due = parseFloat(flatData.Due || 0);
+                
                 const nFlat = parseInt(this.flat);
                 let floorVal = !isNaN(nFlat) ? Math.floor(nFlat / 100) : 0;
                 this.floor = (floorVal === 0) ? 'Ground' : String(floorVal);
                 this.tower = '15'; 
+
                 this.occupants = (rawResidentData || []).map(r => ({
                     name: safeString(r.Name || 'Unknown'),
                     phone: safeString(r.Phone),
                     email: safeString(r.Email), 
                     type: safeString(r.ResidentType || 'Owner')
                 }));
+
                 this.history = paymentHistory || []; 
                 this.lastPayment = this.history.length > 0 ? this.history[0] : null; 
             }
+
             getPendingMonthsList(settings) {
                 const startStr = settings.startMonthStr;
                 const monthlyAmount = settings.monthlyFee;
                 const parts = startStr.split('-');
                 if (parts.length !== 2) return [];
+
                 let startMonth = MONTHS_MAP[parts[0].trim().toLowerCase().substring(0, 3)];
                 let startYear = parseInt(parts[1]);
                 if (startMonth === undefined) return [];
+                
                 const now = new Date();
                 const endYear = now.getFullYear();
                 const endMonth = now.getMonth();
+                
                 let list = [];
                 let currY = startYear;
                 let currM = startMonth;
                 let safety = 0;
+
                 while ((currY < endYear || (currY === endYear && currM <= endMonth)) && safety < 120) {
                     const monthKey = `${currY}-${String(currM + 1).padStart(2, '0')}`;
                     const isPaid = this.history.some(p => p.isMonthly && p.isPaidOrPendingValidation && p.monthKey === monthKey);
@@ -162,39 +182,53 @@ document.addEventListener('alpine:init', () => {
                 this.settings = new Settings({});
                 this.isLoading = false;
             }
+
             async fetchData() {
                 this.isLoading = true;
                 try {
                     if (!this.apiUrl) throw new Error("API URL Missing");
                     const response = await fetch(this.apiUrl + '?action=getData'); 
                     const result = await response.json();
+
+                    const rawFlats = result.flats || [];
+                    const rawResidents = result.residents || [];
+                    const rawPayments = result.payments || [];
+                    const rawExpenses = result.expenditure || []; 
                     
                     this.settings = new Settings(result.settings);
                     this.admins = result.admins || []; 
                     
-                    const rawExpenses = result.expenditure || []; 
                     this.expenditures = rawExpenses.map(e => new Expense(e));
 
-                    const allPayments = (result.payments || []).map(p => new Payment(p));
-                    const rawResidents = result.residents || [];
+                    const allPayments = rawPayments.map(p => new Payment(p));
                     
-                    this.residents = (result.flats || []).map((f, index) => {
+                    this.residents = rawFlats.map((f, index) => {
                         try {
                             const matchKey = normalizeFlat(f.FlatNo);
-                            const residentPayments = allPayments.filter(p => p.flatNo === matchKey).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
+                            const residentPayments = allPayments.filter(p => p.flatNo === matchKey)
+                                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
                             const residentData = rawResidents.filter(r => normalizeFlat(r.FlatNo) === matchKey);
                             const resident = new Resident(f, residentData, residentPayments);
+                            
                             resident.id = index;
                             resident.searchStr = `${resident.flat} ${resident.occupants.map(o => o.name).join(' ')}`.toLowerCase();
+                            
                             const pendingList = resident.getPendingMonthsList(this.settings);
                             resident.totalPendingDue = pendingList.reduce((sum, m) => sum + m.amount, 0);
+                            
                             return resident;
                         } catch (e) { return null; }
                     }).filter(r => r !== null);
+
                     return true;
-                } catch (error) { console.error("Fetch Error:", error); return false; } 
-                finally { this.isLoading = false; }
+                } catch (error) {
+                    console.error("Fetch API Error:", error);
+                    return false; 
+                } finally {
+                    this.isLoading = false;
+                }
             }
+
             async addPayment(formData, extraData = {}) {
                 const paymentId = Date.now().toString(); 
                 let finalTitle = formData.title;
@@ -211,35 +245,57 @@ document.addEventListener('alpine:init', () => {
                     PaymentMethod: formData.method,
                     Remarks: formData.remarks,
                     
-                    // Fields from Extra Data
                     Status: extraData.status || 'Pending Validation',
                     ValidatedBy: extraData.validatedBy || '',
                     ValidationTime: extraData.validationTime || '',
                     ValidationComments: extraData.validationComments || '',
                     
-                    // NEW: Capture timestamp for script
                     EntryAddedDate: new Date().toLocaleString()
                 };
+
                 try {
-                    const response = await fetch(this.apiUrl + '?action=addPayment', { method: 'POST', body: JSON.stringify(payload) });
+                    const response = await fetch(this.apiUrl + '?action=addPayment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
                     const result = await response.json();
                     return result.success;
-                } catch (error) { return false; }
+                } catch (error) {
+                    console.error("Add Payment Error:", error);
+                    return false;
+                }
             }
+
             async updatePaymentStatus(paymentId, newStatus, adminName, comments) {
-                const payload = { action: 'UPDATE', PaymentID: paymentId, Status: newStatus, ValidatedBy: adminName, ValidationTime: new Date().toLocaleString(), ValidationComments: comments || '' };
+                const timestamp = new Date().toLocaleString();
+                const payload = {
+                    action: 'UPDATE', 
+                    PaymentID: paymentId,
+                    Status: newStatus,
+                    ValidatedBy: adminName,
+                    ValidationTime: timestamp,
+                    ValidationComments: comments || ''
+                };
+
                 try {
-                    const response = await fetch(this.apiUrl + '?action=updatePayment', { method: 'POST', body: JSON.stringify(payload) });
+                    const response = await fetch(this.apiUrl + '?action=updatePayment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
                     const result = await response.json();
                     return result.success;
-                } catch (error) { return false; }
+                } catch (error) {
+                    console.error("Update Payment Error:", error);
+                    return false;
+                }
             }
         }
         
         return { SocietyRepository, LocalTimeHelper, Resident, Settings };
     })();
 
-    // --- ALPINE COMPONENT ---
     window.societyApp = (api_url) => ({
         repository: new AppServices.SocietyRepository(api_url),
         getLocalISOString: AppServices.LocalTimeHelper.getLocalISOString,
@@ -262,8 +318,12 @@ document.addEventListener('alpine:init', () => {
 
         dashboardStats: {
             flatsCount: 0, ownersCount: 0, tenantsCount: 0, totalCollection: 0,
-            monthlyTotal: 0, monthlyBreakdown: [], monthlyExpenditureBreakdown: [], monthlySpent: 0, monthlyCashInHand: 0,
+            
+            monthlyTotal: 0, monthlyPaid: 0, monthlyPending: 0, // Updated Init
+            monthlyBreakdown: [], monthlyExpenditureBreakdown: [], monthlySpent: 0, monthlyCashInHand: 0,
+            
             adhocTotal: 0, adhocBreakdown: [], adhocExpenditureBreakdown: [], adhocSpent: 0, adhocCashInHand: 0,
+            
             pendingValidationTotal: 0, recentTransactions: [], totalSpent: 0, cashInHand: 0
         },
 
@@ -299,62 +359,39 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = false; 
         },
 
-        // --- UPDATED SAVE TRANSACTION ---
-        async saveTransaction() {
-            this.isSubmitting = true;
-            
-            // ADMIN OVERRIDE LOGIC
-            let status = 'Pending Validation';
-            let validatedBy = '';
-            let validationTime = '';
-            let validationComments = '';
-
-            // Check if user is logged in as Admin
-            if (this.admin.isLoggedIn) {
-                status = 'Paid';
-                validatedBy = this.admin.currentUser || 'Admin';
-                validationTime = new Date().toLocaleString();
-                validationComments = 'Added directly by Admin';
-            }
-
-            const extraData = { status, validatedBy, validationTime, validationComments };
-
-            const success = await this.repository.addPayment(this.txnForm, extraData);
-            if (success) { 
-                await this.fetchAndHydrate(); 
-                this.txnSuccess = true; 
-                // Scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } 
-            else { this.txnSuccess = false; alert("Failed to save. Try again."); }
-            this.isSubmitting = false;
+        // ... (Getters for filteredMonthly, etc. - UNCHANGED)
+        get filteredMonthly() {
+            if (!this.activeResident || !this.activeResident.history) return [];
+            const q = (this.historyQuery || '').toLowerCase();
+            return this.activeResident.history.filter(h => h.isMonthly && (!q || (String(h.amount)+h.method+h.remarks+(h.rawMonth||'')).toLowerCase().includes(q)));
         },
-
-        async handleApprove(paymentId) {
-            this.isSubmitting = true;
-            const adminName = this.admin.currentUser || 'Admin';
-            const success = await this.repository.updatePaymentStatus(paymentId, 'Paid', adminName, 'Approved via App');
-            if (success) { await this.fetchAndHydrate(); this.admin.showSuccessModal = true; setTimeout(() => { this.admin.showSuccessModal = false; }, 2000); } 
-            else { alert("Failed to update status."); }
-            this.isSubmitting = false;
+        get paginatedMonthly() {
+            const start = (this.pageM - 1) * this.limit;
+            return this.filteredMonthly.slice(start, start + this.limit);
         },
+        get totalPagesM() { return Math.ceil(this.filteredMonthly.length / this.limit) || 1; },
 
-        login() {
-            this.admin.error = '';
-            const foundAdmin = this.repository.admins.find(a => (a.AdminUserName) === this.admin.username && (String(a.AdminPassword)) === this.admin.password);
-            if (foundAdmin) { this.admin.isLoggedIn = true; this.admin.currentUser = this.admin.username; this.admin.password = ''; } 
-            else { this.admin.error = 'Invalid Credentials'; }
+        get filteredAdhoc() {
+            if (!this.activeResident || !this.activeResident.history) return [];
+            const q = (this.historyQuery || '').toLowerCase();
+            return this.activeResident.history.filter(h => !h.isMonthly && (!q || (h.category+(h.title||'')+String(h.amount)+h.method+h.remarks).toLowerCase().includes(q)));
         },
-        logout() { this.admin.isLoggedIn = false; this.admin.currentUser = null; this.view = 'home'; },
+        get paginatedAdhoc() {
+            const start = (this.pageA - 1) * this.limit;
+            return this.filteredAdhoc.slice(start, start + this.limit);
+        },
+        get totalPagesA() { return Math.ceil(this.filteredAdhoc.length / this.limit) || 1; },
 
-        // --- DASHBOARD CALCULATIONS (Unchanged from previous robust version) ---
         calculateDashboardStats() {
              const stats = {
                 flatsCount: this.residents.length,
                 ownersCount: 0, tenantsCount: 0,
                 totalCollection: 0, totalSpent: 0, cashInHand: 0,
-                monthlyTotal: 0, monthlyBreakdown: [], monthlyExpenditureBreakdown: [], monthlySpent: 0, monthlyCashInHand: 0,
+                
+                monthlyTotal: 0, monthlyPaid: 0, monthlyPending: 0, // Reset these
+                monthlyBreakdown: [], monthlyExpenditureBreakdown: [], monthlySpent: 0, monthlyCashInHand: 0,
                 adhocTotal: 0, adhocBreakdown: [], adhocExpenditureBreakdown: [], adhocSpent: 0, adhocCashInHand: 0,
+                
                 pendingValidationTotal: 0, recentTransactions: []
             };
 
@@ -377,12 +414,18 @@ document.addEventListener('alpine:init', () => {
              const monthlyMap = new Map(); 
              const adhocSummaryMap = new Map(); 
 
+             // 1. Income
              allPayments.forEach(p => {
                 if (p.status.toLowerCase() === 'pending validation') stats.pendingValidationTotal += p.amount;
                 if (p.isPaidOrPendingValidation) {
                      stats.totalCollection += p.amount;
                      if(p.isMonthly) {
                         stats.monthlyTotal += p.amount;
+                        
+                        // NEW LOGIC: Breakdown Paid vs Pending
+                        if (p.isPaidStrict) stats.monthlyPaid += p.amount;
+                        else stats.monthlyPending += p.amount;
+
                         const key = p.monthKey || 'Unknown';
                         let current = monthlyMap.get(key) || { amount: 0, label: '' };
                         if (!current.label) {
@@ -395,30 +438,41 @@ document.addEventListener('alpine:init', () => {
                         monthlyMap.set(key, current);
                      }
                      else {
+                        // ADHOC INCOME
                         stats.adhocTotal += p.amount;
                         const title = p.title || p.category || 'Other';
+                        
                         if (!adhocSummaryMap.has(title)) adhocSummaryMap.set(title, { collected: 0, spent: 0, lastDateObj: null });
                         const entry = adhocSummaryMap.get(title);
                         entry.collected += p.amount;
+                        
                         const pDate = new Date(p.rawDate);
                         if (!entry.lastDateObj || pDate > entry.lastDateObj) entry.lastDateObj = pDate;
                      }
                 }
              });
 
+             // 2. Expenses (Unchanged)
              if (this.repository.expenditures && this.repository.expenditures.length > 0) {
                  const sortedExpenses = this.repository.expenditures.sort((a,b) => b.rawDateObj - a.rawDateObj);
+
                  sortedExpenses.forEach(exp => {
                      stats.totalSpent += exp.amount;
                      if (exp.type.toLowerCase() === 'monthly') {
                          stats.monthlySpent += exp.amount;
-                         stats.monthlyExpenditureBreakdown.push({ category: exp.title, date: exp.formattedDate, amount: exp.amount });
+                         stats.monthlyExpenditureBreakdown.push({
+                             category: exp.title, 
+                             date: exp.formattedDate,
+                             amount: exp.amount
+                         });
                      } else {
                          stats.adhocSpent += exp.amount;
                          const title = exp.title || 'Other';
+
                          if (!adhocSummaryMap.has(title)) adhocSummaryMap.set(title, { collected: 0, spent: 0, lastDateObj: null });
                          const entry = adhocSummaryMap.get(title);
                          entry.spent += exp.amount;
+
                          const eDate = exp.rawDateObj; 
                          if (!entry.lastDateObj || eDate > entry.lastDateObj) entry.lastDateObj = eDate;
                      }
@@ -451,6 +505,7 @@ document.addEventListener('alpine:init', () => {
              this.dashboardStats = stats;
         },
 
+        // ... (Rest of component functions: openResidentByFlat, payPending, saveTransaction, etc. - UNCHANGED) ...
         openResidentByFlat(flatNo) {
             const resident = this.residents.find(r => r.flat === flatNo);
             if (resident) this.openHistory(resident);
@@ -468,26 +523,6 @@ document.addEventListener('alpine:init', () => {
             const tempSettings = new AppServices.Settings({ MonthlyMaintainenceStartFrom: startStr, MonthlyMaintainenceAmount: amount });
             return tempResident.getPendingMonthsList(tempSettings);
         },
-        get filteredMonthly() {
-            if (!this.activeResident || !this.activeResident.history) return [];
-            const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history.filter(h => h.isMonthly && (!q || (String(h.amount)+h.method+h.remarks+(h.rawMonth||'')).toLowerCase().includes(q)));
-        },
-        get paginatedMonthly() {
-            const start = (this.pageM - 1) * this.limit;
-            return this.filteredMonthly.slice(start, start + this.limit);
-        },
-        get totalPagesM() { return Math.ceil(this.filteredMonthly.length / this.limit) || 1; },
-        get filteredAdhoc() {
-            if (!this.activeResident || !this.activeResident.history) return [];
-            const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history.filter(h => !h.isMonthly && (!q || (h.category+(h.title||'')+String(h.amount)+h.method+h.remarks).toLowerCase().includes(q)));
-        },
-        get paginatedAdhoc() {
-            const start = (this.pageA - 1) * this.limit;
-            return this.filteredAdhoc.slice(start, start + this.limit);
-        },
-        get totalPagesA() { return Math.ceil(this.filteredAdhoc.length / this.limit) || 1; },
         get filteredResidents() {
             let data = this.residents || [];
             if (this.filterStatus === 'paid') data = data.filter(r => r.isPaid);
@@ -564,7 +599,43 @@ document.addEventListener('alpine:init', () => {
             this.view = 'history';
             window.scrollTo(0,0);
         },
-        // --- MAPPER ---
+        async saveTransaction() {
+            this.isSubmitting = true;
+            let status = 'Pending Validation';
+            let validatedBy = '';
+            let validationTime = '';
+            let validationComments = '';
+            if (this.admin.isLoggedIn) {
+                status = 'Paid';
+                validatedBy = this.admin.currentUser || 'Admin';
+                validationTime = new Date().toLocaleString();
+                validationComments = 'Added directly by Admin';
+            }
+            const extraData = { status, validatedBy, validationTime, validationComments };
+            const success = await this.repository.addPayment(this.txnForm, extraData);
+            if (success) { 
+                await this.fetchAndHydrate(); 
+                this.txnSuccess = true; 
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } 
+            else { this.txnSuccess = false; alert("Failed to save. Try again."); }
+            this.isSubmitting = false;
+        },
+        async handleApprove(paymentId) {
+            this.isSubmitting = true;
+            const adminName = this.admin.currentUser || 'Admin';
+            const success = await this.repository.updatePaymentStatus(paymentId, 'Paid', adminName, 'Approved via App');
+            if (success) { await this.fetchAndHydrate(); this.admin.showSuccessModal = true; setTimeout(() => { this.admin.showSuccessModal = false; }, 2000); } 
+            else { alert("Failed to update status."); }
+            this.isSubmitting = false;
+        },
+        login() {
+            this.admin.error = '';
+            const foundAdmin = this.repository.admins.find(a => (a.AdminUserName) === this.admin.username && (String(a.AdminPassword)) === this.admin.password);
+            if (foundAdmin) { this.admin.isLoggedIn = true; this.admin.currentUser = this.admin.username; this.admin.password = ''; } 
+            else { this.admin.error = 'Invalid Credentials'; }
+        },
+        logout() { this.admin.isLoggedIn = false; this.admin.currentUser = null; this.view = 'home'; },
         mapTransactionForDisplay(txn) {
             const resident = this.residents.find(r => r.flat === txn.flatNo);
             let displayResidentName = "Unknown";
