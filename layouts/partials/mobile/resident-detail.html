@@ -1,68 +1,84 @@
 <div class="d-flex flex-column h-100 bg-light">
 
-    <div class="bg-white p-3 shadow-sm rounded-bottom-4 border-bottom mb-3 position-relative">
-        <div class="row g-0 align-items-start">
+    <div class="flex-grow-1 overflow-auto pb-5">
 
-            <div class="col-5 border-end pe-2 d-flex flex-column">
-                <h2 class="fw-bold text-dark mb-0 lh-1">
-                    <h6 class="text-secondary small fw-bold mb-2 text-uppercase">Flat Details</h6>
-                </h2>
-                <div class="mt-2 text-secondary small fw-medium">
-                    <div class="d-flex align-items-center gap-1 mb-1">
-                        <i class="bi bi-layers-fill text-primary"></i>
-                        <span>Flat No <span x-text="activeResident.flat"></span></span>
-                    </div>
-                    <div class="d-flex align-items-center gap-1 mb-1">
-                        <i class="bi bi-layers-fill text-primary"></i>
-                        <span>Floor <span x-text="activeResident.floor"></span></span>
-                    </div>
-                    <div class="d-flex align-items-center gap-1">
-                        <i class="bi bi-building-fill text-danger"></i>
-                        <span>Tower <span x-text="activeResident.tower"></span></span>
+        <div class="bg-white p-3 shadow-sm rounded-bottom-4 border-bottom mb-3 position-relative">
+            <div class="row g-0 align-items-start">
+
+                <div class="col-5 border-end pe-2 d-flex flex-column">
+                    <button class="btn btn-light btn-sm rounded-circle shadow-sm border mb-2 me-auto" 
+                            @click="view = 'residents'" style="width: 32px; height: 32px;">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    
+                    <h2 class="fw-bold text-dark mb-0 lh-1">
+                        <span class="fs-6 text-muted fw-normal d-block mb-1">Flat</span>
+                        <span x-text="activeResident.flat"></span>
+                    </h2>
+                    
+                    <div class="mt-2 text-secondary small fw-medium">
+                        <div class="d-flex align-items-center gap-1 mb-1">
+                            <i class="bi bi-layers-fill text-primary"></i>
+                            <span>Floor <span x-text="activeResident.floor"></span></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <i class="bi bi-building-fill text-danger"></i>
+                            <span>Tower <span x-text="activeResident.tower"></span></span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-
-            <div class="col-7 ps-3">
-                <h6 class="text-secondary small fw-bold mb-2 text-uppercase">Resident(s) Details</h6>
-                <div class="d-flex flex-column gap-2 overflow-auto" style="max-height: 140px;">
-                    <template x-for="p in activeResident.occupants">
-                        <div class="d-flex align-items-center justify-content-between bg-light rounded-3 p-2 border">
-                            <div class="d-flex align-items-center gap-2 overflow-hidden" style="min-width: 0;">
-                                <span class="fw-bold small text-uppercase"
-                                    :class="p.type.toLowerCase() === 'owner' ? 'text-success' : 'text-danger'"
-                                    style="font-size: 0.75rem;" x-text="p.type"></span>
-                                <div class="flex-shrink-0">
-                                    <i class="bi"
-                                        :class="p.type.toLowerCase() === 'owner' ? 'bi-house-fill text-success' : 'bi-person-fill text-warning'"></i>
+                <div class="col-7 ps-3">
+                    <h6 class="text-secondary small fw-bold mb-2 text-uppercase">Resident(s) Details</h6>
+                    
+                    <div class="d-flex flex-column gap-2 overflow-auto" style="max-height: 220px;">
+                        <template x-for="p in activeResident.occupants">
+                            <div class="bg-light rounded-3 p-2 border w-100">
+                                <div class="d-flex align-items-start gap-2 mb-1">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <i class="bi" :class="p.type.toLowerCase() === 'owner' ? 'bi-house-fill text-success' : 'bi-person-fill text-warning'"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-bold small text-uppercase d-block lh-1 mb-1"
+                                              :class="p.type.toLowerCase() === 'owner' ? 'text-success' : 'text-danger'"
+                                              style="font-size: 0.65rem;" x-text="p.type"></span>
+                                        <div class="fw-bold text-dark small text-wrap lh-sm" x-text="p.name"></div>
+                                    </div>
                                 </div>
-                                <div class="fw-bold text-dark small text-truncate" x-text="p.name"></div>
+                                <div class="d-flex align-items-center gap-2 mt-2" x-show="p.phone">
+                                    <div class="flex-shrink-0 text-center" style="width: 16px;">
+                                        <i class="bi bi-phone-fill text-primary" style="font-size: 0.9rem;"></i>
+                                    </div>
+                                    <div class="small text-muted fw-medium flex-grow-1 text-break" x-text="p.phone"></div>
+                                    <div class="d-flex gap-3 flex-shrink-0">
+                                        <a :href="'tel:' + p.phone" class="text-primary text-decoration-none"><i class="bi bi-telephone-fill"></i></a>
+                                        <a :href="'https://wa.me/91' + p.phone" class="text-success text-decoration-none"><i class="bi bi-whatsapp"></i></a>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mt-1" x-show="p.email">
+                                    <div class="flex-shrink-0 text-center" style="width: 16px;">
+                                        <i class="bi bi-envelope-fill text-secondary" style="font-size: 0.9rem;"></i>
+                                    </div>
+                                    <div class="small text-muted fw-medium text-break flex-grow-1" style="font-size: 0.75rem; line-height: 1.2;" x-text="p.email"></div>
+                                    <div class="flex-shrink-0">
+                                        <a :href="'mailto:' + p.email" class="text-danger text-decoration-none"><i class="bi bi-envelope-at-fill"></i></a>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="d-flex gap-2 ms-1 flex-shrink-0">
-                                <a :href="'tel:' + p.phone" class="text-primary"><i
-                                        class="bi bi-telephone-fill"></i></a>
-                                <a :href="'https://wa.me/91' + p.phone" class="text-success"><i
-                                        class="bi bi-whatsapp"></i></a>
-                            </div>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="flex-grow-1 overflow-auto pb-5">
 
         <div class="px-3 mb-3">
-            <div class="d-flex align-items-center gap-2 mb-2 ps-1">
+             <div class="d-flex align-items-center gap-2 mb-2 ps-1">
                 <i class="bi bi-pie-chart-fill text-dark"></i>
                 <h6 class="fw-bold text-muted small text-uppercase mb-0">Payment History Summary</h6>
             </div>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="card-body p-0 d-flex">
-                    <div
-                        class="flex-fill p-2 border-end bg-success bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
+                    <div class="flex-fill p-2 border-end bg-success bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
                         <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center shadow-sm"
                             style="width: 32px; height: 32px;">
                             <i class="bi bi-check-circle-fill"></i>
@@ -75,8 +91,7 @@
                             </div>
                         </div>
                     </div>
-                    <div
-                        class="flex-fill p-2 border-end bg-warning bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
+                    <div class="flex-fill p-2 border-end bg-warning bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
                         <div class="rounded-circle bg-white text-warning d-flex align-items-center justify-content-center shadow-sm"
                             style="width: 32px; height: 32px;">
                             <i class="bi bi-hourglass-split"></i>
@@ -89,8 +104,7 @@
                             </div>
                         </div>
                     </div>
-                    <div
-                        class="flex-fill p-2 bg-danger bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
+                    <div class="flex-fill p-2 bg-danger bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
                         <div class="rounded-circle bg-white text-danger d-flex align-items-center justify-content-center shadow-sm"
                             style="width: 32px; height: 32px;">
                             <i class="bi bi-exclamation-circle-fill"></i>
@@ -211,7 +225,7 @@
                                         </div>
 
                                         <div class="d-flex align-items-center justify-content-end gap-2">
-
+                                            
                                             <div x-show="txn.validatedBy && txn.status.toLowerCase() === 'paid'"
                                                 class="text-success d-flex align-items-center gap-1 small lh-1"
                                                 style="font-size: 0.65rem;">
@@ -320,6 +334,7 @@
                                         </div>
 
                                         <div class="d-flex align-items-center justify-content-end gap-2">
+                                            
                                             <div x-show="txn.validatedBy && txn.status.toLowerCase() === 'paid'"
                                                 class="text-success d-flex align-items-center gap-1 small lh-1"
                                                 style="font-size: 0.65rem;">

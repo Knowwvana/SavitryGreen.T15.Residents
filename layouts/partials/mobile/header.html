@@ -1,103 +1,88 @@
-<!-- HEADER CONTAINER -->
 <div class="sticky-top" style="z-index: 1040;">
 
-    <!-- 1. LOADING SKELETON -->
     <template x-if="isLoading">
         <div class="position-relative bg-dark shadow-sm overflow-hidden" 
-             style="min-height: 200px; border-bottom-left-radius: 2rem; border-bottom-right-radius: 2rem;">
-            <div class="p-4 d-flex flex-column h-100 justify-content-between">
+             style="min-height: 150px; border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem;">
+            <div class="p-3 d-flex flex-column h-100 justify-content-between">
                 <div>
-                    <div class="skeleton-box skeleton-dark rounded mb-2" style="width: 70%; height: 28px;"></div>
-                    <div class="skeleton-box skeleton-dark rounded" style="width: 50%; height: 16px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded mb-2" style="width: 70%; height: 24px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded" style="width: 50%; height: 14px;"></div>
                 </div>
                 <div class="d-flex gap-2">
-                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 50px;"></div>
-                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 50px;"></div>
-                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 50px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 40px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 40px;"></div>
+                    <div class="skeleton-box skeleton-dark rounded-3" style="width: 30%; height: 40px;"></div>
                 </div>
             </div>
         </div>
     </template>
 
-    <!-- 2. DATA LOADED HEADER -->
     <template x-if="!isLoading">
         <div class="position-relative bg-dark text-white shadow-sm overflow-hidden header-transition" 
-             :style="view === 'home' ? 'min-height: 200px; border-bottom-left-radius: 2rem; border-bottom-right-radius: 2rem;' : 'min-height: 90px; border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem;'">
+             :style="view === 'home' ? 'min-height: 150px; border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem;' : 'min-height: 80px; border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem;'">
             
-            <!-- Background Image -->
             <div class="position-absolute top-0 start-0 w-100 h-100" 
-                 style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.9) 100%), url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; z-index: 0;">
+                 style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.92) 100%), url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; z-index: 0;">
             </div>
 
-            <!-- Content Container -->
-            <div class="position-relative z-1 h-100 p-4 d-flex flex-column justify-content-between">
+            <div class="position-relative z-1 h-100 p-3 d-flex flex-column justify-content-between">
                 
-                <!-- TOP ROW: Navigation / Actions -->
                 <div class="d-flex justify-content-between align-items-start">
                     
-                    <!-- LEFT: Navigation Icons & Title -->
                     <div class="d-flex align-items-center gap-2">
-                        <!-- Show on Sub-pages -->
-                        <button x-show="view !== 'home'" 
-                                class="btn btn-white bg-opacity-10 text-white rounded-circle p-0 border border-white border-opacity-25 d-flex align-items-center justify-content-center" 
-                                style="width: 36px; height: 36px;"
-                                @click="view === 'history' ? view = 'residents' : view = 'home'">
-                            <i class="bi bi-arrow-left fs-6"></i>
-                        </button>
+                        <template x-if="view !== 'home'">
+                            <button class="btn btn-white bg-opacity-10 text-white rounded-circle p-0 border border-white border-opacity-25 d-flex align-items-center justify-content-center" 
+                                    style="width: 32px; height: 32px;"
+                                    @click="view === 'history' ? view = 'residents' : view = 'home'">
+                                <i class="bi bi-arrow-left fs-6"></i>
+                            </button>
+                        </template>
                         
-                        <!-- Page Title (Sub-pages) -->
-                        <h6 x-show="view !== 'home'" class="mb-0 fw-bold text-white text-nowrap">
-                            <span x-show="view === 'residents'">Residents Directory</span>
+                        <h6 x-show="view !== 'home'" class="mb-0 fw-bold text-white text-nowrap" style="font-size: 0.9rem;">
+                            <span x-show="view === 'residents'">Tower 15 Residents</span>
                             <span x-show="view === 'history'">Resident Details</span>
                             <span x-show="view === 'add'">Record Payment</span>
                             <span x-show="view === 'validate'">Admin Portal</span>
                         </h6>
                     </div>
 
-                    <!-- RIGHT: Date (Home) OR Actions -->
                     <div>
-                        <!-- Home: Date ONLY -->
                         <div x-show="view === 'home'" class="d-flex align-items-center">
-                            <!-- Updated text color to white -->
-                            <small class="text-white fw-bold" 
-                                   style="font-size: 0.65rem; letter-spacing: 0.5px; text-transform: uppercase;" 
-                                   x-text="new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).replace(/ /g, '.')">
+                            <small class="text-white fw-bold opacity-75" 
+                                   style="font-size: 0.6rem; letter-spacing: 0.5px; text-transform: uppercase;" 
+                                   x-text="new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/ /g, ' ')">
                             </small>
                         </div>
 
-                        <!-- Admin: Logout -->
                         <button x-show="view === 'validate' && admin.isLoggedIn" 
                                 @click="logout()" 
                                 class="btn btn-sm btn-danger rounded-pill px-3 fw-bold border-0 shadow-sm"
-                                style="font-size: 0.7rem;">
+                                style="font-size: 0.65rem; padding-top: 2px; padding-bottom: 2px;">
                             Logout
                         </button>
                     </div>
                 </div>
 
-                <!-- MIDDLE: Society Info (Always Visible) -->
-                <div class="mt-3">
-                    <h4 class="fw-bold mb-1 text-white" style="font-size: 1.4rem;" x-text="settings.SocietyName || 'Loading...'"></h4>
-                    <!-- Updated text color and vertical alignment -->
-                    <div class="d-flex align-items-center text-white opacity-75 small">
-                        <i class="bi bi-geo-alt-fill me-1 text-warning"></i>
-                        <span style="font-size: 0.75rem; line-height: 1.2;" x-text="settings.SocietyAddress || ''"></span>
+                <div x-show="view === 'home'" class="mt-2 app-view">
+                    <h5 class="fw-bold mb-0 text-white text-truncate" style="font-size: 1.1rem;" x-text="settings.SocietyName || 'Loading...'"></h5>
+                    <div class="d-flex align-items-center text-white opacity-75 small mt-1">
+                        <i class="bi bi-geo-alt-fill me-1 text-warning" style="font-size: 0.7rem;"></i>
+                        <span style="font-size: 0.7rem; line-height: 1.2;" class="text-truncate" x-text="settings.SocietyAddress || ''"></span>
                     </div>
-                </div>
 
-                <!-- BOTTOM: Stats Badges (Distinct Colors) -->
-                <div class="d-flex gap-2 overflow-auto pb-1 no-scrollbar mt-3">
-                    <div class="header-badge badge-flats text-white rounded-3 px-3 py-2 d-flex flex-column align-items-center justify-content-center flex-fill">
-                        <span class="text-white-50 small" style="font-size: 0.6rem; text-transform: uppercase;">Flats</span>
-                        <span class="fw-bold fs-5 lh-1" x-text="dashboardStats.flatsCount"></span>
-                    </div>
-                    <div class="header-badge badge-owners text-white rounded-3 px-3 py-2 d-flex flex-column align-items-center justify-content-center flex-fill">
-                        <span class="text-white-50 small" style="font-size: 0.6rem; text-transform: uppercase;">Owners</span>
-                        <span class="fw-bold fs-5 lh-1" x-text="dashboardStats.ownersCount"></span>
-                    </div>
-                    <div class="header-badge badge-tenants text-white rounded-3 px-3 py-2 d-flex flex-column align-items-center justify-content-center flex-fill">
-                        <span class="text-white-50 small" style="font-size: 0.6rem; text-transform: uppercase;">Tenants</span>
-                        <span class="fw-bold fs-5 lh-1" x-text="dashboardStats.tenantsCount"></span>
+                    <div class="d-flex gap-2 overflow-auto pb-0 no-scrollbar mt-2">
+                        <div class="header-badge badge-flats text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                            <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Flats</span>
+                            <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.flatsCount"></span>
+                        </div>
+                        <div class="header-badge badge-owners text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                            <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Owners</span>
+                            <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.ownersCount"></span>
+                        </div>
+                        <div class="header-badge badge-tenants text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                            <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Tenants</span>
+                            <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.tenantsCount"></span>
+                        </div>
                     </div>
                 </div>
 

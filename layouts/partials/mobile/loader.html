@@ -1,0 +1,39 @@
+<div x-show="isLoading" 
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="position-fixed top-0 start-0 w-100 h-100"
+     style="z-index: 9999; background: rgba(248, 250, 252, 0.8); backdrop-filter: blur(4px);">
+
+    <div class="d-flex w-100 h-100 align-items-center justify-content-center">
+        
+        <div class="bg-white p-4 rounded-4 shadow-lg text-center border border-light position-relative overflow-hidden" 
+             style="width: 85%; max-width: 320px;">
+            
+            <div class="position-absolute top-0 start-0 w-100 bg-primary" style="height: 4px;"></div>
+
+            <div class="mb-3 d-inline-block position-relative">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+                <i class="bi bi-cloud-download-fill position-absolute top-50 start-50 translate-middle text-primary" style="font-size: 1.2rem;"></i>
+            </div>
+
+            <h5 class="fw-bold text-dark mb-1">Just a moment</h5>
+            <p class="text-muted small mb-3">Please wait, page is loading...</p>
+
+            <div class="progress rounded-pill bg-light" style="height: 8px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                     role="progressbar" 
+                     style="width: 100%">
+                </div>
+            </div>
+            
+            <div class="mt-2">
+                 <small class="text-muted fst-italic" style="font-size: 0.65rem; opacity: 0.7;">Fetching latest records</small>
+            </div>
+        </div>
+
+    </div>
+</div>
