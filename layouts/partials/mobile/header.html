@@ -30,15 +30,16 @@
                 <div class="d-flex justify-content-between align-items-start">
                     
                     <div class="d-flex align-items-center gap-2">
-                        <button x-show="view !== 'home'" 
-                                class="btn btn-white bg-opacity-10 text-white rounded-circle p-0 border border-white border-opacity-25 d-flex align-items-center justify-content-center" 
-                                style="width: 32px; height: 32px;"
-                                @click="view === 'history' ? view = 'residents' : view = 'home'">
-                            <i class="bi bi-arrow-left fs-6"></i>
-                        </button>
+                        <template x-if="view !== 'home'">
+                            <button class="btn btn-white bg-opacity-10 text-white rounded-circle p-0 border border-white border-opacity-25 d-flex align-items-center justify-content-center" 
+                                    style="width: 32px; height: 32px;"
+                                    @click="view === 'history' ? view = 'residents' : view = 'home'">
+                                <i class="bi bi-arrow-left fs-6"></i>
+                            </button>
+                        </template>
                         
                         <h6 x-show="view !== 'home'" class="mb-0 fw-bold text-white text-nowrap" style="font-size: 0.9rem;">
-                            <span x-show="view === 'residents'">Residents Directory</span>
+                            <span x-show="view === 'residents'">Tower 15 Residents</span>
                             <span x-show="view === 'history'">Resident Details</span>
                             <span x-show="view === 'add'">Record Payment</span>
                             <span x-show="view === 'validate'">Admin Portal</span>
@@ -62,26 +63,26 @@
                     </div>
                 </div>
 
-                <div class="mt-2">
+                <div x-show="view === 'home'" class="mt-2 app-view">
                     <h5 class="fw-bold mb-0 text-white text-truncate" style="font-size: 1.1rem;" x-text="settings.SocietyName || 'Loading...'"></h5>
                     <div class="d-flex align-items-center text-white opacity-75 small mt-1">
                         <i class="bi bi-geo-alt-fill me-1 text-warning" style="font-size: 0.7rem;"></i>
                         <span style="font-size: 0.7rem; line-height: 1.2;" class="text-truncate" x-text="settings.SocietyAddress || ''"></span>
                     </div>
-                </div>
 
-                <div class="d-flex gap-2 overflow-auto pb-0 no-scrollbar mt-2">
-                    <div class="header-badge badge-flats text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
-                        <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Flats</span>
-                        <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.flatsCount"></span>
-                    </div>
-                    <div class="header-badge badge-owners text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
-                        <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Owners</span>
-                        <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.ownersCount"></span>
-                    </div>
-                    <div class="header-badge badge-tenants text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
-                        <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Tenants</span>
-                        <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.tenantsCount"></span>
+                    <div class="d-flex gap-2 overflow-auto pb-0 no-scrollbar mt-2">
+                        <div class="header-badge badge-flats text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                            <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Flats</span>
+                            <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.flatsCount"></span>
+                        </div>
+                        <div class="header-badge badge-owners text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                            <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Owners</span>
+                            <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.ownersCount"></span>
+                        </div>
+                        <div class="header-badge badge-tenants text-white rounded-3 px-2 py-1 d-flex flex-column align-items-center justify-content-center flex-fill border-0">
+                            <span class="text-white-50" style="font-size: 0.55rem; text-transform: uppercase; font-weight: 600;">Tenants</span>
+                            <span class="fw-bold lh-1" style="font-size: 0.9rem;" x-text="dashboardStats.tenantsCount"></span>
+                        </div>
                     </div>
                 </div>
 

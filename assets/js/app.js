@@ -1,6 +1,6 @@
 /**
  * =================================================================
- * SOCIETY MANAGEMENT APP - MAIN LOGIC ENGINE
+ * SOCIETY MANAGEMENT APP - MAIN CONTROLLER
  * =================================================================
  */
 
@@ -8,27 +8,19 @@ document.addEventListener('alpine:init', () => {
 
     const AppServices = (() => {
 
-        // --- CONSTANTS ---
-        const MONTHS_MAP = {jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11};
-        const MONTHS_ARRAY = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-        // --- UTILITIES ---
-        const LocalTimeHelper = {
-            getLocalISOString: function() {
-                const now = new Date();
-                const offset = now.getTimezoneOffset() * 60000; 
-                return new Date(now.getTime() - offset).toISOString();
-            }
-        };
-
-        const safeString = (val) => String(val !== null && val !== undefined ? val : '').trim();
-        const normalizeFlat = (val) => {
-            const s = safeString(val);
-            const n = Number(s);
-            return (s !== '' && !isNaN(n)) ? String(n) : s;
-        };
+        // --- IMPORT EXTERNAL UTILITIES ---
+        // Access the Namespace we created in utility.js
+        // If utility.js didn't load, this line throws "Cannot read properties of undefined"
+        const Utility = window.AppServices.Utility; 
+        
+        // Unwrap the tools we need (Destructuring)
+        // This is just a shortcut so we don't have to type 'Utility.safeString' every time
+        const { safeString, normalizeFlat } = Utility;
+        const { MONTHS_MAP, MONTHS_ARRAY } = Utility.Constants;
+        const LocalTimeHelper = Utility.LocalTimeHelper;
 
         // --- DOMAIN MODELS ---
+
         class Settings {
             constructor(data) {
                 this._config = data || {}; 
@@ -47,13 +39,12 @@ document.addEventListener('alpine:init', () => {
                     this._config.MonthlyMaintainenceStartFrom = formatMonthString(this._config.MonthlyMaintainenceStartFrom);
                 }
             }
-            // Getters for internal logic
             get societyName() { return this._config.SocietyName || 'Green Valley Heights'; }
             get societyAddress() { return this._config.SocietyAddress || 'Sector 42, Maintenance Drive'; }
             get monthlyFee() { return parseFloat(this._config.MonthlyMaintainenceAmount || 150); }
             get startMonthStr() { return this._config.MonthlyMaintainenceStartFrom || 'Sep-2025'; }
             
-            // --- FIX: Expose Uppercase properties for HTML (header.html) ---
+            // Expose properties for HTML binding (header.html)
             get SocietyName() { return this.societyName; }
             get SocietyAddress() { return this.societyAddress; }
         }
@@ -67,18 +58,25 @@ document.addEventListener('alpine:init', () => {
                 this.date = data.Date; 
                 this.remarks = safeString(data.Remarks);
             }
+
             get formattedDate() {
                 try {
                     const d = new Date(this.date);
                     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '.');
                 } catch(e) { return ''; }
             }
-            get rawDateObj() { return new Date(this.date); }
+            
+            get rawDateObj() {
+                return new Date(this.date);
+            }
         }
 
         class Payment {
             constructor(data) {
-                this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") ? String(data.PaymentID) : ('temp_' + Math.random().toString(36).substr(2, 9));
+                this.id = (data.PaymentID && String(data.PaymentID).trim() !== "") 
+                          ? String(data.PaymentID) 
+                          : ('temp_' + Math.random().toString(36).substr(2, 9));
+                
                 this.amount = parseFloat(data.Amount || 0);
                 this.status = safeString(data.Status || 'Pending');
                 this.category = safeString(data.Category || 'Maintenance');
@@ -87,11 +85,16 @@ document.addEventListener('alpine:init', () => {
                 this.method = safeString(data.PaymentMethod || 'UPI');
                 this.validatedBy = safeString(data.ValidatedBy);
                 this.validationTime = safeString(data.ValidationTime);
+                this.validationComments = safeString(data.ValidationComments);
+                
                 this.rawDate = data.PaymentDate;
                 this.rawMonth = data.Month;
+                // Use the shared utility function
                 this.flatNo = normalizeFlat(data.FlatNo);
+
                 this.type = (this.category.toLowerCase() === 'monthly') ? 'Monthly' : this.category;
             }
+
             get monthKey() {
                 if (!this.rawMonth) return '';
                 try {
@@ -103,8 +106,8 @@ document.addEventListener('alpine:init', () => {
                 } catch(e) {}
                 return '';
             }
+
             get isPaidStrict() { return this.status.toLowerCase() === 'paid'; }
-            get isInReview() { const s = this.status.toLowerCase(); return s !== 'paid' && s !== 'rejected'; }
             get isPaidOrPendingValidation() { const s = this.status.toLowerCase(); return s === 'paid' || s === 'pending validation'; }
             get isMonthly() { return this.category.toLowerCase() === 'monthly'; }
         }
@@ -113,34 +116,42 @@ document.addEventListener('alpine:init', () => {
             constructor(flatData, rawResidentData, paymentHistory) {
                 this.flat = normalizeFlat(flatData.FlatNo);
                 this.due = parseFloat(flatData.Due || 0);
+                
                 const nFlat = parseInt(this.flat);
                 let floorVal = !isNaN(nFlat) ? Math.floor(nFlat / 100) : 0;
                 this.floor = (floorVal === 0) ? 'Ground' : String(floorVal);
                 this.tower = '15'; 
+
                 this.occupants = (rawResidentData || []).map(r => ({
                     name: safeString(r.Name || 'Unknown'),
                     phone: safeString(r.Phone),
                     email: safeString(r.Email), 
                     type: safeString(r.ResidentType || 'Owner')
                 }));
+
                 this.history = paymentHistory || []; 
                 this.lastPayment = this.history.length > 0 ? this.history[0] : null; 
             }
+
             getPendingMonthsList(settings) {
                 const startStr = settings.startMonthStr;
                 const monthlyAmount = settings.monthlyFee;
                 const parts = startStr.split('-');
                 if (parts.length !== 2) return [];
+
                 let startMonth = MONTHS_MAP[parts[0].trim().toLowerCase().substring(0, 3)];
                 let startYear = parseInt(parts[1]);
                 if (startMonth === undefined) return [];
+                
                 const now = new Date();
                 const endYear = now.getFullYear();
                 const endMonth = now.getMonth();
+                
                 let list = [];
                 let currY = startYear;
                 let currM = startMonth;
                 let safety = 0;
+
                 while ((currY < endYear || (currY === endYear && currM <= endMonth)) && safety < 120) {
                     const monthKey = `${currY}-${String(currM + 1).padStart(2, '0')}`;
                     const isPaid = this.history.some(p => p.isMonthly && p.isPaidOrPendingValidation && p.monthKey === monthKey);
@@ -153,6 +164,7 @@ document.addEventListener('alpine:init', () => {
             }
         }
 
+        // ... SocietyRepository class remains mostly same, just ensure it uses correct Settings/Payment classes ...
         class SocietyRepository {
             constructor(apiUrl) {
                 this.apiUrl = apiUrl;
@@ -162,6 +174,9 @@ document.addEventListener('alpine:init', () => {
                 this.settings = new Settings({});
                 this.isLoading = false;
             }
+            // ... (Fetch and Add methods remain same as provided in previous steps) ...
+            
+            // Re-pasting critical fetch method for context
             async fetchData() {
                 this.isLoading = true;
                 try {
@@ -172,30 +187,38 @@ document.addEventListener('alpine:init', () => {
                     this.settings = new Settings(result.settings);
                     this.admins = result.admins || []; 
                     
-                    const rawExpenses = result.expenditure || []; 
-                    this.expenditures = rawExpenses.map(e => new Expense(e));
-
+                    this.expenditures = (result.expenditure || []).map(e => new Expense(e));
                     const allPayments = (result.payments || []).map(p => new Payment(p));
+                    const rawFlats = result.flats || [];
                     const rawResidents = result.residents || [];
                     
-                    this.residents = (result.flats || []).map((f, index) => {
+                    this.residents = rawFlats.map((f, index) => {
                         try {
                             const matchKey = normalizeFlat(f.FlatNo);
-                            const residentPayments = allPayments.filter(p => p.flatNo === matchKey).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
+                            const residentPayments = allPayments.filter(p => p.flatNo === matchKey)
+                                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
                             const residentData = rawResidents.filter(r => normalizeFlat(r.FlatNo) === matchKey);
                             const resident = new Resident(f, residentData, residentPayments);
+                            
                             resident.id = index;
                             resident.searchStr = `${resident.flat} ${resident.occupants.map(o => o.name).join(' ')}`.toLowerCase();
+                            
                             const pendingList = resident.getPendingMonthsList(this.settings);
                             resident.totalPendingDue = pendingList.reduce((sum, m) => sum + m.amount, 0);
+                            
                             return resident;
                         } catch (e) { return null; }
                     }).filter(r => r !== null);
                     return true;
-                } catch (error) { console.error("Fetch Error:", error); return false; } 
-                finally { this.isLoading = false; }
+                } catch (error) {
+                    console.error("Fetch API Error:", error);
+                    return false; 
+                } finally {
+                    this.isLoading = false;
+                }
             }
-            async addPayment(formData, extraData = {}) {
+            // ... addPayment & updatePaymentStatus ...
+             async addPayment(formData, extraData = {}) {
                 const paymentId = Date.now().toString(); 
                 let finalTitle = formData.title;
                 if (formData.category === 'Monthly') finalTitle = `Maint: ${formData.month}`; 
@@ -210,14 +233,10 @@ document.addEventListener('alpine:init', () => {
                     PaymentDate: formData.paymentDate.replace('T', ' '),
                     PaymentMethod: formData.method,
                     Remarks: formData.remarks,
-                    
-                    // Fields from Extra Data
                     Status: extraData.status || 'Pending Validation',
                     ValidatedBy: extraData.validatedBy || '',
                     ValidationTime: extraData.validationTime || '',
                     ValidationComments: extraData.validationComments || '',
-                    
-                    // NEW: Capture timestamp for script
                     EntryAddedDate: new Date().toLocaleString()
                 };
                 try {
@@ -226,6 +245,7 @@ document.addEventListener('alpine:init', () => {
                     return result.success;
                 } catch (error) { return false; }
             }
+
             async updatePaymentStatus(paymentId, newStatus, adminName, comments) {
                 const payload = { action: 'UPDATE', PaymentID: paymentId, Status: newStatus, ValidatedBy: adminName, ValidationTime: new Date().toLocaleString(), ValidationComments: comments || '' };
                 try {
@@ -239,8 +259,11 @@ document.addEventListener('alpine:init', () => {
         return { SocietyRepository, LocalTimeHelper, Resident, Settings };
     })();
 
-    // --- ALPINE COMPONENT ---
+    // ... (window.societyApp logic remains the same as before) ...
     window.societyApp = (api_url) => ({
+        // ... paste the exact component logic from previous step here ...
+        // I will re-paste it below to ensure you have the full file content.
+        
         repository: new AppServices.SocietyRepository(api_url),
         getLocalISOString: AppServices.LocalTimeHelper.getLocalISOString,
 
@@ -300,31 +323,24 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = false; 
         },
 
-        // --- UPDATED SAVE TRANSACTION ---
+        // CORE ACTIONS
         async saveTransaction() {
             this.isSubmitting = true;
-            
-            // ADMIN OVERRIDE LOGIC
             let status = 'Pending Validation';
             let validatedBy = '';
             let validationTime = '';
             let validationComments = '';
-
-            // Check if user is logged in as Admin
             if (this.admin.isLoggedIn) {
                 status = 'Paid';
                 validatedBy = this.admin.currentUser || 'Admin';
                 validationTime = new Date().toLocaleString();
                 validationComments = 'Added directly by Admin';
             }
-
-            const extraData = { status, validatedBy, validationTime, validationComments };
-
+            const extraData = { status, validatedBy, validationTime, validationComments, EntryAddedDate: new Date().toLocaleString() };
             const success = await this.repository.addPayment(this.txnForm, extraData);
             if (success) { 
                 await this.fetchAndHydrate(); 
                 this.txnSuccess = true; 
-                // Scroll to top
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } 
             else { this.txnSuccess = false; alert("Failed to save. Try again."); }
@@ -348,7 +364,7 @@ document.addEventListener('alpine:init', () => {
         },
         logout() { this.admin.isLoggedIn = false; this.admin.currentUser = null; this.view = 'home'; },
 
-        // --- DASHBOARD CALCULATIONS ---
+        // DASHBOARD CALCULATIONS
         calculateDashboardStats() {
              const stats = {
                 flatsCount: this.residents.length,
@@ -379,17 +395,15 @@ document.addEventListener('alpine:init', () => {
              const monthlyMap = new Map(); 
              const adhocSummaryMap = new Map(); 
 
-             // 1. Income (Payments)
              allPayments.forEach(p => {
                 if (p.status.toLowerCase() === 'pending validation') stats.pendingValidationTotal += p.amount;
                 if (p.isPaidOrPendingValidation) {
                      stats.totalCollection += p.amount;
                      if(p.isMonthly) {
                         stats.monthlyTotal += p.amount;
-                        
                         if (p.isPaidStrict) stats.monthlyPaid += p.amount;
                         else stats.monthlyPending += p.amount;
-
+                        
                         const key = p.monthKey || 'Unknown';
                         let current = monthlyMap.get(key) || { amount: 0, label: '' };
                         if (!current.label) {
@@ -402,21 +416,15 @@ document.addEventListener('alpine:init', () => {
                         monthlyMap.set(key, current);
                      }
                      else {
-                        // ADHOC INCOME
                         stats.adhocTotal += p.amount;
                         const title = p.title || p.category || 'Other';
-                        
                         if (!adhocSummaryMap.has(title)) adhocSummaryMap.set(title, { collected: 0, spent: 0, lastDateObj: null });
                         const entry = adhocSummaryMap.get(title);
                         entry.collected += p.amount;
-                        
-                        // UPDATED: DO NOT set date from Payments. Date comes ONLY from Expenses.
-                        // Removed logic to update lastDateObj from payment date.
                      }
                 }
              });
 
-             // 2. Expenses (Expenditure Sheet)
              if (this.repository.expenditures && this.repository.expenditures.length > 0) {
                  const sortedExpenses = this.repository.expenditures.sort((a,b) => b.rawDateObj - a.rawDateObj);
                  sortedExpenses.forEach(exp => {
@@ -430,8 +438,6 @@ document.addEventListener('alpine:init', () => {
                          if (!adhocSummaryMap.has(title)) adhocSummaryMap.set(title, { collected: 0, spent: 0, lastDateObj: null });
                          const entry = adhocSummaryMap.get(title);
                          entry.spent += exp.amount;
-                         
-                         // UPDATED: Set date ONLY from Expenses
                          const eDate = exp.rawDateObj; 
                          if (!entry.lastDateObj || eDate > entry.lastDateObj) entry.lastDateObj = eDate;
                      }
@@ -464,11 +470,11 @@ document.addEventListener('alpine:init', () => {
              this.dashboardStats = stats;
         },
 
-        // ... (Filter getters for history lists - UNCHANGED) ...
         openResidentByFlat(flatNo) {
             const resident = this.residents.find(r => r.flat === flatNo);
             if (resident) this.openHistory(resident);
         },
+        // ... (remaining getters and mappers identical to before) ...
         payPending(monthIso, amount) {
             this.resetTxnForm();
             this.txnForm.flatNo = this.activeResident.flat;
@@ -504,8 +510,8 @@ document.addEventListener('alpine:init', () => {
         get totalPagesA() { return Math.ceil(this.filteredAdhoc.length / this.limit) || 1; },
         get filteredResidents() {
             let data = this.residents || [];
-            if (this.filterStatus === 'paid') data = data.filter(r => r.isPaid);
-            if (this.filterStatus === 'unpaid') data = data.filter(r => !r.isPaid);
+            if (this.filterStatus === 'paid') data = data.filter(r => r.totalPendingDue <= 0 && !r.history.some(p => p.status.toLowerCase() === 'pending validation'));
+            if (this.filterStatus === 'unpaid') data = data.filter(r => r.totalPendingDue > 0);
             if (this.filterStatus === 'pending') data = data.filter(r => r.history.some(p => p.status.toLowerCase() === 'pending validation'));
             if (this.searchQuery) data = data.filter(r => r.searchStr.includes(this.searchQuery.toLowerCase()));
             return data;
@@ -554,31 +560,6 @@ document.addEventListener('alpine:init', () => {
              allPayments.forEach(p => unique.set(p.id, p));
             return Array.from(unique.values()).filter(p => p.isPaidStrict).length;
         },
-        get monthKey() {
-            if (!this.rawMonth) return '';
-            try {
-                const d = new Date(this.rawMonth);
-                const adjustedDate = new Date(d.getTime() + 12 * 60 * 60 * 1000);
-                if (!isNaN(adjustedDate.getTime())) {
-                    return `${adjustedDate.getFullYear()}-${String(adjustedDate.getMonth() + 1).padStart(2, '0')}`;
-                }
-            } catch(e) {}
-            return '';
-        },
-        openHistory(resident) {
-            const totalPaid = resident.history.filter(p => p.isPaidStrict && p.isMonthly).reduce((sum, p) => sum + p.amount, 0);
-            const pendingVal = resident.history.filter(p => p.isInReview && p.isMonthly).reduce((sum, p) => sum + p.amount, 0);
-            const pendingList = resident.getPendingMonthsList(this.settings);
-            resident.stats = { totalPaid: totalPaid, pendingValidation: pendingVal, currentDue: resident.totalPendingDue };
-            resident.pendingList = pendingList; 
-            this.activeResident = resident;
-            this.historyQuery = '';
-            this.pageM = 1;
-            this.pageA = 1;
-            this.view = 'history';
-            window.scrollTo(0,0);
-        },
-        // --- MAPPER ---
         mapTransactionForDisplay(txn) {
             const resident = this.residents.find(r => r.flat === txn.flatNo);
             let displayResidentName = "Unknown";

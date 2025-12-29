@@ -1,40 +1,34 @@
 {{ define "main" }}
-<!-- 
-  MODULAR APP SHELL
-  x-data calls the societyApp factory function and injects the API URL.
--->
 <div x-data="societyApp('{{ .Site.Params.API_URL | default "" }}')" class="min-vh-100 bg-white" x-cloak>
 
-    <!-- COMMON HEADER -->
+    {{ partial "mobile/loader.html" . }}
+
     {{ partial "mobile/header.html" . }}
 
-    <!-- 1. DASHBOARD VIEW (Content Only) -->
     <div x-show="view === 'home'" class="app-view">
         {{ partial "mobile/dashboard.html" . }}
     </div>
 
-    <!-- 2. RESIDENTS LIST VIEW -->
     <div x-show="view === 'residents'" class="app-view">
         {{ partial "mobile/residents-list.html" . }}
     </div>
 
-    <!-- 3. RESIDENT DETAIL (HISTORY) VIEW -->
     <div x-show="view === 'history'" class="app-view">
         {{ partial "mobile/resident-detail.html" . }}
     </div>
 
-    <!-- 4. ADD ENTRY VIEW -->
     <div x-show="view === 'add'" class="app-view">
         {{ partial "mobile/add-entry.html" . }}
     </div>
 
-    <!-- 5. ADMIN VALIDATION VIEW -->
     <div x-show="view === 'validate'" class="app-view">
         {{ partial "mobile/validate.html" . }}
     </div>
-
-    <!-- BOTTOM NAVIGATION -->
+    
     {{ partial "mobile/bottom-nav.html" . }}
-
+    
+    <div class="mt-auto">
+        {{ partial "mobile/footer.html" . }}
+    </div>
 </div>
 {{ end }}
