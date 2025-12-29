@@ -9,12 +9,8 @@ document.addEventListener('alpine:init', () => {
     const AppServices = (() => {
 
         // --- IMPORT EXTERNAL UTILITIES ---
-        // Access the Namespace we created in utility.js
-        // If utility.js didn't load, this line throws "Cannot read properties of undefined"
         const Utility = window.AppServices.Utility; 
         
-        // Unwrap the tools we need (Destructuring)
-        // This is just a shortcut so we don't have to type 'Utility.safeString' every time
         const { safeString, normalizeFlat } = Utility;
         const { MONTHS_MAP, MONTHS_ARRAY } = Utility.Constants;
         const LocalTimeHelper = Utility.LocalTimeHelper;
@@ -44,7 +40,6 @@ document.addEventListener('alpine:init', () => {
             get monthlyFee() { return parseFloat(this._config.MonthlyMaintainenceAmount || 150); }
             get startMonthStr() { return this._config.MonthlyMaintainenceStartFrom || 'Sep-2025'; }
             
-            // Expose properties for HTML binding (header.html)
             get SocietyName() { return this.societyName; }
             get SocietyAddress() { return this.societyAddress; }
         }
@@ -89,7 +84,6 @@ document.addEventListener('alpine:init', () => {
                 
                 this.rawDate = data.PaymentDate;
                 this.rawMonth = data.Month;
-                // Use the shared utility function
                 this.flatNo = normalizeFlat(data.FlatNo);
 
                 this.type = (this.category.toLowerCase() === 'monthly') ? 'Monthly' : this.category;
@@ -164,7 +158,6 @@ document.addEventListener('alpine:init', () => {
             }
         }
 
-        // ... SocietyRepository class remains mostly same, just ensure it uses correct Settings/Payment classes ...
         class SocietyRepository {
             constructor(apiUrl) {
                 this.apiUrl = apiUrl;
@@ -174,9 +167,7 @@ document.addEventListener('alpine:init', () => {
                 this.settings = new Settings({});
                 this.isLoading = false;
             }
-            // ... (Fetch and Add methods remain same as provided in previous steps) ...
             
-            // Re-pasting critical fetch method for context
             async fetchData() {
                 this.isLoading = true;
                 try {
@@ -217,8 +208,8 @@ document.addEventListener('alpine:init', () => {
                     this.isLoading = false;
                 }
             }
-            // ... addPayment & updatePaymentStatus ...
-             async addPayment(formData, extraData = {}) {
+
+            async addPayment(formData, extraData = {}) {
                 const paymentId = Date.now().toString(); 
                 let finalTitle = formData.title;
                 if (formData.category === 'Monthly') finalTitle = `Maint: ${formData.month}`; 
@@ -259,10 +250,7 @@ document.addEventListener('alpine:init', () => {
         return { SocietyRepository, LocalTimeHelper, Resident, Settings };
     })();
 
-    // ... (window.societyApp logic remains the same as before) ...
     window.societyApp = (api_url) => ({
-        // ... paste the exact component logic from previous step here ...
-        // I will re-paste it below to ensure you have the full file content.
         
         repository: new AppServices.SocietyRepository(api_url),
         getLocalISOString: AppServices.LocalTimeHelper.getLocalISOString,
@@ -297,6 +285,11 @@ document.addEventListener('alpine:init', () => {
             this.updateDate();
             this.resetTxnForm();
             this.fetchAndHydrate();
+            
+            // Watch for page/view changes and scroll to top
+            this.$watch('view', () => {
+                window.scrollTo({ top: 0, behavior: 'instant' });
+            });
         },
 
         updateDate() {
@@ -323,7 +316,6 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = false; 
         },
 
-        // CORE ACTIONS
         async saveTransaction() {
             this.isSubmitting = true;
             let status = 'Pending Validation';
@@ -364,7 +356,6 @@ document.addEventListener('alpine:init', () => {
         },
         logout() { this.admin.isLoggedIn = false; this.admin.currentUser = null; this.view = 'home'; },
 
-        // DASHBOARD CALCULATIONS
         calculateDashboardStats() {
              const stats = {
                 flatsCount: this.residents.length,
@@ -474,7 +465,17 @@ document.addEventListener('alpine:init', () => {
             const resident = this.residents.find(r => r.flat === flatNo);
             if (resident) this.openHistory(resident);
         },
-        // ... (remaining getters and mappers identical to before) ...
+
+        // --- RESTORED: This function was missing in previous step ---
+        openHistory(resident) {
+            this.activeResident = resident;
+            this.historyQuery = '';
+            this.pageM = 1;
+            this.pageA = 1;
+            this.view = 'history';
+        },
+        // ------------------------------------------------------------
+
         payPending(monthIso, amount) {
             this.resetTxnForm();
             this.txnForm.flatNo = this.activeResident.flat;
@@ -483,31 +484,39 @@ document.addEventListener('alpine:init', () => {
             this.txnForm.amount = amount;
             this.view = 'add';
         },
+
         calculatePendingMonths(startStr, amount, history) {
             const tempResident = new AppServices.Resident({}, [], history);
             const tempSettings = new AppServices.Settings({ MonthlyMaintainenceStartFrom: startStr, MonthlyMaintainenceAmount: amount });
             return tempResident.getPendingMonthsList(tempSettings);
         },
+
         get filteredMonthly() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
             return this.activeResident.history.filter(h => h.isMonthly && (!q || (String(h.amount)+h.method+h.remarks+(h.rawMonth||'')).toLowerCase().includes(q)));
         },
+
         get paginatedMonthly() {
             const start = (this.pageM - 1) * this.limit;
             return this.filteredMonthly.slice(start, start + this.limit);
         },
+
         get totalPagesM() { return Math.ceil(this.filteredMonthly.length / this.limit) || 1; },
+
         get filteredAdhoc() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
             return this.activeResident.history.filter(h => !h.isMonthly && (!q || (h.category+(h.title||'')+String(h.amount)+h.method+h.remarks).toLowerCase().includes(q)));
         },
+
         get paginatedAdhoc() {
             const start = (this.pageA - 1) * this.limit;
             return this.filteredAdhoc.slice(start, start + this.limit);
         },
+
         get totalPagesA() { return Math.ceil(this.filteredAdhoc.length / this.limit) || 1; },
+
         get filteredResidents() {
             let data = this.residents || [];
             if (this.filterStatus === 'paid') data = data.filter(r => r.totalPendingDue <= 0 && !r.history.some(p => p.status.toLowerCase() === 'pending validation'));
@@ -516,6 +525,7 @@ document.addEventListener('alpine:init', () => {
             if (this.searchQuery) data = data.filter(r => r.searchStr.includes(this.searchQuery.toLowerCase()));
             return data;
         },
+
         get pendingValidationList() {
             if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
@@ -523,16 +533,19 @@ document.addEventListener('alpine:init', () => {
             allPayments.forEach(p => unique.set(p.id, p));
             return Array.from(unique.values()).filter(p => p.status === 'Pending Validation').sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).map(txn => this.mapTransactionForDisplay(txn));
         },
+
         get filteredPendingList() {
             const list = this.pendingValidationList;
             const q = (this.admin.searchPending || '').toLowerCase();
             if (!q) return list;
             return list.filter(txn => txn.displayResidentName.toLowerCase().includes(q) || txn.displayFlat.toLowerCase().includes(q) || txn.remarks.toLowerCase().includes(q));
         },
+
         get pendingStats() {
             const list = this.pendingValidationList;
             return { count: list.length, totalAmount: list.reduce((sum, p) => sum + p.amount, 0) };
         },
+
         get adminHistoryList() {
              if (!this.residents) return [];
             const allPayments = this.residents.flatMap(r => r.history);
@@ -540,12 +553,14 @@ document.addEventListener('alpine:init', () => {
             allPayments.forEach(p => unique.set(p.id, p));
             return Array.from(unique.values()).filter(p => p.isPaidStrict).sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0, 50).map(txn => this.mapTransactionForDisplay(txn));
         },
+
         get filteredHistoryList() {
             const list = this.adminHistoryList;
             const q = (this.admin.searchHistory || '').toLowerCase();
             if (!q) return list;
             return list.filter(txn => txn.displayResidentName.toLowerCase().includes(q) || txn.displayFlat.toLowerCase().includes(q) || (txn.validatedBy && txn.validatedBy.toLowerCase().includes(q)));
         },
+
         get adminHistoryTotal() {
              if (!this.residents) return 0;
              const allPayments = this.residents.flatMap(r => r.history);
@@ -553,6 +568,7 @@ document.addEventListener('alpine:init', () => {
              allPayments.forEach(p => unique.set(p.id, p));
             return Array.from(unique.values()).filter(p => p.isPaidStrict).reduce((sum, p) => sum + p.amount, 0);
         },
+
         get adminHistoryCount() {
              if (!this.residents) return 0;
              const allPayments = this.residents.flatMap(r => r.history);
@@ -560,6 +576,7 @@ document.addEventListener('alpine:init', () => {
              allPayments.forEach(p => unique.set(p.id, p));
             return Array.from(unique.values()).filter(p => p.isPaidStrict).length;
         },
+
         mapTransactionForDisplay(txn) {
             const resident = this.residents.find(r => r.flat === txn.flatNo);
             let displayResidentName = "Unknown";
