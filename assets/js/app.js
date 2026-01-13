@@ -35,13 +35,21 @@ document.addEventListener('alpine:init', () => {
                     this._config.MonthlyMaintainenceStartFrom = formatMonthString(this._config.MonthlyMaintainenceStartFrom);
                 }
             }
+            // Internal getters (existing logic)
             get societyName() { return this._config.SocietyName || 'Green Valley Heights'; }
             get societyAddress() { return this._config.SocietyAddress || 'Sector 42, Maintenance Drive'; }
             get monthlyFee() { return parseFloat(this._config.MonthlyMaintainenceAmount || 150); }
             get startMonthStr() { return this._config.MonthlyMaintainenceStartFrom || 'Sep-2025'; }
             
+            // --- NEW: Expose these for the HTML Templates ---
             get SocietyName() { return this.societyName; }
             get SocietyAddress() { return this.societyAddress; }
+            
+            // 1. Expose GPayAccount (matches your Sheet Header)
+            get GPayAccount() { return this._config.GPayAccount || '8968354240'; }
+
+            // 2. Expose MonthlyMaintainenceAmount (so settings.MonthlyMaintainenceAmount works in HTML)
+            get MonthlyMaintainenceAmount() { return this.monthlyFee; }
         }
 
         class Expense {
@@ -468,6 +476,21 @@ document.addEventListener('alpine:init', () => {
 
         // --- RESTORED: This function was missing in previous step ---
         openHistory(resident) {
+            // Fix: Populate stats and pendingList for Resident Detail Page
+            if (!resident.stats || !resident.pendingList) {
+                // 1. Calculate Pending List using the existing method
+                resident.pendingList = resident.getPendingMonthsList(this.settings);
+                
+                // 2. Calculate Stats for the Summary Box
+                const totalPaid = resident.history.reduce((sum, p) => p.isPaidStrict ? sum + p.amount : sum, 0);
+                const pendingVal = resident.history.reduce((sum, p) => p.status.toLowerCase() === 'pending validation' ? sum + p.amount : sum, 0);
+                
+                resident.stats = {
+                    totalPaid: totalPaid,
+                    pendingValidation: pendingVal,
+                    currentDue: resident.totalPendingDue // This was already calculated in fetchData
+                };
+            }
             this.activeResident = resident;
             this.historyQuery = '';
             this.pageM = 1;
