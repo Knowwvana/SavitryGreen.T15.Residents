@@ -1,47 +1,48 @@
-<div class="fixed-bottom bg-white border-top shadow-lg" 
-     style="z-index: 1030; bottom: 24px !important; padding-bottom: 0;">
-    
+<div class="fixed-bottom bg-white border-top shadow-lg"
+    style="z-index: 1030; bottom: 24px !important; padding-bottom: 0;">
+
     <div class="d-flex justify-content-around py-1">
-        
-        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1" 
-                :class="view === 'home' ? 'text-primary fw-bold' : 'text-muted'"
-                @click="view = 'home'">
-            <i class="bi bi-grid-fill fs-6 mb-0" :class="view === 'home' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'home' ? 'text-primary fw-bold' : 'text-muted'" @click="view = 'home'">
+            <i class="bi bi-grid-fill fs-6 mb-0"
+                :class="view === 'home' ? 'text-primary' : 'text-secondary opacity-50'"></i>
             <span style="font-size: 0.6rem;">Dashboard</span>
         </button>
 
-        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1" 
-                :class="view === 'residents' || view === 'history' ? 'text-primary fw-bold' : 'text-muted'"
-                @click="view = 'residents'">
-            <i class="bi bi-people-fill fs-6 mb-0" :class="view === 'residents' || view === 'history' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'residents' || view === 'history' ? 'text-primary fw-bold' : 'text-muted'"
+            @click="view = 'residents'">
+            <i class="bi bi-people-fill fs-6 mb-0"
+                :class="view === 'residents' || view === 'history' ? 'text-primary' : 'text-secondary opacity-50'"></i>
             <span style="font-size: 0.6rem;">Residents</span>
         </button>
 
         <div class="position-relative" style="margin-top: -22px;">
-            <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
-                    style="width: 45px; height: 45px; border: 3px solid white;"
-                    @click="view = 'add'">
+            <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
+                style="width: 45px; height: 45px; border: 3px solid white;" @click="view = 'add'">
                 <i class="bi bi-plus-lg fs-5 text-white"></i>
             </button>
         </div>
 
-        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1" 
-                :class="view === 'validate' ? 'text-primary fw-bold' : 'text-muted'"
-                @click="view = 'validate'">
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'validate' ? 'text-primary fw-bold' : 'text-muted'" @click="view = 'validate'">
             <div class="position-relative">
-                <i class="bi bi-shield-check fs-6 mb-0" :class="view === 'validate' ? 'text-primary' : 'text-secondary opacity-50'"></i>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white"
-                      style="font-size: 0.4rem; padding: 0.2em 0.3em;"
-                      x-show="pendingStats.count > 0"
-                      x-text="pendingStats.count">
+                <i class="bi bi-shield-check fs-6 mb-0"
+                    :class="view === 'validate' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+                <span
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white"
+                    style="font-size: 0.4rem; padding: 0.2em 0.3em;" x-show="pendingStats.count > 0"
+                    x-text="pendingStats.count">
                 </span>
             </div>
             <span style="font-size: 0.6rem;">Admin</span>
         </button>
 
-        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center text-muted p-1" 
-                @click="alert('Reports coming soon!')">
-            <i class="bi bi-file-earmark-bar-graph-fill fs-6 mb-0 text-secondary opacity-50"></i>
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'report' ? 'text-primary fw-bold' : 'text-muted'" @click="view = 'report'">
+            <i class="bi bi-file-earmark-bar-graph-fill fs-6 mb-0"
+                :class="view === 'report' ? 'text-primary' : 'text-secondary opacity-50'"></i>
             <span style="font-size: 0.6rem;">Reports</span>
         </button>
     </div>

@@ -1211,6 +1211,227 @@
     </template>
 </div>
     </div>
+    <div x-show="view === 'report'" class="app-view">
+        <div class="d-flex flex-column h-100 bg-light" x-init="if(reportTab === 'monthly') reportTab = 'paid'">
+
+    <div class="bg-white shadow-sm sticky-top" style="z-index: 1020;">
+
+        <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+            <button class="btn btn-light btn-sm rounded-circle border shadow-sm" @click="view = 'home'"
+                style="width: 40px; height: 40px;">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </button>
+
+            <div class="d-flex align-items-center bg-white rounded-3 border px-1 shadow-sm" style="height: 42px;">
+                <button class="btn btn-sm btn-link text-dark p-0" style="width: 32px;" @click="changeReportMonth(-1)">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <input type="month" class="form-control border-0 bg-transparent text-center fw-bold text-dark p-0 mx-1"
+                    style="width: 160px; font-size: 1rem; height: 100%; cursor: pointer; letter-spacing: 0.5px;"
+                    x-model="reportMonthKey">
+                <button class="btn btn-sm btn-link text-dark p-0" style="width: 32px;" @click="changeReportMonth(1)">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+
+            <div style="width: 40px;"></div>
+        </div>
+
+        <div class="px-3 py-3">
+            <div class="card border-0 shadow-sm rounded-3 bg-white overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="d-flex border-bottom">
+                        <div class="flex-fill p-2 text-center border-end">
+                            <span class="d-block text-muted fw-bold"
+                                style="font-size: 0.6rem; letter-spacing: 0.5px;">FLATS</span>
+                            <span class="fw-bold text-dark h6 mb-0" x-text="reportData.stats.flats"></span>
+                        </div>
+                        <div class="flex-fill p-2 text-center border-end">
+                            <span class="d-block text-success fw-bold"
+                                style="font-size: 0.6rem; letter-spacing: 0.5px;">PAID</span>
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                <span class="fw-bold text-success h6 mb-0" x-text="reportData.stats.paid"></span>
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill"
+                                    style="font-size: 0.55rem;" x-text="reportData.stats.paidPercent + '%'"></span>
+                            </div>
+                        </div>
+                        <div class="flex-fill p-2 text-center">
+                            <span class="d-block text-danger fw-bold"
+                                style="font-size: 0.6rem; letter-spacing: 0.5px;">UNPAID</span>
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                <span class="fw-bold text-danger h6 mb-0" x-text="reportData.stats.unpaid"></span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill"
+                                    style="font-size: 0.55rem;" x-text="reportData.stats.unpaidPercent + '%'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex bg-light">
+                        <div class="flex-fill p-2 text-center border-end">
+                            <span class="d-block text-muted fw-bold" style="font-size: 0.6rem;">EXPECTED</span>
+                            <span class="fw-bold text-dark small"
+                                x-text="'₹' + reportData.stats.expected.toLocaleString('en-IN')"></span>
+                        </div>
+                        <div class="flex-fill p-2 text-center border-end">
+                            <span class="d-block text-success fw-bold" style="font-size: 0.6rem;">RECEIVED</span>
+                            <span class="fw-bold text-success small"
+                                x-text="'₹' + reportData.stats.received.toLocaleString('en-IN')"></span>
+                        </div>
+                        <div class="flex-fill p-2 text-center">
+                            <span class="d-block text-danger fw-bold" style="font-size: 0.6rem;">PENDING</span>
+                            <span class="fw-bold text-danger small"
+                                x-text="'₹' + reportData.stats.pending.toLocaleString('en-IN')"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-top border-4 border-light"></div>
+
+       <div class="d-flex px-0 bg-white shadow-sm border-bottom border-light">
+            
+            <button class="flex-fill btn btn-sm rounded-0 border-end py-2 position-relative"
+                style="font-size: 0.85rem;"
+                :class="(reportTab === 'paid' || reportTab === 'monthly') ? 'border-bottom border-3 border-success text-success fw-bold bg-success bg-opacity-10' : 'border-bottom border-3 border-transparent text-muted'"
+                @click="reportTab = 'paid'">
+                Paid
+            </button>
+            
+            <button class="flex-fill btn btn-sm rounded-0 border-end py-2"
+                style="font-size: 0.85rem;"
+                :class="reportTab === 'unpaid' ? 'border-bottom border-3 border-danger text-danger fw-bold bg-danger bg-opacity-10' : 'border-bottom border-3 border-transparent text-muted'"
+                @click="reportTab = 'unpaid'">
+                Unpaid
+            </button>
+            
+            <button class="flex-fill btn btn-sm rounded-0 py-2"
+                style="font-size: 0.85rem;"
+                :class="reportTab === 'defaulters' ? 'border-bottom border-3 border-warning text-dark fw-bold bg-warning bg-opacity-10' : 'border-bottom border-3 border-transparent text-muted'"
+                @click="reportTab = 'defaulters'">
+                Defaulters
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-grow-1 overflow-auto bg-light mt-3">
+
+        <div class="d-flex bg-secondary bg-opacity-10 border-top border-bottom py-2 px-3 sticky-top shadow-sm align-items-center"
+            style="top: 0; font-size: 0.65rem;"
+            x-show="reportTab === 'paid' || reportTab === 'unpaid' || reportTab === 'monthly' || reportTab === 'defaulters'">
+
+            <div class="fw-bold text-muted" style="width: 45px;">FLAT</div>
+            <div class="fw-bold text-muted flex-grow-1 px-1">RESIDENT</div>
+            <div class="fw-bold text-muted text-center" style="width: 85px;">DATE</div>
+            <div class="fw-bold text-muted text-center" style="width: 55px;">TYPE</div>
+            <div class="fw-bold text-muted text-end" style="width: 75px;">AMOUNT</div>
+        </div>
+
+        <div x-show="reportTab === 'paid' || reportTab === 'monthly'" class="bg-white">
+            <template x-for="item in reportData.paidList" :key="item.flat">
+                <div class="d-flex align-items-center border-bottom py-2 px-3" style="min-height: 45px;">
+                    <div class="fw-bold text-dark" style="width: 45px; font-size: 0.85rem;" x-text="item.flat"></div>
+
+                    <div class="flex-grow-1 px-1 overflow-hidden">
+                        <div class="text-truncate fw-bold text-secondary" style="font-size: 0.8rem;" x-text="item.name">
+                        </div>
+                    </div>
+
+                    <div class="text-center text-dark small" style="width: 85px; font-size: 0.75rem;"
+                        x-text="item.date"></div>
+
+                    <div class="text-center" style="width: 55px;">
+                        <span class="badge rounded-pill fw-normal"
+                            :class="item.type === 'Owner' ? 'text-success border border-success' : 'text-warning border border-warning text-dark'"
+                            style="font-size: 0.6rem; background: transparent;" x-text="item.type"></span>
+                    </div>
+
+                    <div class="text-end fw-bold text-success" style="width: 75px; font-size: 0.85rem;">
+                        <span x-text="'₹' + item.amount"></span>
+                    </div>
+                </div>
+            </template>
+            <div x-show="reportData.paidList.length === 0" class="p-5 text-center text-muted small">
+                No payments recorded for this month.
+            </div>
+        </div>
+
+        <div x-show="reportTab === 'unpaid'" class="bg-white">
+            <template x-for="item in reportData.unpaidList" :key="item.flat">
+                <div class="d-flex align-items-center border-bottom py-2 px-3 cursor-pointer hover-bg-light"
+                    style="min-height: 45px;"
+                    @click="activeResident = residents.find(r => r.flat === item.flat); payPending(reportData.key, item.amount)">
+
+                    <div class="fw-bold text-dark" style="width: 45px; font-size: 0.85rem;" x-text="item.flat"></div>
+
+                    <div class="flex-grow-1 px-1 overflow-hidden">
+                        <div class="text-truncate fw-bold text-dark" style="font-size: 0.8rem;" x-text="item.name">
+                        </div>
+                    </div>
+
+                    <div class="text-center text-muted" style="width: 85px; font-size: 0.75rem;">-</div>
+
+                    <div class="text-center" style="width: 55px;">
+                        <span class="badge rounded-pill fw-normal"
+                            :class="item.type === 'Owner' ? 'text-success border border-success' : 'text-warning border border-warning text-dark'"
+                            style="font-size: 0.6rem; background: transparent;" x-text="item.type"></span>
+                    </div>
+
+                    <div class="text-end fw-bold text-danger" style="width: 75px; font-size: 0.85rem;">
+                        <span x-text="'₹' + item.amount"></span>
+                    </div>
+                </div>
+            </template>
+            <div x-show="reportData.unpaidList.length === 0" class="p-5 text-center text-muted small">
+                Everyone has paid!
+            </div>
+        </div>
+
+        <div x-show="reportTab === 'defaulters'" class="p-3">
+            <div class="card border-0 shadow-sm rounded-3 mb-3 bg-white border-start border-4 border-danger">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Pending
+                            Dues</small>
+                        <h3 class="fw-bold text-danger mb-0" x-text="'₹' + totalPendingDuesAll.toLocaleString('en-IN')">
+                        </h3>
+                    </div>
+                    <i class="bi bi-graph-down-arrow text-danger fs-2 opacity-25"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3 shadow-sm overflow-hidden">
+                <template x-for="(r, idx) in defaultersList" :key="r.flat">
+                    <div class="d-flex align-items-center border-bottom py-2 px-3" style="min-height: 45px;">
+
+                        <div class="fw-bold text-dark" style="width: 45px; font-size: 0.85rem;" x-text="r.flat"></div>
+
+                        <div class="flex-grow-1 px-1 overflow-hidden">
+                            <div class="text-truncate fw-bold text-dark" style="font-size: 0.8rem;" x-text="r.name">
+                            </div>
+                        </div>
+
+                        <div class="text-center text-danger small fw-bold" style="width: 85px; font-size: 0.75rem;"
+                            x-text="r.monthsCount + ' Months'"></div>
+
+                        <div class="text-center" style="width: 55px;">
+                            <span class="badge rounded-pill fw-normal"
+                                :class="r.type === 'Owner' ? 'text-success border border-success' : 'text-warning border border-warning text-dark'"
+                                style="font-size: 0.6rem; background: transparent;" x-text="r.type"></span>
+                        </div>
+
+                        <div class="text-end" style="width: 75px;">
+                            <div class="fw-bold text-danger" style="font-size: 0.85rem;"
+                                x-text="'₹' + r.totalDue.toLocaleString('en-IN')"></div>
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill py-0 px-2 mt-1"
+                                style="font-size: 0.6rem;" @click="openResidentByFlat(r.flat)">View</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
 
     <div x-show="view === 'validate'" class="app-view">
         <div class="d-flex flex-column h-100 bg-light" x-data="{ searchPending: '', searchHistory: '' }">
@@ -1436,50 +1657,51 @@
 </div>
     </div>
     
-    <div class="fixed-bottom bg-white border-top shadow-lg" 
-     style="z-index: 1030; bottom: 24px !important; padding-bottom: 0;">
-    
+    <div class="fixed-bottom bg-white border-top shadow-lg"
+    style="z-index: 1030; bottom: 24px !important; padding-bottom: 0;">
+
     <div class="d-flex justify-content-around py-1">
-        
-        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1" 
-                :class="view === 'home' ? 'text-primary fw-bold' : 'text-muted'"
-                @click="view = 'home'">
-            <i class="bi bi-grid-fill fs-6 mb-0" :class="view === 'home' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'home' ? 'text-primary fw-bold' : 'text-muted'" @click="view = 'home'">
+            <i class="bi bi-grid-fill fs-6 mb-0"
+                :class="view === 'home' ? 'text-primary' : 'text-secondary opacity-50'"></i>
             <span style="font-size: 0.6rem;">Dashboard</span>
         </button>
 
-        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1" 
-                :class="view === 'residents' || view === 'history' ? 'text-primary fw-bold' : 'text-muted'"
-                @click="view = 'residents'">
-            <i class="bi bi-people-fill fs-6 mb-0" :class="view === 'residents' || view === 'history' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'residents' || view === 'history' ? 'text-primary fw-bold' : 'text-muted'"
+            @click="view = 'residents'">
+            <i class="bi bi-people-fill fs-6 mb-0"
+                :class="view === 'residents' || view === 'history' ? 'text-primary' : 'text-secondary opacity-50'"></i>
             <span style="font-size: 0.6rem;">Residents</span>
         </button>
 
         <div class="position-relative" style="margin-top: -22px;">
-            <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
-                    style="width: 45px; height: 45px; border: 3px solid white;"
-                    @click="view = 'add'">
+            <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
+                style="width: 45px; height: 45px; border: 3px solid white;" @click="view = 'add'">
                 <i class="bi bi-plus-lg fs-5 text-white"></i>
             </button>
         </div>
 
-        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1" 
-                :class="view === 'validate' ? 'text-primary fw-bold' : 'text-muted'"
-                @click="view = 'validate'">
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'validate' ? 'text-primary fw-bold' : 'text-muted'" @click="view = 'validate'">
             <div class="position-relative">
-                <i class="bi bi-shield-check fs-6 mb-0" :class="view === 'validate' ? 'text-primary' : 'text-secondary opacity-50'"></i>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white"
-                      style="font-size: 0.4rem; padding: 0.2em 0.3em;"
-                      x-show="pendingStats.count > 0"
-                      x-text="pendingStats.count">
+                <i class="bi bi-shield-check fs-6 mb-0"
+                    :class="view === 'validate' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+                <span
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white"
+                    style="font-size: 0.4rem; padding: 0.2em 0.3em;" x-show="pendingStats.count > 0"
+                    x-text="pendingStats.count">
                 </span>
             </div>
             <span style="font-size: 0.6rem;">Admin</span>
         </button>
 
-        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center text-muted p-1" 
-                @click="alert('Reports coming soon!')">
-            <i class="bi bi-file-earmark-bar-graph-fill fs-6 mb-0 text-secondary opacity-50"></i>
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'report' ? 'text-primary fw-bold' : 'text-muted'" @click="view = 'report'">
+            <i class="bi bi-file-earmark-bar-graph-fill fs-6 mb-0"
+                :class="view === 'report' ? 'text-primary' : 'text-secondary opacity-50'"></i>
             <span style="font-size: 0.6rem;">Reports</span>
         </button>
     </div>

@@ -20,6 +20,9 @@
     <div x-show="view === 'add'" class="app-view">
         {{ partial "mobile/add-entry.html" . }}
     </div>
+    <div x-show="view === 'report'" class="app-view">
+        {{ partial "mobile/maintenance-report.html" . }}
+    </div>
 
     <div x-show="view === 'validate'" class="app-view">
         {{ partial "mobile/validate.html" . }}
