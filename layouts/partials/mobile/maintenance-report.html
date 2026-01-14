@@ -1,13 +1,7 @@
 <div class="d-flex flex-column h-100 bg-light" x-init="if(reportTab === 'monthly') reportTab = 'paid'">
 
     <div class="bg-white shadow-sm sticky-top" style="z-index: 1020;">
-
-        <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
-            <button class="btn btn-light btn-sm rounded-circle border shadow-sm" @click="view = 'home'"
-                style="width: 40px; height: 40px;">
-                <i class="bi bi-arrow-left fs-5"></i>
-            </button>
-
+        <div class="d-flex align-items-center justify-content-center p-3 border-bottom">
             <div class="d-flex align-items-center bg-white rounded-3 border px-1 shadow-sm" style="height: 42px;">
                 <button class="btn btn-sm btn-link text-dark p-0" style="width: 32px;" @click="changeReportMonth(-1)">
                     <i class="bi bi-chevron-left"></i>
@@ -19,8 +13,6 @@
                     <i class="bi bi-chevron-right"></i>
                 </button>
             </div>
-
-            <div style="width: 40px;"></div>
         </div>
 
         <div class="px-3 py-3">
