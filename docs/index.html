@@ -1194,25 +1194,7 @@
                 <textarea x-model="txnForm.remarks" class="form-control border-0 shadow-sm rounded-4 p-3 bg-white" rows="2" placeholder="Any additional notes..."></textarea>
             </div>
 
-            <div x-show="gpayState.error" class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <span x-text="gpayState.error"></span>
-                <button type="button" class="btn-close" @click="gpayState.error = null"></button>
-            </div>
-
-            <div class="pt-2 pb-4 d-flex flex-column gap-2">
-                <button class="btn btn-success btn-lg w-100 rounded-pill py-3 fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2"
-                        :disabled="gpayState.isProcessing || !txnForm.amount || !txnForm.flatNo || txnForm.method !== 'UPI'"
-                        @click="initiateGPayPayment">
-                    
-                    <span x-show="!gpayState.isProcessing"><i class="bi bi-phone"></i> Pay with GPay</span>
-                    
-                    <span x-show="gpayState.isProcessing">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        Processing...
-                    </span>
-                </button>
-
+            <div class="pt-2 pb-4">
                 <button class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2"
                         :disabled="isSubmitting || !txnForm.amount || !txnForm.flatNo"
                         @click="saveTransaction">
