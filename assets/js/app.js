@@ -283,7 +283,8 @@ document.addEventListener('alpine:init', () => {
         pageM: 1,
         pageA: 1,
         limit: 10,
-        txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '' },
+        txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '', transactionId: '' },
+        gpayState: { isProcessing: false, transactionId: null, error: null },
 
         dashboardStats: {
             flatsCount: 0, ownersCount: 0, tenantsCount: 0, totalCollection: 0,
@@ -317,9 +318,11 @@ document.addEventListener('alpine:init', () => {
             this.txnForm.amount = '';
             this.txnForm.remarks = '';
             this.txnForm.flatNo = '';
+            this.txnForm.transactionId = '';
             const iso = this.getLocalISOString();
             this.txnForm.paymentDate = iso.slice(0, 16);
             this.txnForm.month = iso.slice(0, 7);
+            this.gpayState = { isProcessing: false, transactionId: null, error: null };
         },
 
         async fetchAndHydrate() {
@@ -361,6 +364,70 @@ document.addEventListener('alpine:init', () => {
             if (success) { await this.fetchAndHydrate(); this.admin.showSuccessModal = true; setTimeout(() => { this.admin.showSuccessModal = false; }, 2000); }
             else { alert("Failed to update status."); }
             this.isSubmitting = false;
+        },
+
+        async initiateGPayPayment() {
+            if (!this.txnForm.amount || !this.txnForm.flatNo) {
+                alert('Please enter amount and select flat');
+                return;
+            }
+            this.gpayState.isProcessing = true;
+            this.gpayState.error = null;
+            const upiId = this.settings.GPayAccount;
+            const amount = this.txnForm.amount;
+            const description = `Flat ${this.txnForm.flatNo} - ${this.txnForm.category}`;
+            const upiUrl = `upi://pay?pa=${upiId}&pn=SavitryGreen&tn=${encodeURIComponent(description)}&am=${amount}&cu=INR`;
+            try {
+                window.location.href = upiUrl;
+                await this.trackGPayTransaction();
+            } catch (error) {
+                this.gpayState.error = 'Failed to open GPay. Please ensure GPay is installed.';
+                this.gpayState.isProcessing = false;
+            }
+        },
+
+        async trackGPayTransaction() {
+            const maxAttempts = 30;
+            let attempts = 0;
+            const checkInterval = 2000;
+            const startTime = Date.now();
+            const timeout = 120000;
+            const pollTransaction = async () => {
+                if (Date.now() - startTime > timeout) {
+                    this.gpayState.isProcessing = false;
+                    this.gpayState.error = 'Transaction tracking timeout. Please enter transaction ID manually.';
+                    return;
+                }
+                attempts++;
+                try {
+                    const response = await fetch(this.repository.apiUrl + '?action=getLatestTransaction&flatNo=' + this.txnForm.flatNo);
+                    const result = await response.json();
+                    if (result.transaction && result.transaction.PaymentID && result.transaction.PaymentDate) {
+                        const txnTime = new Date(result.transaction.PaymentDate).getTime();
+                        if (txnTime > startTime - 5000) {
+                            this.txnForm.transactionId = result.transaction.PaymentID;
+                            this.gpayState.transactionId = result.transaction.PaymentID;
+                            this.gpayState.isProcessing = false;
+                            await this.saveTransaction();
+                            return;
+                        }
+                    }
+                    if (attempts < maxAttempts) {
+                        setTimeout(pollTransaction, checkInterval);
+                    } else {
+                        this.gpayState.isProcessing = false;
+                        this.gpayState.error = 'Could not verify transaction. Please enter transaction ID manually.';
+                    }
+                } catch (error) {
+                    if (attempts < maxAttempts) {
+                        setTimeout(pollTransaction, checkInterval);
+                    } else {
+                        this.gpayState.isProcessing = false;
+                        this.gpayState.error = 'Transaction verification failed. Please enter transaction ID manually.';
+                    }
+                }
+            };
+            setTimeout(pollTransaction, checkInterval);
         },
 
         login() {
@@ -524,7 +591,9 @@ document.addEventListener('alpine:init', () => {
         get filteredMonthly() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history.filter(h => h.isMonthly && (!q || (String(h.amount) + h.method + h.remarks + (h.rawMonth || '')).toLowerCase().includes(q)));
+            return this.activeResident.history
+                .filter(h => h.isMonthly && (!q || (String(h.amount) + h.method + h.remarks + (h.rawMonth || '')).toLowerCase().includes(q)))
+                .sort((a, b) => new Date(b.rawMonth || b.rawDate) - new Date(a.rawMonth || a.rawDate));
         },
 
         get paginatedMonthly() {
@@ -537,7 +606,9 @@ document.addEventListener('alpine:init', () => {
         get filteredAdhoc() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history.filter(h => !h.isMonthly && (!q || (h.category + (h.title || '') + String(h.amount) + h.method + h.remarks).toLowerCase().includes(q)));
+            return this.activeResident.history
+                .filter(h => !h.isMonthly && (!q || (h.category + (h.title || '') + String(h.amount) + h.method + h.remarks).toLowerCase().includes(q)))
+                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
         },
 
         get paginatedAdhoc() {

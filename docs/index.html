@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-	<meta name="generator" content="Hugo 0.152.2"><script src="/SavitryGreen.T15.Residents/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=SavitryGreen.T15.Residents/livereload" data-no-instant defer></script>
+	<meta name="generator" content="Hugo 0.161.0"><script src="/SavitryGreen.T15.Residents/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=SavitryGreen.T15.Residents/livereload" data-no-instant defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title></title>
@@ -957,7 +957,7 @@
                     <div x-show="filteredMonthly.length === 0" class="p-4 text-center text-muted small">No matching
                         monthly payments.</div>
 
-                    <div class="p-2 bg-light border-top d-flex justify-content-between align-items-center"
+                    <div class="p-2 bg-light border-top d-flex justify-content-center align-items-center gap-3"
                         x-show="filteredMonthly.length > limit">
                         <button class="btn btn-sm btn-white border shadow-sm rounded-circle" :disabled="pageM === 1"
                             @click="pageM--"><i class="bi bi-chevron-left"></i></button>
@@ -1065,7 +1065,7 @@
                     <div x-show="filteredAdhoc.length === 0" class="p-4 text-center text-muted small">No matching adhoc
                         payments.</div>
 
-                    <div class="p-2 bg-light border-top d-flex justify-content-between align-items-center"
+                    <div class="p-2 bg-light border-top d-flex justify-content-center align-items-center gap-3"
                         x-show="filteredAdhoc.length > limit">
                         <button class="btn btn-sm btn-white border shadow-sm rounded-circle" :disabled="pageA === 1"
                             @click="pageA--"><i class="bi bi-chevron-left"></i></button>
@@ -1194,7 +1194,25 @@
                 <textarea x-model="txnForm.remarks" class="form-control border-0 shadow-sm rounded-4 p-3 bg-white" rows="2" placeholder="Any additional notes..."></textarea>
             </div>
 
-            <div class="pt-2 pb-4">
+            <div x-show="gpayState.error" class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span x-text="gpayState.error"></span>
+                <button type="button" class="btn-close" @click="gpayState.error = null"></button>
+            </div>
+
+            <div class="pt-2 pb-4 d-flex flex-column gap-2">
+                <button class="btn btn-success btn-lg w-100 rounded-pill py-3 fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2"
+                        :disabled="gpayState.isProcessing || !txnForm.amount || !txnForm.flatNo || txnForm.method !== 'UPI'"
+                        @click="initiateGPayPayment">
+                    
+                    <span x-show="!gpayState.isProcessing"><i class="bi bi-phone"></i> Pay with GPay</span>
+                    
+                    <span x-show="gpayState.isProcessing">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Processing...
+                    </span>
+                </button>
+
                 <button class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2"
                         :disabled="isSubmitting || !txnForm.amount || !txnForm.flatNo"
                         @click="saveTransaction">

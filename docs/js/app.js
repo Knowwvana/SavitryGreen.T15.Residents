@@ -524,7 +524,9 @@ document.addEventListener('alpine:init', () => {
         get filteredMonthly() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history.filter(h => h.isMonthly && (!q || (String(h.amount) + h.method + h.remarks + (h.rawMonth || '')).toLowerCase().includes(q)));
+            return this.activeResident.history
+                .filter(h => h.isMonthly && (!q || (String(h.amount) + h.method + h.remarks + (h.rawMonth || '')).toLowerCase().includes(q)))
+                .sort((a, b) => new Date(b.rawMonth || b.rawDate) - new Date(a.rawMonth || a.rawDate));
         },
 
         get paginatedMonthly() {
@@ -537,7 +539,9 @@ document.addEventListener('alpine:init', () => {
         get filteredAdhoc() {
             if (!this.activeResident || !this.activeResident.history) return [];
             const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history.filter(h => !h.isMonthly && (!q || (h.category + (h.title || '') + String(h.amount) + h.method + h.remarks).toLowerCase().includes(q)));
+            return this.activeResident.history
+                .filter(h => !h.isMonthly && (!q || (h.category + (h.title || '') + String(h.amount) + h.method + h.remarks).toLowerCase().includes(q)))
+                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
         },
 
         get paginatedAdhoc() {
