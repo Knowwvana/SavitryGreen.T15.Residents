@@ -254,6 +254,23 @@ document.addEventListener('alpine:init', () => {
                     return result.success;
                 } catch (error) { return false; }
             }
+
+            async addExpense(formData) {
+                const payload = {
+                    action: 'ADD_EXPENSE',
+                    ExpenseID: formData.expenseId || '',
+                    Title: formData.title,
+                    Type: formData.type,
+                    Amount: formData.amount,
+                    Date: formData.date,
+                    Remarks: formData.remarks || ''
+                };
+                try {
+                    const response = await fetch(this.apiUrl + '?action=addExpense', { method: 'POST', body: JSON.stringify(payload) });
+                    const result = await response.json();
+                    return result.success;
+                } catch (error) { return false; }
+            }
         }
 
         return { SocietyRepository, LocalTimeHelper, Resident, Settings };
@@ -276,14 +293,18 @@ document.addEventListener('alpine:init', () => {
         isLoading: true,
         isSubmitting: false,
         txnSuccess: false,
+        expenseSuccess: false,
         residents: [],
         settings: {},
         activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, pendingValidation: 0, currentDue: 0 } },
         historyQuery: '',
         pageM: 1,
         pageA: 1,
+        recentPage: 1,
         limit: 10,
+        recentLimit: 10,
         txnForm: { flatNo: '', amount: '', category: 'Monthly', title: '', month: '', paymentDate: '', method: 'UPI', remarks: '' },
+        expenseForm: { title: '', type: 'Monthly', amount: '', date: '', remarks: '' },
 
         dashboardStats: {
             flatsCount: 0, ownersCount: 0, tenantsCount: 0, totalCollection: 0,
@@ -299,6 +320,7 @@ document.addEventListener('alpine:init', () => {
             this.reportMonthKey = this.getLocalISOString().slice(0, 7);
             this.updateDate();
             this.resetTxnForm();
+            this.resetExpenseForm();
             this.fetchAndHydrate();
 
             // Watch for page/view changes and scroll to top
@@ -320,6 +342,33 @@ document.addEventListener('alpine:init', () => {
             const iso = this.getLocalISOString();
             this.txnForm.paymentDate = iso.slice(0, 16);
             this.txnForm.month = iso.slice(0, 7);
+        },
+
+        resetExpenseForm() {
+            this.expenseSuccess = false;
+            this.expenseForm.title = '';
+            this.expenseForm.type = 'Monthly';
+            this.expenseForm.amount = '';
+            this.expenseForm.remarks = '';
+            const iso = this.getLocalISOString();
+            this.expenseForm.date = iso.slice(0, 10);
+        },
+
+        async saveExpense() {
+            this.isSubmitting = true;
+            const nextId = this.repository.expenditures.length > 0
+                ? Math.max(...this.repository.expenditures.map(e => parseInt(e.id) || 0)) + 1
+                : 1;
+            this.expenseForm.expenseId = String(nextId);
+            const success = await this.repository.addExpense(this.expenseForm);
+            if (success) {
+                await this.fetchAndHydrate();
+                this.expenseSuccess = true;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                alert('Failed to save expense. Try again.');
+            }
+            this.isSubmitting = false;
         },
 
         async fetchAndHydrate() {
@@ -472,7 +521,8 @@ document.addEventListener('alpine:init', () => {
             stats.adhocCashInHand = stats.adhocTotal - stats.adhocSpent;
             stats.cashInHand = stats.monthlyCashInHand + stats.adhocCashInHand;
 
-            stats.recentTransactions = allPayments.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).slice(0, 50).map(txn => this.mapTransactionForDisplay(txn));
+            stats.recentTransactions = allPayments.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate)).map(txn => this.mapTransactionForDisplay(txn));
+            this.recentPage = 1;
             this.dashboardStats = stats;
         },
 
@@ -533,16 +583,15 @@ document.addEventListener('alpine:init', () => {
             const start = (this.pageM - 1) * this.limit;
             return this.filteredMonthly.slice(start, start + this.limit);
         },
-
+        
         get totalPagesM() { return Math.ceil(this.filteredMonthly.length / this.limit) || 1; },
-
-        get filteredAdhoc() {
-            if (!this.activeResident || !this.activeResident.history) return [];
-            const q = (this.historyQuery || '').toLowerCase();
-            return this.activeResident.history
-                .filter(h => !h.isMonthly && (!q || (h.category + (h.title || '') + String(h.amount) + h.method + h.remarks).toLowerCase().includes(q)))
-                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
+        
+        get paginatedRecentTransactions() {
+            const start = (this.recentPage - 1) * this.recentLimit;
+            return this.dashboardStats.recentTransactions.slice(start, start + this.recentLimit);
         },
+
+        get recentTotalPages() { return Math.ceil(this.dashboardStats.recentTransactions.length / this.recentLimit) || 1; },
 
         get paginatedAdhoc() {
             const start = (this.pageA - 1) * this.limit;

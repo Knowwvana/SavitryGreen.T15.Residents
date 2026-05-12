@@ -197,7 +197,7 @@
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
             <div class="list-group list-group-flush">
-                <template x-for="(txn, index) in dashboardStats.recentTransactions" :key="txn.id">
+                <template x-for="(txn, index) in paginatedRecentTransactions" :key="txn.id">
                     <div class="list-group-item p-3 border-light position-relative" 
                             @click="openResidentByFlat(txn.flatNo)"
                             style="cursor: pointer;">
@@ -251,6 +251,20 @@
                     </div>
                 </template>
             </div>
+        </div>
+
+        <div x-show="recentTotalPages > 1" class="d-flex justify-content-center align-items-center gap-2 mt-3 px-1">
+            <button class="btn btn-sm btn-primary shadow-sm rounded-pill px-2"
+                    :disabled="recentPage <= 1"
+                    @click="recentPage--">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span class="small fw-bold text-muted" x-text="'Page ' + recentPage + ' of ' + recentTotalPages"></span>
+            <button class="btn btn-sm btn-primary shadow-sm rounded-pill px-2"
+                    :disabled="recentPage >= recentTotalPages"
+                    @click="recentPage++">
+                <i class="bi bi-chevron-right"></i>
+            </button>
         </div>
     </div>
 </template>

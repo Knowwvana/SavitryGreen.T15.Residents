@@ -4,4 +4,4 @@ title = 'Savitry Greens - Tower 15 Residents'
 theme = [] # Crucial: We are NOT using a theme, we are building custom layouts.
 publishDir = "docs"
 [params]
-  API_URL = "https://script.google.com/macros/s/AKfycbz0Y3XZlARo3n5OdBTBcyuZnyuZkvFgXH54Qn-QbeDmejUZZrQwWqPvelSgWqXOdPUITA/exec"
+  API_URL = "https://script.google.com/macros/s/AKfycbzXyLszM8IT3c0ZSWZs0hO0mHV8tn3rIKyWmqzWC6oEVtq20GwHRM7Ivu5ZepOgWzC0CQ/exec"

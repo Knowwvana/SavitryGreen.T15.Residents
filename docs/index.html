@@ -30,7 +30,7 @@
 <body>
     
     
-<div x-data="societyApp('https://script.google.com/macros/s/AKfycbz0Y3XZlARo3n5OdBTBcyuZnyuZkvFgXH54Qn-QbeDmejUZZrQwWqPvelSgWqXOdPUITA/exec')" class="min-vh-100 bg-white" x-cloak>
+<div x-data="societyApp('https://script.google.com/macros/s/AKfycbzXyLszM8IT3c0ZSWZs0hO0mHV8tn3rIKyWmqzWC6oEVtq20GwHRM7Ivu5ZepOgWzC0CQ/exec')" class="min-vh-100 bg-white" x-cloak>
 
     <div x-show="isLoading" 
      x-transition:enter="transition ease-out duration-200"
@@ -367,7 +367,7 @@
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
             <div class="list-group list-group-flush">
-                <template x-for="(txn, index) in dashboardStats.recentTransactions" :key="txn.id">
+                <template x-for="(txn, index) in paginatedRecentTransactions" :key="txn.id">
                     <div class="list-group-item p-3 border-light position-relative" 
                             @click="openResidentByFlat(txn.flatNo)"
                             style="cursor: pointer;">
@@ -421,6 +421,20 @@
                     </div>
                 </template>
             </div>
+        </div>
+
+        <div x-show="recentTotalPages > 1" class="d-flex justify-content-center align-items-center gap-2 mt-3 px-1">
+            <button class="btn btn-sm btn-primary shadow-sm rounded-pill px-2"
+                    :disabled="recentPage <= 1"
+                    @click="recentPage--">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span class="small fw-bold text-muted" x-text="'Page ' + recentPage + ' of ' + recentTotalPages"></span>
+            <button class="btn btn-sm btn-primary shadow-sm rounded-pill px-2"
+                    :disabled="recentPage >= recentTotalPages"
+                    @click="recentPage++">
+                <i class="bi bi-chevron-right"></i>
+            </button>
         </div>
     </div>
 </template>
@@ -1500,16 +1514,21 @@
                      </div>
                 </div>
 
-                <div class="bg-white p-1 rounded-pill border shadow-sm d-flex mb-4 position-relative z-1">
-                    <button class="btn rounded-pill py-2 flex-fill fw-bold transition-all"
+                <div class="bg-white p-1 rounded-4 border shadow-sm d-flex flex-wrap gap-1 mb-4 position-relative z-1">
+                    <button class="btn rounded-pill py-2 flex-fill fw-bold transition-all small"
                             :class="admin.tab === 'pending' ? 'bg-primary text-white shadow-sm' : 'text-muted hover-bg-light'"
                             @click="admin.tab = 'pending'">
-                        Payments - Pending Approval <span class="badge bg-white text-primary ms-1 rounded-pill" x-text="pendingStats.count"></span>
+                        <i class="bi bi-hourglass-split me-1"></i>Pending <span class="badge bg-white text-primary ms-1 rounded-pill" x-text="pendingStats.count"></span>
                     </button>
-                    <button class="btn rounded-pill py-2 flex-fill fw-bold transition-all"
+                    <button class="btn rounded-pill py-2 flex-fill fw-bold transition-all small"
                             :class="admin.tab === 'history' ? 'bg-dark text-white shadow-sm' : 'text-muted hover-bg-light'"
                             @click="admin.tab = 'history'">
-                        Approval History
+                        <i class="bi bi-clock-history me-1"></i>History
+                    </button>
+                    <button class="btn rounded-pill py-2 flex-fill fw-bold transition-all small"
+                            :class="admin.tab === 'expense' ? 'bg-primary text-white shadow-sm' : 'text-muted hover-bg-light'"
+                            @click="admin.tab = 'expense'; resetExpenseForm()">
+                        <i class="bi bi-receipt me-1"></i>Add Expense
                     </button>
                 </div>
 
@@ -1624,6 +1643,98 @@
                             </div>
                         </template>
                     </div>
+                </div>
+
+                <div x-show="admin.tab === 'expense'" x-transition:enter="fade-in">
+
+                    <template x-if="expenseSuccess">
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center pt-4 page-animate">
+                            <div class="mb-4 bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                <i class="bi bi-check-lg text-success" style="font-size: 4rem;"></i>
+                            </div>
+                            <h3 class="fw-bold text-dark mb-2">Expense Saved!</h3>
+                            <p class="text-muted mb-4 px-4">The expense has been recorded in the Expenditure sheet.</p>
+                            <div class="w-100 px-2 d-flex flex-column gap-3">
+                                <button class="btn btn-primary btn-lg rounded-pill py-3 fw-bold shadow-sm" @click="resetExpenseForm()">
+                                    <i class="bi bi-plus-lg me-2"></i> Add Another Expense
+                                </button>
+                                <button class="btn btn-white btn-lg rounded-pill py-3 fw-bold border shadow-sm text-muted"
+                                        @click="admin.tab = 'pending'; expenseSuccess = false;">
+                                    Back to Approvals
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="!expenseSuccess">
+                        <div class="d-flex flex-column gap-3">
+
+                            <div class="card border-0 shadow-sm rounded-4 mb-2 overflow-hidden">
+                                <div class="card-body p-4 text-center bg-white">
+                                    <label class="text-uppercase fw-bold text-muted small mb-2" style="letter-spacing: 1px;">Expense Amount</label>
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <span class="display-3 fw-bold text-primary me-1">₹</span>
+                                        <input type="number" x-model="expenseForm.amount"
+                                               class="form-control border-0 p-0 display-1 fw-bold text-center text-dark bg-transparent"
+                                               placeholder="0"
+                                               style="max-width: 250px; outline: none; box-shadow: none;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="form-label small fw-bold text-muted ms-1">Title / Description</label>
+                                <input type="text" x-model="expenseForm.title"
+                                       class="form-control border-0 shadow-sm rounded-4 py-3 bg-white"
+                                       placeholder="e.g. CCTV Repair, Lift Floor Mats">
+                            </div>
+
+                            <div>
+                                <label class="form-label small fw-bold text-muted ms-1">Expense Type</label>
+                                <div class="bg-white p-1 rounded-4 border shadow-sm d-flex">
+                                    <button class="btn flex-fill rounded-4 py-2 fw-bold transition-all"
+                                            :class="expenseForm.type === 'Monthly' ? 'bg-primary text-white shadow-sm' : 'text-muted'"
+                                            @click="expenseForm.type = 'Monthly'">
+                                        Monthly
+                                    </button>
+                                    <button class="btn flex-fill rounded-4 py-2 fw-bold transition-all"
+                                            :class="expenseForm.type === 'Adhoc' ? 'bg-info text-white shadow-sm' : 'text-muted'"
+                                            @click="expenseForm.type = 'Adhoc'">
+                                        Adhoc
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="form-label small fw-bold text-muted ms-1">Date of Expense</label>
+                                <input type="date" x-model="expenseForm.date"
+                                       class="form-control border-0 shadow-sm rounded-4 py-3 bg-white fw-bold custom-date-input"
+                                       onclick="this.showPicker()">
+                            </div>
+
+                            <div>
+                                <label class="form-label small fw-bold text-muted ms-1">Remarks</label>
+                                <textarea x-model="expenseForm.remarks"
+                                          class="form-control border-0 shadow-sm rounded-4 p-3 bg-white"
+                                          rows="2"
+                                          placeholder="e.g. Gpay Manav, Cash paid to vendor"></textarea>
+                            </div>
+
+                            <div class="pt-2 pb-4">
+                                <button class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2"
+                                        :disabled="isSubmitting || !expenseForm.amount || !expenseForm.title"
+                                        @click="saveExpense()">
+                                    <span x-show="!isSubmitting"><i class="bi bi-receipt me-1"></i> Save Expense</span>
+                                    <span x-show="isSubmitting">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        Saving...
+                                    </span>
+                                </button>
+                            </div>
+
+                        </div>
+                    </template>
+
                 </div>
 
             </div>
