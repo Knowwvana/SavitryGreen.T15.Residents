@@ -51,15 +51,23 @@
                 </div>
 
                 <div class="mb-3 px-1">
-                     <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-4 border shadow-sm bg-success text-white border-success" style="max-width: 200px;">
-                         <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0 bg-white text-success" 
-                              style="width: 32px; height: 32px; font-size: 0.8rem;">
-                             <span x-text="(admin.currentUser || 'A').charAt(0).toUpperCase()"></span>
-                         </div>
-                         <div class="d-flex flex-column" style="line-height: 1.1;">
-                             <span class="fw-bold text-truncate" style="font-size: 0.8rem; max-width: 100px;" x-text="admin.currentUser"></span>
-                             <span style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.8;">LOGGED IN</span>
-                         </div>
+                     <div class="text-muted small fw-bold mb-2">Admin Team:</div>
+                     <div class="d-flex gap-2 flex-wrap">
+                         <template x-for="adm in repository.adminNames" :key="adm">
+                            <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-4 border shadow-sm"
+                                 :class="admin.currentUser === adm ? 'bg-success text-white border-success' : 'bg-white text-dark border-light'"
+                                 style="min-width: 140px;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                                     :class="admin.currentUser === adm ? 'bg-white text-success' : 'bg-light text-secondary'" 
+                                     style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                    <span x-text="adm.charAt(0).toUpperCase()"></span>
+                                </div>
+                                <div class="d-flex flex-column" style="line-height: 1.1;">
+                                    <span class="fw-bold text-truncate" style="font-size: 0.8rem; max-width: 100px;" x-text="adm"></span>
+                                    <span style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.8;" x-text="admin.currentUser === adm ? 'YOU' : 'ADMIN'"></span>
+                                </div>
+                            </div>
+                         </template>
                      </div>
                 </div>
 
@@ -177,21 +185,25 @@
                     <div class="d-flex flex-column gap-2">
                         <template x-for="txn in filteredHistoryList" :key="txn.id">
                             <div class="bg-white p-3 rounded-4 border shadow-sm">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1 pe-2">
                                         <div class="fw-bold text-dark small" x-text="txn.displayFlat + ' - ' + txn.displayResidentName"></div>
-                                        <div class="text-muted" style="font-size: 0.65rem;" x-text="txn.fullDateTime"></div>
+                                        <div class="text-muted" style="font-size: 0.65rem;" x-text="txn.title || txn.category"></div>
                                     </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success small" x-text="'₹' + txn.amount"></div>
+                                    <div class="text-end flex-shrink-0">
+                                        <div class="fw-bold text-success" style="font-size: 0.95rem;" x-text="'₹' + txn.amount"></div>
                                         <span class="badge bg-success bg-opacity-10 text-success rounded-pill" style="font-size: 0.55rem;">Paid</span>
                                     </div>
                                 </div>
-                                <div class="mt-2 pt-2 border-top border-light d-flex align-items-center gap-2">
-                                    <i class="bi bi-shield-check text-success" style="font-size: 0.7rem;"></i>
-                                    <div class="small text-muted lh-1" style="font-size: 0.65rem;">
-                                        Approved by <span class="fw-bold text-dark" x-text="txn.validatedBy"></span><br>
-                                        <span class="text-secondary opacity-75" x-text="txn.displayValidationTime"></span>
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <i class="bi bi-shield-check text-success" style="font-size: 0.65rem;"></i>
+                                        <span class="text-muted" style="font-size: 0.65rem;">
+                                            <span class="fw-bold text-dark" x-text="txn.validatedBy"></span>
+                                        </span>
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.6rem;">
+                                        <i class="bi bi-clock me-1"></i><span x-text="txn.displayValidationTime || txn.fullDateTime"></span>
                                     </div>
                                 </div>
                             </div>

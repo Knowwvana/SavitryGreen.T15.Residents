@@ -174,6 +174,7 @@ document.addEventListener('alpine:init', () => {
                 this.expenditures = [];
                 this.settings = new Settings({});
                 this.flatList = [];
+                this.adminNames = [];
                 this.isLoading = false;
             }
 
@@ -186,6 +187,7 @@ document.addEventListener('alpine:init', () => {
 
                     this.settings = new Settings(result.settings);
                     this.flatList = (result.flatList || []).map(f => normalizeFlat(f));
+                    this.adminNames = result.adminNames || [];
 
                     this.expenditures = (result.expenditure || []).map(e => new Expense(e));
                     const allPayments = (result.payments || []).map(p => new Payment(p));
@@ -335,7 +337,7 @@ document.addEventListener('alpine:init', () => {
         expenseSuccess: false,
         residents: [],
         settings: {},
-        activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, pendingValidation: 0, currentDue: 0 } },
+        activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, monthlyPaid: 0, adhocPaid: 0, pendingValidation: 0, currentDue: 0 } },
         historyQuery: '',
         pageM: 1,
         pageA: 1,
@@ -502,11 +504,11 @@ document.addEventListener('alpine:init', () => {
                 localStorage.setItem('sg_user', JSON.stringify({ flatNo, phone, name: match.Name || '' }));
                 this.view = 'home';
             } else {
-                // Check if pending
+                // Check if pending (IsActive === false)
                 const pending = rawResidents.find(r => {
                     const rFlat = AppServices.normalizeFlat(r.FlatNo);
                     const rPhone = String(r.Phone || '').trim().replace(/\s/g, '');
-                    return rFlat === flatNo && rPhone === phone && (String(r.IsActive).toLowerCase() === 'pending');
+                    return rFlat === flatNo && rPhone === phone && (r.IsActive === false);
                 });
                 if (pending) {
                     this.userLogin.error = 'Your registration is pending admin approval. Please wait or contact your society admin.';
@@ -531,11 +533,21 @@ document.addEventListener('alpine:init', () => {
                 this.registerForm.error = 'Flat Number, Name, and Phone are required.';
                 return;
             }
+            if (this.registerForm.name.trim().length < 4) {
+                this.registerForm.error = 'Name must be at least 4 characters.';
+                return;
+            }
+            const phoneDigits = this.registerForm.phone.trim().replace(/\D/g, '');
+            if (phoneDigits.length !== 10) {
+                this.registerForm.error = 'Mobile number must be exactly 10 digits.';
+                return;
+            }
             this.registerForm.isSubmitting = true;
             const result = await this.repository.addResident(this.registerForm);
             if (result.success) {
                 this.registerForm.success = result.message || 'Registration submitted! An admin will validate your entry shortly.';
-                this.registerForm.name = ''; this.registerForm.email = ''; this.registerForm.phone = ''; this.registerForm.residentType = 'Owner';
+                this.registerForm.flatNo = ''; this.registerForm.name = ''; this.registerForm.email = ''; this.registerForm.phone = ''; this.registerForm.residentType = 'Owner';
+                await this.fetchAndHydrate();
             } else {
                 this.registerForm.error = result.message || 'Registration failed. Please try again.';
             }
@@ -549,7 +561,6 @@ document.addEventListener('alpine:init', () => {
             if (result.success) {
                 await this.fetchAndHydrate();
                 this.admin.showSuccessModal = true;
-                setTimeout(() => { this.admin.showSuccessModal = false; }, 2000);
             } else {
                 alert('Failed to update resident status: ' + (result.message || ''));
             }
@@ -604,7 +615,7 @@ document.addEventListener('alpine:init', () => {
             const occupiedFlats = new Set();
             rawResidents.forEach(r => {
                 const isActive = r.IsActive === true || r.IsActive === 'TRUE' || r.IsActive === 'true' || r.IsActive === 'Active';
-                const isPending = String(r.IsActive).toLowerCase() === 'pending';
+                const isPending = r.IsActive === false;  // false = pending approval
                 if (isActive || isPending) occupiedFlats.add(AppServices.normalizeFlat(r.FlatNo));
             });
             return allFlats.filter(f => !occupiedFlats.has(f));
@@ -627,7 +638,7 @@ document.addEventListener('alpine:init', () => {
         // --- PENDING RESIDENTS LIST (for admin validation) ---
         get pendingResidentsList() {
             const rawResidents = this.repository.rawResidents || [];
-            return rawResidents.filter(r => String(r.IsActive).toLowerCase() === 'pending').map(r => ({
+            return rawResidents.filter(r => r.IsActive === false).map(r => ({
                 id: r.ResidentId,
                 flatNo: AppServices.normalizeFlat(r.FlatNo),
                 name: r.Name || 'Unknown',
@@ -764,10 +775,14 @@ document.addEventListener('alpine:init', () => {
 
                 // 2. Calculate Stats for the Summary Box
                 const totalPaid = resident.history.reduce((sum, p) => p.isPaidStrict ? sum + p.amount : sum, 0);
+                const monthlyPaid = resident.history.reduce((sum, p) => p.isPaidStrict && p.isMonthly ? sum + p.amount : sum, 0);
+                const adhocPaid = totalPaid - monthlyPaid;
                 const pendingVal = resident.history.reduce((sum, p) => p.status.toLowerCase() === 'pending validation' ? sum + p.amount : sum, 0);
 
                 resident.stats = {
                     totalPaid: totalPaid,
+                    monthlyPaid: monthlyPaid,
+                    adhocPaid: adhocPaid,
                     pendingValidation: pendingVal,
                     currentDue: resident.totalPendingDue // This was already calculated in fetchData
                 };

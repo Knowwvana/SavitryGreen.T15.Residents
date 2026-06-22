@@ -34,6 +34,23 @@ function doGet(e) {
     // Build list of all flat numbers for login dropdown
     var allFlats = (result.flats || []).map(function(f) { return String(f.FlatNo); });
     
+    // Build admin names list (usernames ONLY — never send passwords)
+    var adminNames = [];
+    var adminSheet = ss.getSheetByName(ADMIN_SHEET_NAME);
+    if (adminSheet) {
+      var adminData = adminSheet.getDataRange().getValues();
+      if (adminData.length > 1) {
+        var adminHeaders = adminData[0].map(function(h) { return h.toString().trim(); });
+        var userCol = adminHeaders.indexOf("AdminUserName");
+        if (userCol !== -1) {
+          for (var i = 1; i < adminData.length; i++) {
+            var uName = String(adminData[i][userCol]).trim();
+            if (uName) adminNames.push(uName);
+          }
+        }
+      }
+    }
+    
     return createJSONResponse({ 
       success: true, 
       flats: result.flats, 
@@ -41,7 +58,8 @@ function doGet(e) {
       payments: result.payments,
       settings: result.settings,
       expenditure: result.expenditure,
-      flatList: allFlats
+      flatList: allFlats,
+      adminNames: adminNames
     });
 
   } catch (error) {

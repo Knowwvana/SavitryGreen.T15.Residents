@@ -174,6 +174,7 @@ document.addEventListener('alpine:init', () => {
                 this.expenditures = [];
                 this.settings = new Settings({});
                 this.flatList = [];
+                this.adminNames = [];
                 this.isLoading = false;
             }
 
@@ -186,6 +187,7 @@ document.addEventListener('alpine:init', () => {
 
                     this.settings = new Settings(result.settings);
                     this.flatList = (result.flatList || []).map(f => normalizeFlat(f));
+                    this.adminNames = result.adminNames || [];
 
                     this.expenditures = (result.expenditure || []).map(e => new Expense(e));
                     const allPayments = (result.payments || []).map(p => new Payment(p));
@@ -335,7 +337,7 @@ document.addEventListener('alpine:init', () => {
         expenseSuccess: false,
         residents: [],
         settings: {},
-        activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, pendingValidation: 0, currentDue: 0 } },
+        activeResident: { flat: '...', occupants: [], history: [], due: 0, pendingList: [], stats: { totalPaid: 0, monthlyPaid: 0, adhocPaid: 0, pendingValidation: 0, currentDue: 0 } },
         historyQuery: '',
         pageM: 1,
         pageA: 1,
@@ -773,10 +775,14 @@ document.addEventListener('alpine:init', () => {
 
                 // 2. Calculate Stats for the Summary Box
                 const totalPaid = resident.history.reduce((sum, p) => p.isPaidStrict ? sum + p.amount : sum, 0);
+                const monthlyPaid = resident.history.reduce((sum, p) => p.isPaidStrict && p.isMonthly ? sum + p.amount : sum, 0);
+                const adhocPaid = totalPaid - monthlyPaid;
                 const pendingVal = resident.history.reduce((sum, p) => p.status.toLowerCase() === 'pending validation' ? sum + p.amount : sum, 0);
 
                 resident.stats = {
                     totalPaid: totalPaid,
+                    monthlyPaid: monthlyPaid,
+                    adhocPaid: adhocPaid,
                     pendingValidation: pendingVal,
                     currentDue: resident.totalPendingDue // This was already calculated in fetchData
                 };
