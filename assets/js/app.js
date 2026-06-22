@@ -579,6 +579,14 @@ document.addEventListener('alpine:init', () => {
                 .sort((a, b) => new Date(b.rawMonth || b.rawDate) - new Date(a.rawMonth || a.rawDate));
         },
 
+        get filteredAdhoc() {
+            if (!this.activeResident || !this.activeResident.history) return [];
+            const q = (this.historyQuery || '').toLowerCase();
+            return this.activeResident.history
+                .filter(h => !h.isMonthly && (!q || (String(h.amount) + h.method + h.remarks + (h.title || h.category || '')).toLowerCase().includes(q)))
+                .sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
+        },
+
         get paginatedMonthly() {
             const start = (this.pageM - 1) * this.limit;
             return this.filteredMonthly.slice(start, start + this.limit);
