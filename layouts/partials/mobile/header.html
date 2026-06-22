@@ -1,4 +1,4 @@
-<div class="sticky-top" style="z-index: 1040;">
+<div class="sticky-top" style="z-index: 1040;" x-show="user.isLoggedIn">
 
     <template x-if="isLoading">
         <div class="position-relative bg-dark shadow-sm overflow-hidden" 
@@ -30,7 +30,7 @@
                 <div class="d-flex justify-content-between align-items-start">
                     
                     <div class="d-flex align-items-center gap-2">
-                        <template x-if="view !== 'home'">
+                        <template x-if="view !== 'home' && view !== 'myflat'">
                             <button class="btn btn-white bg-opacity-10 text-white rounded-circle p-0 border border-white border-opacity-25 d-flex align-items-center justify-content-center" 
                                     style="width: 32px; height: 32px;"
                                     @click="view === 'history' ? view = 'residents' : view = 'home'">
@@ -39,6 +39,7 @@
                         </template>
                         
                         <h6 x-show="view !== 'home'" class="mb-0 fw-bold text-white text-nowrap" style="font-size: 0.9rem;">
+                            <span x-show="view === 'myflat'">My Flat</span>
                             <span x-show="view === 'residents'">Tower 15 Residents</span>
                             <span x-show="view === 'history'">Resident Details</span>
                             <span x-show="view === 'add'">Record Payment</span>
@@ -47,7 +48,28 @@
                         </h6>
                     </div>
 
-                    <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button x-show="view === 'validate' && admin.isLoggedIn" 
+                                @click="logout()" 
+                                class="btn btn-sm btn-danger rounded-pill px-3 fw-bold border-0 shadow-sm"
+                                style="font-size: 0.65rem; padding-top: 2px; padding-bottom: 2px;">
+                            Admin Logout
+                        </button>
+
+                        <button x-show="view === 'home' || view === 'myflat'" 
+                                @click="view = 'validate'" 
+                                class="btn btn-sm btn-outline-light rounded-pill px-2 fw-bold border-white border-opacity-25"
+                                style="font-size: 0.6rem; padding-top: 2px; padding-bottom: 2px;">
+                            <i class="bi bi-shield-check me-1"></i>Admin
+                        </button>
+
+                        <button x-show="view === 'home' || view === 'myflat'" 
+                                @click="userLogout()" 
+                                class="btn btn-sm btn-outline-light rounded-pill px-2 fw-bold border-white border-opacity-25"
+                                style="font-size: 0.6rem; padding-top: 2px; padding-bottom: 2px;">
+                            <i class="bi bi-box-arrow-right me-1"></i>Logout
+                        </button>
+
                         <div x-show="view === 'home'" class="d-flex align-items-center">
                             <small class="text-white fw-bold opacity-75" 
                                    style="font-size: 0.6rem; letter-spacing: 0.5px; text-transform: uppercase;" 
@@ -55,12 +77,6 @@
                             </small>
                         </div>
 
-                        <button x-show="view === 'validate' && admin.isLoggedIn" 
-                                @click="logout()" 
-                                class="btn btn-sm btn-danger rounded-pill px-3 fw-bold border-0 shadow-sm"
-                                style="font-size: 0.65rem; padding-top: 2px; padding-bottom: 2px;">
-                            Logout
-                        </button>
                     </div>
                 </div>
 

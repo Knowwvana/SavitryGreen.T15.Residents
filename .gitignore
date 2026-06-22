@@ -1,0 +1,19 @@
+# Excel data files (contain sensitive resident data)
+*.xlsx
+*.xls
+
+# Hugo build cache
+resources/
+.hugo_build.lock
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Node (if any temp installs)
+node_modules/
+package-lock.json

@@ -53,18 +53,18 @@
                 <div class="mb-3 px-1">
                      <div class="text-muted small fw-bold mb-2">Admin Team:</div>
                      <div class="d-flex gap-2 flex-wrap">
-                         <template x-for="adm in repository.admins" :key="adm.AdminUserName">
+                         <template x-for="adm in repository.adminNames" :key="adm">
                             <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-4 border shadow-sm"
-                                 :class="admin.currentUser === adm.AdminUserName ? 'bg-success text-white border-success' : 'bg-white text-dark border-light'"
+                                 :class="admin.currentUser === adm ? 'bg-success text-white border-success' : 'bg-white text-dark border-light'"
                                  style="min-width: 140px;">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                                     :class="admin.currentUser === adm.AdminUserName ? 'bg-white text-success' : 'bg-light text-secondary'" 
+                                     :class="admin.currentUser === adm ? 'bg-white text-success' : 'bg-light text-secondary'" 
                                      style="width: 32px; height: 32px; font-size: 0.8rem;">
-                                    <span x-text="adm.AdminUserName.charAt(0).toUpperCase()"></span>
+                                    <span x-text="adm.charAt(0).toUpperCase()"></span>
                                 </div>
                                 <div class="d-flex flex-column" style="line-height: 1.1;">
-                                    <span class="fw-bold text-truncate" style="font-size: 0.8rem; max-width: 100px;" x-text="adm.AdminUserName"></span>
-                                    <span style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.8;" x-text="admin.currentUser === adm.AdminUserName ? 'YOU' : 'ADMIN'"></span>
+                                    <span class="fw-bold text-truncate" style="font-size: 0.8rem; max-width: 100px;" x-text="adm"></span>
+                                    <span style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.8;" x-text="admin.currentUser === adm ? 'YOU' : 'ADMIN'"></span>
                                 </div>
                             </div>
                          </template>
@@ -85,7 +85,12 @@
                     <button class="btn rounded-pill py-2 flex-fill fw-bold transition-all small"
                             :class="admin.tab === 'expense' ? 'bg-primary text-white shadow-sm' : 'text-muted hover-bg-light'"
                             @click="admin.tab = 'expense'; resetExpenseForm()">
-                        <i class="bi bi-receipt me-1"></i>Add Expense
+                        <i class="bi bi-receipt me-1"></i>Expense
+                    </button>
+                    <button class="btn rounded-pill py-2 flex-fill fw-bold transition-all small"
+                            :class="admin.tab === 'residents' ? 'bg-success text-white shadow-sm' : 'text-muted hover-bg-light'"
+                            @click="admin.tab = 'residents'">
+                        <i class="bi bi-person-check-fill me-1"></i>Residents <span class="badge bg-white text-success ms-1 rounded-pill" x-show="pendingResidentsList.length > 0" x-text="pendingResidentsList.length"></span>
                     </button>
                 </div>
 
@@ -180,21 +185,25 @@
                     <div class="d-flex flex-column gap-2">
                         <template x-for="txn in filteredHistoryList" :key="txn.id">
                             <div class="bg-white p-3 rounded-4 border shadow-sm">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1 pe-2">
                                         <div class="fw-bold text-dark small" x-text="txn.displayFlat + ' - ' + txn.displayResidentName"></div>
-                                        <div class="text-muted" style="font-size: 0.65rem;" x-text="txn.fullDateTime"></div>
+                                        <div class="text-muted" style="font-size: 0.65rem;" x-text="txn.title || txn.category"></div>
                                     </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success small" x-text="'₹' + txn.amount"></div>
+                                    <div class="text-end flex-shrink-0">
+                                        <div class="fw-bold text-success" style="font-size: 0.95rem;" x-text="'₹' + txn.amount"></div>
                                         <span class="badge bg-success bg-opacity-10 text-success rounded-pill" style="font-size: 0.55rem;">Paid</span>
                                     </div>
                                 </div>
-                                <div class="mt-2 pt-2 border-top border-light d-flex align-items-center gap-2">
-                                    <i class="bi bi-shield-check text-success" style="font-size: 0.7rem;"></i>
-                                    <div class="small text-muted lh-1" style="font-size: 0.65rem;">
-                                        Approved by <span class="fw-bold text-dark" x-text="txn.validatedBy"></span><br>
-                                        <span class="text-secondary opacity-75" x-text="txn.displayValidationTime"></span>
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top border-light">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <i class="bi bi-shield-check text-success" style="font-size: 0.65rem;"></i>
+                                        <span class="text-muted" style="font-size: 0.65rem;">
+                                            <span class="fw-bold text-dark" x-text="txn.validatedBy"></span>
+                                        </span>
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.6rem;">
+                                        <i class="bi bi-clock me-1"></i><span x-text="txn.displayValidationTime || txn.fullDateTime"></span>
                                     </div>
                                 </div>
                             </div>
@@ -294,6 +303,71 @@
 
                 </div>
 
+                <div x-show="admin.tab === 'residents'" x-transition:enter="fade-in">
+                    <div class="card border-0 shadow-sm rounded-4 mb-3 bg-success bg-opacity-10">
+                        <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-uppercase fw-bold text-success" style="font-size: 0.65rem;">Pending Registrations</small>
+                                <div class="fw-bold text-dark h5 mb-0" x-text="pendingResidentsList.length"></div>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                <i class="bi bi-person-plus-fill text-success fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        <h6 class="fw-bold text-dark small mb-0 ps-2 border-start border-4 border-success">PENDING RESIDENT APPROVALS</h6>
+
+                        <template x-if="filteredPendingResidents.length === 0">
+                            <div class="text-center py-5 text-muted bg-white rounded-4 shadow-sm">
+                                <div class="mb-3"><i class="bi bi-person-check-fill fs-1 text-success bg-success bg-opacity-10 rounded-circle p-3"></i></div>
+                                <h6 class="fw-bold text-dark">All Caught Up!</h6>
+                                <p class="small mb-0">No pending resident registrations.</p>
+                            </div>
+                        </template>
+
+                        <template x-for="res in filteredPendingResidents" :key="res.id">
+                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-25 rounded-pill mb-1" style="font-size: 0.6rem;">New Registration</span>
+                                            <h6 class="fw-bold text-dark mb-0" x-text="'Flat ' + res.flatNo + ' - ' + res.name"></h6>
+                                        </div>
+                                        <span class="badge rounded-pill" 
+                                              :class="res.type === 'Owner' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-dark'"
+                                              style="font-size: 0.6rem;" x-text="res.type"></span>
+                                    </div>
+                                    <div class="bg-light rounded-3 p-2 mb-3 border border-light-subtle">
+                                        <div class="d-flex flex-column gap-1 small text-secondary">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-phone-fill text-primary" style="font-size: 0.8rem;"></i>
+                                                <span x-text="res.phone || 'N/A'"></span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2" x-show="res.email">
+                                                <i class="bi bi-envelope-fill text-secondary" style="font-size: 0.8rem;"></i>
+                                                <span x-text="res.email"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-success flex-fill rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
+                                                @click="handleApproveResident(res.id)" :disabled="isSubmitting">
+                                            <span x-show="isSubmitting" class="spinner-border spinner-border-sm" role="status"></span>
+                                            <i class="bi bi-check-circle-fill"></i> Approve
+                                        </button>
+                                        <button class="btn btn-outline-danger flex-fill rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2"
+                                                @click="handleRejectResident(res.id)" :disabled="isSubmitting">
+                                            <i class="bi bi-x-circle-fill"></i> Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
             </div>
         </div>
     </template>
@@ -303,7 +377,7 @@
          style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none;"
          :class="{ 'd-flex': admin.showSuccessModal }"
          x-transition.opacity>
-         <div class="bg-white rounded-5 p-4 text-center shadow-lg mx-4" @click.away="admin.showSuccessModal = false"
+         <div class="bg-white rounded-5 p-4 text-center shadow-lg mx-4"
               x-transition:enter="transition ease-out duration-300"
               x-transition:enter-start="opacity-0 translate-y-4 scale-90"
               x-transition:enter-end="opacity-100 translate-y-0 scale-100">
@@ -311,7 +385,11 @@
                 <i class="bi bi-check-lg display-3"></i>
             </div>
             <h3 class="fw-bold text-dark mb-2">Approved!</h3>
-            <p class="text-muted mb-0">Payment has been successfully validated.</p>
+            <p class="text-muted mb-3">Entry has been successfully validated.</p>
+            <button class="btn btn-success rounded-pill px-4 py-2 fw-bold small shadow-sm"
+                    @click="admin.showSuccessModal = false">
+                <i class="bi bi-check-circle me-1"></i> Close
+            </button>
          </div>
     </div>
 

@@ -1,0 +1,84 @@
+<div class="d-flex flex-column justify-content-center" style="min-height: 85vh;">
+
+    <div class="px-4">
+        <div class="card border-0 shadow-lg rounded-5 overflow-hidden">
+            <div class="card-body p-4">
+
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm" style="width: 70px; height: 70px;">
+                        <i class="bi bi-building-fill fs-2"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-1" x-text="settings.SocietyName || 'Society Maintenance'"></h4>
+                    <p class="text-muted small mb-0">Login with your Flat & Mobile Number</p>
+                </div>
+
+                <form @submit.prevent="userLoginAction()">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted ms-1">Select Your Flat</label>
+                        <select x-model="userLogin.flatNo"
+                                class="form-select rounded-4 border-light bg-light py-3 fw-bold">
+                            <option value="">-- Select Flat --</option>
+                            <template x-for="flat in availableFlatsForLogin" :key="flat">
+                                <option :value="flat" x-text="'Flat ' + flat"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted ms-1">Mobile Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-light rounded-start-4 fw-bold text-muted">+91</span>
+                            <input type="tel" x-model="userLogin.phone"
+                                   class="form-control border-light bg-light rounded-end-4 py-3 fw-bold"
+                                   placeholder="Enter mobile number"
+                                   maxlength="15"
+                                   inputmode="tel">
+                        </div>
+                    </div>
+
+                    <div x-show="userLogin.error"
+                         class="alert py-2 small mb-3 rounded-3 text-center border-0 bg-danger bg-opacity-10 text-danger fw-bold"
+                         x-text="userLogin.error">
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit"
+                                class="btn btn-primary rounded-pill py-3 px-5 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center gap-2"
+                                :disabled="userLogin.isLoading"
+                                x-cloak>
+                            <template x-if="!userLogin.isLoading">
+                                <span>
+                                    <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                                </span>
+                            </template>
+                            <template x-if="userLogin.isLoading">
+                                <span class="d-flex align-items-center gap-2">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                    Verifying...
+                                </span>
+                            </template>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-4 pt-3 border-top">
+                    <p class="text-muted small mb-2">Not registered yet?</p>
+                    <button class="btn btn-success rounded-pill px-4 py-2 fw-bold small shadow-sm"
+                            @click="view = 'register'">
+                        <i class="bi bi-person-plus-fill me-1"></i> Register as New Resident
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="text-center mt-3">
+            <small class="text-muted" style="font-size: 0.65rem;">
+                <i class="bi bi-shield-lock-fill me-1"></i>
+                Your data is validated against society records
+            </small>
+        </div>
+    </div>
+
+</div>

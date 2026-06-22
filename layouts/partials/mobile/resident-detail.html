@@ -84,43 +84,46 @@
             </div>
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 <div class="card-body p-0 d-flex">
-                    <div
-                        class="flex-fill p-2 border-end bg-success bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
-                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center shadow-sm"
-                            style="width: 32px; height: 32px;">
-                            <i class="bi bi-check-circle-fill"></i>
+                    <div class="flex-fill border-end bg-success bg-opacity-10 d-flex flex-column">
+                        <div class="d-flex align-items-center gap-2 p-2 justify-content-center border-bottom">
+                            <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center shadow-sm"
+                                style="width: 24px; height: 24px;">
+                                <i class="bi bi-check-circle-fill" style="font-size: 0.65rem;"></i>
+                            </div>
+                            <small class="text-uppercase fw-bold text-muted lh-1" style="font-size: 0.45rem;">Paid</small>
                         </div>
-                        <div class="text-start">
-                            <small class="d-block text-uppercase fw-bold text-muted lh-1"
-                                style="font-size: 0.55rem;">Paid</small>
-                            <div class="fw-bold text-dark small lh-1 mt-1"
-                                x-text="'₹' + ((activeResident.stats || {}).totalPaid || 0).toLocaleString('en-IN')">
+                        <div class="d-flex flex-grow-1">
+                            <div class="flex-fill p-2 border-end d-flex flex-column justify-content-center align-items-center">
+                                <small class="text-muted lh-1" style="font-size: 0.45rem;">Monthly</small>
+                                <div class="fw-bold text-dark" style="font-size: 0.65rem;" x-text="'₹' + ((activeResident.stats || {}).monthlyPaid || 0).toLocaleString('en-IN')"></div>
+                            </div>
+                            <div class="flex-fill p-2 d-flex flex-column justify-content-center align-items-center">
+                                <small class="text-muted lh-1" style="font-size: 0.45rem;">Adhoc</small>
+                                <div class="fw-bold text-dark" style="font-size: 0.65rem;" x-text="'₹' + ((activeResident.stats || {}).adhocPaid || 0).toLocaleString('en-IN')"></div>
                             </div>
                         </div>
                     </div>
-                    <div
-                        class="flex-fill p-2 border-end bg-warning bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
+                    <div class="flex-fill p-2 border-end bg-warning bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
                         <div class="rounded-circle bg-white text-warning d-flex align-items-center justify-content-center shadow-sm"
-                            style="width: 32px; height: 32px;">
-                            <i class="bi bi-hourglass-split"></i>
+                            style="width: 28px; height: 28px;">
+                            <i class="bi bi-hourglass-split" style="font-size: 0.7rem;"></i>
                         </div>
                         <div class="text-start">
                             <small class="d-block text-uppercase fw-bold text-muted lh-1"
-                                style="font-size: 0.55rem;">Pending</small>
+                                style="font-size: 0.5rem;">Pending</small>
                             <div class="fw-bold text-dark small lh-1 mt-1"
                                 x-text="'₹' + ((activeResident.stats || {}).pendingValidation || 0).toLocaleString('en-IN')">
                             </div>
                         </div>
                     </div>
-                    <div
-                        class="flex-fill p-2 bg-danger bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
+                    <div class="flex-fill p-2 bg-danger bg-opacity-10 d-flex align-items-center justify-content-center gap-2">
                         <div class="rounded-circle bg-white text-danger d-flex align-items-center justify-content-center shadow-sm"
-                            style="width: 32px; height: 32px;">
-                            <i class="bi bi-exclamation-circle-fill"></i>
+                            style="width: 28px; height: 28px;">
+                            <i class="bi bi-exclamation-circle-fill" style="font-size: 0.7rem;"></i>
                         </div>
                         <div class="text-start">
                             <small class="d-block text-uppercase fw-bold text-muted lh-1"
-                                style="font-size: 0.55rem;">Due</small>
+                                style="font-size: 0.5rem;">Due</small>
                             <div class="fw-bold text-dark small lh-1 mt-1"
                                 x-text="'₹' + ((activeResident.stats || {}).currentDue || 0).toLocaleString('en-IN')">
                             </div>
