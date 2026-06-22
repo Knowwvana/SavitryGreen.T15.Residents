@@ -170,9 +170,10 @@ document.addEventListener('alpine:init', () => {
             constructor(apiUrl) {
                 this.apiUrl = apiUrl;
                 this.residents = [];
-                this.admins = [];
+                this.rawResidents = [];
                 this.expenditures = [];
                 this.settings = new Settings({});
+                this.flatList = [];
                 this.isLoading = false;
             }
 
@@ -184,12 +185,13 @@ document.addEventListener('alpine:init', () => {
                     const result = await response.json();
 
                     this.settings = new Settings(result.settings);
-                    this.admins = result.admins || [];
+                    this.flatList = (result.flatList || []).map(f => normalizeFlat(f));
 
                     this.expenditures = (result.expenditure || []).map(e => new Expense(e));
                     const allPayments = (result.payments || []).map(p => new Payment(p));
                     const rawFlats = result.flats || [];
                     const rawResidents = result.residents || [];
+                    this.rawResidents = rawResidents;
 
                     this.residents = rawFlats.map((f, index) => {
                         try {
@@ -271,9 +273,40 @@ document.addEventListener('alpine:init', () => {
                     return result.success;
                 } catch (error) { return false; }
             }
+
+            async adminLogin(username, password) {
+                const payload = { action: 'ADMIN_LOGIN', username, password };
+                try {
+                    const response = await fetch(this.apiUrl + '?action=adminLogin', { method: 'POST', body: JSON.stringify(payload) });
+                    return await response.json();
+                } catch (error) { return { success: false, message: 'Network error. Try again.' }; }
+            }
+
+            async addResident(formData) {
+                const payload = {
+                    action: 'ADD_RESIDENT',
+                    FlatNo: formData.flatNo,
+                    Name: formData.name,
+                    Email: formData.email || '',
+                    Phone: formData.phone,
+                    ResidentType: formData.residentType || 'Owner'
+                };
+                try {
+                    const response = await fetch(this.apiUrl + '?action=addResident', { method: 'POST', body: JSON.stringify(payload) });
+                    return await response.json();
+                } catch (error) { return { success: false, message: 'Network error. Try again.' }; }
+            }
+
+            async updateResidentStatus(residentId, status) {
+                const payload = { action: 'UPDATE_RESIDENT', ResidentId: residentId, IsActive: status };
+                try {
+                    const response = await fetch(this.apiUrl + '?action=updateResident', { method: 'POST', body: JSON.stringify(payload) });
+                    return await response.json();
+                } catch (error) { return { success: false, message: 'Network error. Try again.' }; }
+            }
         }
 
-        return { SocietyRepository, LocalTimeHelper, Resident, Settings };
+        return { SocietyRepository, LocalTimeHelper, Resident, Settings, normalizeFlat };
     })();
 
     window.societyApp = (api_url) => ({
@@ -281,7 +314,13 @@ document.addEventListener('alpine:init', () => {
         repository: new AppServices.SocietyRepository(api_url),
         getLocalISOString: AppServices.LocalTimeHelper.getLocalISOString,
 
-        view: 'home',
+        // --- USER LOGIN STATE ---
+        user: { isLoggedIn: false, flatNo: '', phone: '', name: '' },
+        userLogin: { flatNo: '', phone: '', error: '', isLoading: false },
+        // --- REGISTER NEW RESIDENT ---
+        registerForm: { flatNo: '', name: '', email: '', phone: '', residentType: 'Owner', error: '', success: '', isSubmitting: false },
+
+        view: 'login',
         searchQuery: '',
         filterStatus: 'all',
         currentDate: '',
@@ -321,6 +360,31 @@ document.addEventListener('alpine:init', () => {
             this.updateDate();
             this.resetTxnForm();
             this.resetExpenseForm();
+
+            // Check localStorage for existing user session
+            const savedUser = localStorage.getItem('sg_user');
+            if (savedUser) {
+                try {
+                    const parsed = JSON.parse(savedUser);
+                    if (parsed.flatNo && parsed.phone) {
+                        this.user = { isLoggedIn: true, flatNo: parsed.flatNo, phone: parsed.phone, name: parsed.name || '' };
+                        this.view = 'home';
+                    }
+                } catch (e) { localStorage.removeItem('sg_user'); }
+            }
+
+            // Check localStorage for existing admin session
+            const savedAdmin = localStorage.getItem('sg_admin');
+            if (savedAdmin) {
+                try {
+                    const parsed = JSON.parse(savedAdmin);
+                    if (parsed.currentUser) {
+                        this.admin.isLoggedIn = true;
+                        this.admin.currentUser = parsed.currentUser;
+                    }
+                } catch (e) { localStorage.removeItem('sg_admin'); }
+            }
+
             this.fetchAndHydrate();
 
             // Watch for page/view changes and scroll to top
@@ -412,13 +476,174 @@ document.addEventListener('alpine:init', () => {
             this.isSubmitting = false;
         },
 
-        login() {
-            this.admin.error = '';
-            const foundAdmin = this.repository.admins.find(a => (a.AdminUserName) === this.admin.username && (String(a.AdminPassword)) === this.admin.password);
-            if (foundAdmin) { this.admin.isLoggedIn = true; this.admin.currentUser = this.admin.username; this.admin.password = ''; }
-            else { this.admin.error = 'Invalid Credentials'; }
+        // --- USER LOGIN (Flat + Phone validation against Residents sheet) ---
+        async userLoginAction() {
+            this.userLogin.error = '';
+            this.userLogin.isLoading = true;
+            // Wait for data to be loaded
+            if (this.isLoading) {
+                await new Promise(resolve => {
+                    const check = setInterval(() => { if (!this.isLoading) { clearInterval(check); resolve(); } }, 200);
+                });
+            }
+            const flatNo = AppServices.normalizeFlat(this.userLogin.flatNo);
+            const phone = this.userLogin.phone.trim().replace(/\s/g, '');
+            if (!flatNo || !phone) { this.userLogin.error = 'Please select a flat and enter your mobile number.'; this.userLogin.isLoading = false; return; }
+            // Find matching active resident
+            const rawResidents = this.repository.rawResidents || [];
+            const match = rawResidents.find(r => {
+                const rFlat = AppServices.normalizeFlat(r.FlatNo);
+                const rPhone = String(r.Phone || '').trim().replace(/\s/g, '');
+                const isActive = r.IsActive === true || r.IsActive === 'TRUE' || r.IsActive === 'true' || r.IsActive === 'Active';
+                return rFlat === flatNo && rPhone === phone && isActive;
+            });
+            if (match) {
+                this.user = { isLoggedIn: true, flatNo: flatNo, phone: phone, name: match.Name || '' };
+                localStorage.setItem('sg_user', JSON.stringify({ flatNo, phone, name: match.Name || '' }));
+                this.view = 'home';
+            } else {
+                // Check if pending (IsActive === false)
+                const pending = rawResidents.find(r => {
+                    const rFlat = AppServices.normalizeFlat(r.FlatNo);
+                    const rPhone = String(r.Phone || '').trim().replace(/\s/g, '');
+                    return rFlat === flatNo && rPhone === phone && (r.IsActive === false);
+                });
+                if (pending) {
+                    this.userLogin.error = 'Your registration is pending admin approval. Please wait or contact your society admin.';
+                } else {
+                    this.userLogin.error = 'No active resident found for this flat and mobile number. Please register below.';
+                }
+            }
+            this.userLogin.isLoading = false;
         },
-        logout() { this.admin.isLoggedIn = false; this.admin.currentUser = null; this.view = 'home'; },
+
+        userLogout() {
+            this.user = { isLoggedIn: false, flatNo: '', phone: '', name: '' };
+            localStorage.removeItem('sg_user');
+            this.view = 'login';
+        },
+
+        // --- REGISTER NEW RESIDENT ---
+        async registerResident() {
+            this.registerForm.error = '';
+            this.registerForm.success = '';
+            if (!this.registerForm.flatNo || !this.registerForm.name || !this.registerForm.phone) {
+                this.registerForm.error = 'Flat Number, Name, and Phone are required.';
+                return;
+            }
+            this.registerForm.isSubmitting = true;
+            const result = await this.repository.addResident(this.registerForm);
+            if (result.success) {
+                this.registerForm.success = result.message || 'Registration submitted! An admin will validate your entry shortly.';
+                this.registerForm.flatNo = ''; this.registerForm.name = ''; this.registerForm.email = ''; this.registerForm.phone = ''; this.registerForm.residentType = 'Owner';
+                await this.fetchAndHydrate();
+            } else {
+                this.registerForm.error = result.message || 'Registration failed. Please try again.';
+            }
+            this.registerForm.isSubmitting = false;
+        },
+
+        // --- ADMIN: Approve/Reject Resident ---
+        async handleApproveResident(residentId) {
+            this.isSubmitting = true;
+            const result = await this.repository.updateResidentStatus(residentId, 'Active');
+            if (result.success) {
+                await this.fetchAndHydrate();
+                this.admin.showSuccessModal = true;
+                setTimeout(() => { this.admin.showSuccessModal = false; }, 2000);
+            } else {
+                alert('Failed to update resident status: ' + (result.message || ''));
+            }
+            this.isSubmitting = false;
+        },
+
+        async handleRejectResident(residentId) {
+            this.isSubmitting = true;
+            const result = await this.repository.updateResidentStatus(residentId, 'Rejected');
+            if (result.success) {
+                await this.fetchAndHydrate();
+            } else {
+                alert('Failed to reject resident: ' + (result.message || ''));
+            }
+            this.isSubmitting = false;
+        },
+
+        // --- ADMIN LOGIN (Server-side) ---
+        async login() {
+            this.admin.error = '';
+            if (!this.admin.username || !this.admin.password) { this.admin.error = 'Username and password required.'; return; }
+            this.isSubmitting = true;
+            const result = await this.repository.adminLogin(this.admin.username, this.admin.password);
+            if (result.success) {
+                this.admin.isLoggedIn = true;
+                this.admin.currentUser = result.adminName;
+                this.admin.password = '';
+                localStorage.setItem('sg_admin', JSON.stringify({ currentUser: result.adminName }));
+            } else {
+                this.admin.error = result.message || 'Invalid Credentials';
+            }
+            this.isSubmitting = false;
+        },
+
+        logout() {
+            this.admin.isLoggedIn = false;
+            this.admin.currentUser = null;
+            localStorage.removeItem('sg_admin');
+            this.view = 'home';
+        },
+
+        // --- AVAILABLE FLATS (for login dropdown: all flats from Flats sheet) ---
+        get availableFlatsForLogin() {
+            return this.repository.flatList || [];
+        },
+
+        // --- AVAILABLE FLATS FOR REGISTER (flats without any active resident in Residents sheet) ---
+        get availableFlatsForRegister() {
+            const allFlats = this.repository.flatList || [];
+            const rawResidents = this.repository.rawResidents || [];
+            // Find flats that have at least one active resident
+            const occupiedFlats = new Set();
+            rawResidents.forEach(r => {
+                const isActive = r.IsActive === true || r.IsActive === 'TRUE' || r.IsActive === 'true' || r.IsActive === 'Active';
+                const isPending = r.IsActive === false;  // false = pending approval
+                if (isActive || isPending) occupiedFlats.add(AppServices.normalizeFlat(r.FlatNo));
+            });
+            return allFlats.filter(f => !occupiedFlats.has(f));
+        },
+
+        // --- MY FLAT: Get the logged-in user's resident object ---
+        get myFlatResident() {
+            if (!this.user.isLoggedIn || !this.user.flatNo) return null;
+            return this.residents.find(r => r.flat === this.user.flatNo) || null;
+        },
+
+        openMyFlat() {
+            const resident = this.myFlatResident;
+            if (resident) {
+                this.openHistory(resident);
+                this.view = 'myflat';
+            }
+        },
+
+        // --- PENDING RESIDENTS LIST (for admin validation) ---
+        get pendingResidentsList() {
+            const rawResidents = this.repository.rawResidents || [];
+            return rawResidents.filter(r => r.IsActive === false).map(r => ({
+                id: r.ResidentId,
+                flatNo: AppServices.normalizeFlat(r.FlatNo),
+                name: r.Name || 'Unknown',
+                phone: r.Phone || '',
+                email: r.Email || '',
+                type: r.ResidentType || 'Owner'
+            }));
+        },
+
+        get filteredPendingResidents() {
+            const list = this.pendingResidentsList;
+            const q = (this.admin.searchPending || '').toLowerCase();
+            if (!q) return list;
+            return list.filter(r => r.name.toLowerCase().includes(q) || r.flatNo.toLowerCase().includes(q) || r.phone.includes(q));
+        },
 
         calculateDashboardStats() {
             const stats = {

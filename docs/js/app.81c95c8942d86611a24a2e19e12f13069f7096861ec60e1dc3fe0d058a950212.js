@@ -174,6 +174,7 @@ document.addEventListener('alpine:init', () => {
                 this.expenditures = [];
                 this.settings = new Settings({});
                 this.flatList = [];
+                this.adminList = [];
                 this.isLoading = false;
             }
 
@@ -186,6 +187,7 @@ document.addEventListener('alpine:init', () => {
 
                     this.settings = new Settings(result.settings);
                     this.flatList = (result.flatList || []).map(f => normalizeFlat(f));
+                    this.adminList = result.adminList || [];
 
                     this.expenditures = (result.expenditure || []).map(e => new Expense(e));
                     const allPayments = (result.payments || []).map(p => new Payment(p));

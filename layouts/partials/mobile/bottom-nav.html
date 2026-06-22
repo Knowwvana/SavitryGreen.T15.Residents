@@ -1,5 +1,6 @@
 <div class="fixed-bottom bg-white border-top shadow-lg"
-    style="z-index: 1030; bottom: 24px !important; padding-bottom: 0;">
+    style="z-index: 1030; bottom: 24px !important; padding-bottom: 0;"
+    x-show="user.isLoggedIn">
 
     <div class="d-flex justify-content-around py-1">
 
@@ -11,11 +12,11 @@
         </button>
 
         <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
-            :class="view === 'residents' || view === 'history' ? 'text-primary fw-bold' : 'text-muted'"
-            @click="view = 'residents'">
-            <i class="bi bi-people-fill fs-6 mb-0"
-                :class="view === 'residents' || view === 'history' ? 'text-primary' : 'text-secondary opacity-50'"></i>
-            <span style="font-size: 0.6rem;">Residents</span>
+            :class="view === 'myflat' ? 'text-primary fw-bold' : 'text-muted'"
+            @click="openMyFlat()">
+            <i class="bi bi-house-door-fill fs-6 mb-0"
+                :class="view === 'myflat' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+            <span style="font-size: 0.6rem;">My Flat</span>
         </button>
 
         <div class="position-relative" style="margin-top: -22px;">
@@ -26,17 +27,11 @@
         </div>
 
         <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
-            :class="view === 'validate' ? 'text-primary fw-bold' : 'text-muted'" @click="view = 'validate'">
-            <div class="position-relative">
-                <i class="bi bi-shield-check fs-6 mb-0"
-                    :class="view === 'validate' ? 'text-primary' : 'text-secondary opacity-50'"></i>
-                <span
-                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white"
-                    style="font-size: 0.4rem; padding: 0.2em 0.3em;" x-show="pendingStats.count > 0"
-                    x-text="pendingStats.count">
-                </span>
-            </div>
-            <span style="font-size: 0.6rem;">Admin</span>
+            :class="view === 'residents' || view === 'history' ? 'text-primary fw-bold' : 'text-muted'"
+            @click="view = 'residents'">
+            <i class="bi bi-people-fill fs-6 mb-0"
+                :class="view === 'residents' || view === 'history' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+            <span style="font-size: 0.6rem;">Residents</span>
         </button>
 
         <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
@@ -44,6 +39,13 @@
             <i class="bi bi-file-earmark-bar-graph-fill fs-6 mb-0"
                 :class="view === 'report' ? 'text-primary' : 'text-secondary opacity-50'"></i>
             <span style="font-size: 0.6rem;">Reports</span>
+        </button>
+
+        <button class="btn btn-link text-decoration-none d-flex flex-column align-items-center p-1"
+            :class="view === 'validate' ? 'text-primary fw-bold' : 'text-muted'" @click="view = 'validate'">
+            <i class="bi bi-shield-check fs-6 mb-0"
+                :class="view === 'validate' ? 'text-primary' : 'text-secondary opacity-50'"></i>
+            <span style="font-size: 0.6rem;">Admin</span>
         </button>
     </div>
 </div>

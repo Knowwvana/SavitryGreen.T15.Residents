@@ -531,21 +531,11 @@ document.addEventListener('alpine:init', () => {
                 this.registerForm.error = 'Flat Number, Name, and Phone are required.';
                 return;
             }
-            if (this.registerForm.name.trim().length < 4) {
-                this.registerForm.error = 'Name must be at least 4 characters.';
-                return;
-            }
-            const phoneDigits = this.registerForm.phone.trim().replace(/\D/g, '');
-            if (phoneDigits.length !== 10) {
-                this.registerForm.error = 'Mobile number must be exactly 10 digits.';
-                return;
-            }
             this.registerForm.isSubmitting = true;
             const result = await this.repository.addResident(this.registerForm);
             if (result.success) {
                 this.registerForm.success = result.message || 'Registration submitted! An admin will validate your entry shortly.';
-                this.registerForm.flatNo = ''; this.registerForm.name = ''; this.registerForm.email = ''; this.registerForm.phone = ''; this.registerForm.residentType = 'Owner';
-                await this.fetchAndHydrate();
+                this.registerForm.name = ''; this.registerForm.email = ''; this.registerForm.phone = ''; this.registerForm.residentType = 'Owner';
             } else {
                 this.registerForm.error = result.message || 'Registration failed. Please try again.';
             }
@@ -559,6 +549,7 @@ document.addEventListener('alpine:init', () => {
             if (result.success) {
                 await this.fetchAndHydrate();
                 this.admin.showSuccessModal = true;
+                setTimeout(() => { this.admin.showSuccessModal = false; }, 2000);
             } else {
                 alert('Failed to update resident status: ' + (result.message || ''));
             }

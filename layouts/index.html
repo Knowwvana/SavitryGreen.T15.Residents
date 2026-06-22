@@ -3,10 +3,22 @@
 
     {{ partial "mobile/loader.html" . }}
 
+    <div x-show="view === 'login'" class="app-view">
+        {{ partial "mobile/login.html" . }}
+    </div>
+
+    <div x-show="view === 'register'" class="app-view">
+        {{ partial "mobile/add-resident.html" . }}
+    </div>
+
     {{ partial "mobile/header.html" . }}
 
     <div x-show="view === 'home'" class="app-view">
         {{ partial "mobile/dashboard.html" . }}
+    </div>
+
+    <div x-show="view === 'myflat'" class="app-view">
+        {{ partial "mobile/myflat.html" . }}
     </div>
 
     <div x-show="view === 'residents'" class="app-view">

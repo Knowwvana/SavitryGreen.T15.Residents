@@ -559,6 +559,7 @@ document.addEventListener('alpine:init', () => {
             if (result.success) {
                 await this.fetchAndHydrate();
                 this.admin.showSuccessModal = true;
+                setTimeout(() => { this.admin.showSuccessModal = false; }, 2000);
             } else {
                 alert('Failed to update resident status: ' + (result.message || ''));
             }
