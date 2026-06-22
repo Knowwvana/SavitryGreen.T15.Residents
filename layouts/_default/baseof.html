@@ -12,17 +12,17 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <!-- Custom CSS (Hugo Pipes) -->
-    {{ $style := resources.Get "css/style.css" }}
+    {{ $style := resources.Get "css/style.css" | fingerprint }}
     <link rel="stylesheet" href="{{ $style.RelPermalink }}">
 
     <!-- Alpine.js (Core Library) -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.13.3/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 
-    {{ $utils := resources.Get "js/lib/utility.js" }}
+    {{ $utils := resources.Get "js/lib/utility.js" | fingerprint }}
     <script src="{{ $utils.RelPermalink }}"></script>
     <!-- App Logic (Hugo Pipes) -->
-    {{ $app := resources.Get "js/app.js" }}
+    {{ $app := resources.Get "js/app.js" | fingerprint }}
     <script src="{{ $app.RelPermalink }}"></script>
 </head>
 
