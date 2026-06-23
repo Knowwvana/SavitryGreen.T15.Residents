@@ -167,6 +167,51 @@ function handleCreate(sheet, data) {
     return createJSONResponse({ success: false, message: "Missing required fields." });
   }
 
+  // Duplicate check for Monthly payments: same FlatNo + Month + (Paid or Pending Validation)
+  if (data.Category === 'Monthly' && data.Month) {
+    var allData = sheet.getDataRange().getValues();
+    if (allData.length > 1) {
+      var headers = allData[0].map(function(h) { return h.toString().trim(); });
+      var flatCol = headers.indexOf("FlatNo");
+      var monthCol = headers.indexOf("Month");
+      var catCol = headers.indexOf("Category");
+      var statusCol = headers.indexOf("Status");
+      var amountCol = headers.indexOf("Amount");
+      
+      if (flatCol !== -1 && monthCol !== -1 && catCol !== -1 && statusCol !== -1) {
+        for (var i = 1; i < allData.length; i++) {
+          var rowFlat = String(allData[i][flatCol]).replace(/^0+/, '').trim();
+          var inputFlat = String(data.FlatNo).replace(/^0+/, '').trim();
+          var rowMonth = String(allData[i][monthCol]).trim();
+          var inputMonth = String(data.Month).trim();
+          var rowCat = String(allData[i][catCol]).trim().toLowerCase();
+          var rowStatus = String(allData[i][statusCol]).trim().toLowerCase();
+          
+          // Match month: handle both "2026-02" and ISO date formats
+          var rowMonthKey = rowMonth;
+          if (rowMonth.indexOf('T') > -1 || rowMonth.indexOf('Z') > -1) {
+            try {
+              var d = new Date(rowMonth);
+              rowMonthKey = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);
+            } catch(e) {}
+          } else if (rowMonth.length > 7) {
+            rowMonthKey = rowMonth.substring(0, 7);
+          }
+          
+          if (rowFlat === inputFlat && rowMonthKey === inputMonth && rowCat === 'monthly' && 
+              (rowStatus === 'paid' || rowStatus === 'pending validation')) {
+            var existingAmount = amountCol !== -1 ? allData[i][amountCol] : '';
+            return createJSONResponse({ 
+              success: false, 
+              duplicate: true,
+              message: "An entry of ₹" + existingAmount + " for " + inputMonth + " for Flat " + inputFlat + " already exists in the database." 
+            });
+          }
+        }
+      }
+    }
+  }
+
   // MAP FIELDS TO COLUMNS (Order Matters)
   // 1.PaymentID, 2.FlatNo, 3.Category, 4.Title, 5.Month, 6.Amount, 7.PayDate, 8.Method, 9.Status, 10.ValBy, 11.ValTime, 12.Remarks, 13.ValComments, 14.EntryAddedDate
   var newRow = [

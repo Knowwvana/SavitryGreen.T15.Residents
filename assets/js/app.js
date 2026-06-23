@@ -246,7 +246,9 @@ document.addEventListener('alpine:init', () => {
                 try {
                     const response = await fetch(this.apiUrl + '?action=addPayment', { method: 'POST', body: JSON.stringify(payload) });
                     const result = await response.json();
-                    return result.success;
+                    if (result.success) return true;
+                    if (result.duplicate) return result.message; // Return duplicate message as string
+                    return false;
                 } catch (error) { return false; }
             }
 
@@ -447,7 +449,26 @@ document.addEventListener('alpine:init', () => {
         },
 
         async saveTransaction() {
+            if (this.isSubmitting) return; // Prevent double-click
             this.isSubmitting = true;
+
+            // Client-side duplicate check for Monthly payments
+            if (this.txnForm.category === 'Monthly' && this.txnForm.flatNo && this.txnForm.month) {
+                const flatNo = AppServices.normalizeFlat(this.txnForm.flatNo);
+                const monthKey = this.txnForm.month; // format: YYYY-MM
+                const resident = this.residents.find(r => r.flat === flatNo);
+                if (resident) {
+                    const existing = resident.history.find(p => 
+                        p.isMonthly && p.monthKey === monthKey && p.isPaidOrPendingValidation
+                    );
+                    if (existing) {
+                        alert(`An entry of ₹${existing.amount} for ${monthKey} for Flat ${flatNo} already exists in the database.`);
+                        this.isSubmitting = false;
+                        return;
+                    }
+                }
+            }
+
             let status = 'Pending Validation';
             let validatedBy = '';
             let validationTime = '';
@@ -459,11 +480,15 @@ document.addEventListener('alpine:init', () => {
                 validationComments = 'Added directly by Admin';
             }
             const extraData = { status, validatedBy, validationTime, validationComments, EntryAddedDate: new Date().toLocaleString() };
-            const success = await this.repository.addPayment(this.txnForm, extraData);
-            if (success) {
+            const result = await this.repository.addPayment(this.txnForm, extraData);
+            if (result === true) {
                 await this.fetchAndHydrate();
                 this.txnSuccess = true;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            else if (typeof result === 'string') {
+                // Server returned a duplicate/error message
+                alert(result);
             }
             else { this.txnSuccess = false; alert("Failed to save. Try again."); }
             this.isSubmitting = false;
