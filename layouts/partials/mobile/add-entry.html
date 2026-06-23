@@ -22,7 +22,29 @@
         </div>
     </template>
 
-    <template x-if="!txnSuccess">
+    <template x-if="txnDuplicateMsg">
+        <div class="d-flex flex-column align-items-center justify-content-center text-center pt-4 mt-2 page-animate">
+            <div class="mb-3 bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 72px; height: 72px;">
+                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 2.5rem;"></i>
+            </div>
+            
+            <h5 class="fw-bold text-dark mb-2">Duplicate Entry Found</h5>
+            <p class="text-muted mb-4 px-3 small" x-text="txnDuplicateMsg"></p>
+
+            <div class="w-100 px-3 d-flex flex-column gap-2">
+                <button class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm" @click="txnDuplicateMsg = ''">
+                    <i class="bi bi-arrow-left me-1"></i> Go Back & Edit
+                </button>
+                
+                <button class="btn btn-white rounded-pill py-2 fw-bold border shadow-sm text-muted small" 
+                        @click="resetTxnForm(); view = admin.isLoggedIn ? 'validate' : 'residents';">
+                    Close Form
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template x-if="!txnSuccess && !txnDuplicateMsg">
         <div class="d-flex flex-column gap-3">
             
             <div class="card border-0 shadow-sm rounded-4 mb-2 overflow-hidden">

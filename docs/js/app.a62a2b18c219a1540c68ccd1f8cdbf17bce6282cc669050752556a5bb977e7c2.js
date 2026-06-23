@@ -336,7 +336,6 @@ document.addEventListener('alpine:init', () => {
         isLoading: true,
         isSubmitting: false,
         txnSuccess: false,
-        txnDuplicateMsg: '',
         expenseSuccess: false,
         residents: [],
         settings: {},
@@ -405,7 +404,6 @@ document.addEventListener('alpine:init', () => {
 
         resetTxnForm() {
             this.txnSuccess = false;
-            this.txnDuplicateMsg = '';
             this.txnForm.amount = '';
             this.txnForm.remarks = '';
             this.txnForm.flatNo = '';
@@ -453,7 +451,6 @@ document.addEventListener('alpine:init', () => {
         async saveTransaction() {
             if (this.isSubmitting) return; // Prevent double-click
             this.isSubmitting = true;
-            this.txnDuplicateMsg = '';
 
             // Client-side duplicate check for Monthly payments
             if (this.txnForm.category === 'Monthly' && this.txnForm.flatNo && this.txnForm.month) {
@@ -465,9 +462,8 @@ document.addEventListener('alpine:init', () => {
                         p.isMonthly && p.monthKey === monthKey && p.isPaidOrPendingValidation
                     );
                     if (existing) {
-                        this.txnDuplicateMsg = `An entry of ₹${existing.amount} for ${monthKey} for Flat ${flatNo} already exists in the database.`;
+                        alert(`An entry of ₹${existing.amount} for ${monthKey} for Flat ${flatNo} already exists in the database.`);
                         this.isSubmitting = false;
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
                         return;
                     }
                 }
@@ -492,10 +488,9 @@ document.addEventListener('alpine:init', () => {
             }
             else if (typeof result === 'string') {
                 // Server returned a duplicate/error message
-                this.txnDuplicateMsg = result;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                alert(result);
             }
-            else { this.txnDuplicateMsg = 'Failed to save the payment. Please try again.'; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+            else { this.txnSuccess = false; alert("Failed to save. Try again."); }
             this.isSubmitting = false;
         },
 

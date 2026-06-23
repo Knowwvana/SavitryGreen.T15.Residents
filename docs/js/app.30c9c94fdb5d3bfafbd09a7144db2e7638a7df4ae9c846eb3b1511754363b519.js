@@ -453,7 +453,6 @@ document.addEventListener('alpine:init', () => {
         async saveTransaction() {
             if (this.isSubmitting) return; // Prevent double-click
             this.isSubmitting = true;
-            this.txnDuplicateMsg = '';
 
             // Client-side duplicate check for Monthly payments
             if (this.txnForm.category === 'Monthly' && this.txnForm.flatNo && this.txnForm.month) {

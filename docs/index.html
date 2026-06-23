@@ -24,7 +24,7 @@
     <script src="/SavitryGreen.T15.Residents/js/lib/utility.bb0b10ad8090416ab97ef2229191ebb29d48dbfb3c12fcebb9a3e1a058a7d98e.js"></script>
     
     
-    <script src="/SavitryGreen.T15.Residents/js/app.ad2792d39702e5984fd3baa6bb2dbb136d25fd1a1c3371e831bdd6050ecbd0eb.js"></script>
+    <script src="/SavitryGreen.T15.Residents/js/app.b2f71d69bf9331333761b02d41cb4db3ca3931fbd35cf7d9582d31633292ff65.js"></script>
 </head>
 
 <body>
@@ -1690,7 +1690,29 @@
         </div>
     </template>
 
-    <template x-if="!txnSuccess">
+    <template x-if="txnDuplicateMsg">
+        <div class="d-flex flex-column align-items-center justify-content-center text-center pt-4 mt-2 page-animate">
+            <div class="mb-3 bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 72px; height: 72px;">
+                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 2.5rem;"></i>
+            </div>
+            
+            <h5 class="fw-bold text-dark mb-2">Duplicate Entry Found</h5>
+            <p class="text-muted mb-4 px-3 small" x-text="txnDuplicateMsg"></p>
+
+            <div class="w-100 px-3 d-flex flex-column gap-2">
+                <button class="btn btn-primary rounded-pill py-2 fw-bold shadow-sm" @click="txnDuplicateMsg = ''">
+                    <i class="bi bi-arrow-left me-1"></i> Go Back & Edit
+                </button>
+                
+                <button class="btn btn-white rounded-pill py-2 fw-bold border shadow-sm text-muted small" 
+                        @click="resetTxnForm(); view = admin.isLoggedIn ? 'validate' : 'residents';">
+                    Close Form
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template x-if="!txnSuccess && !txnDuplicateMsg">
         <div class="d-flex flex-column gap-3">
             
             <div class="card border-0 shadow-sm rounded-4 mb-2 overflow-hidden">
