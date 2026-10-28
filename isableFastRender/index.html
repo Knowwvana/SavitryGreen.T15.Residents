@@ -2089,7 +2089,7 @@
         </div>
 
         <div x-show="adhocCategory" class="card border-0 shadow-sm rounded-3 bg-white mt-3 overflow-hidden">
-            <div class="bg-warning bg-opacity-10 border-bottom py-2 px-3 d-flex align-items-center gap-2">
+            <div class="bg-warning bg-opacity-10 border-bottom py-2 px-3 d-flex align-items-center justify-content-center gap-2">
                 <i class="bi bi-cash-coin text-warning"></i>
                 <span class="text-dark fw-bold small text-uppercase" style="letter-spacing: 1px;">Collection Details</span>
             </div>
@@ -2122,10 +2122,11 @@
                     </div>
                 </div>
             </template>
-            <div x-show="adhocCategoryPayments.length > 0" class="d-flex align-items-center py-2 px-3 bg-light border-top">
-                <div class="fw-bold text-dark" style="width: 45px; font-size: 0.75rem;">TOTAL</div>
-                <div class="fw-bold text-success text-end" style="width: 70px; font-size: 0.85rem;"
-                    x-text="'₹' + adhocCategoryPayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString('en-IN')"></div>
+            <div x-show="adhocCategoryPayments.length > 0" class="d-flex align-items-center justify-content-between py-2 px-3 bg-light border-top">
+                <div class="fw-bold text-dark" style="font-size: 0.75rem;"
+                    x-text="'Flats - ' + new Set(adhocCategoryPayments.map(p => p.flatNo)).size"></div>
+                <div class="fw-bold text-success text-end" style="font-size: 0.85rem;"
+                    x-text="'Amount - ₹' + adhocCategoryPayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString('en-IN')"></div>
             </div>
             <div x-show="adhocCategoryPayments.length === 0" class="p-4 text-center text-muted small">No collections for this category.</div>
         </div>
