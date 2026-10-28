@@ -1179,6 +1179,30 @@ document.addEventListener('alpine:init', () => {
                 .sort((a, b) => a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true }));
         },
 
+        // WhatsApp share link (wa.me): summary lines, bold collection line and headers, aligned monospace rows sorted by date
+        get adhocWhatsappUrl() {
+            const s = this.adhocCategorySummary;
+            const payments = [...this.adhocCategoryPayments].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+            const flats = new Set(payments.map(p => p.flatNo)).size;
+            const money = v => '₹' + v.toLocaleString('en-IN');
+            const lines = [
+                `*Adhoc Event Summary - ${this.adhocCategory}*`,
+                `Collected: ${money(s.collected)}`,
+                `Spent: ${money(s.spent)}`,
+                `Cash Available: ${money(s.balance)}`,
+                '',
+                `*Collection Details (Flats: ${flats}, Amount: ${money(s.collected)})*`,
+                '```',
+                'Flat'.padEnd(6) + 'Amount'.padEnd(9) + 'Date'
+            ];
+            payments.forEach(p => {
+                const when = new Date(p.rawDate).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+                lines.push(String(p.flatNo).padEnd(6) + money(p.amount).padEnd(9) + when);
+            });
+            lines.push('```');
+            return 'https://wa.me/?text=' + encodeURIComponent(lines.join('\n'));
+        },
+
         get totalPendingDuesAll() {
             return this.defaultersList.reduce((sum, r) => sum + r.totalDue, 0);
         }
