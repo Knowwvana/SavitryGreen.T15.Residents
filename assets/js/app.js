@@ -329,6 +329,8 @@ document.addEventListener('alpine:init', () => {
         filterStatus: 'all',
         currentDate: '',
         // --- MISSING VARIABLES FOR REPORTS ---
+        reportSection: 'monthly',  // Top-level report tab (Monthly Maintainence Reports vs Adhoc Reports)
+        adhocCategory: '',         // Selected Adhoc expense title in the Adhoc Reports dropdown
         reportTab: 'monthly',      // Controls the main tabs (Monthly vs Defaulters)
         reportSubTab: 'unpaid',    // Controls the sub-tabs (Paid vs Unpaid)
         reportMonthKey: '', // Tracks the currently selected month
@@ -1129,6 +1131,52 @@ document.addEventListener('alpine:init', () => {
                     monthsCount: r.pendingList.length
                 }))
                 .sort((a, b) => b.totalDue - a.totalDue); // Sort highest due first
+        },
+
+        // Distinct Titles (sheet column B) of Expenditure rows where Type (column C) is Adhoc
+        get adhocCategoryOptions() {
+            return [...new Set(this.repository.expenditures
+                .filter(e => e.type.toLowerCase() === 'adhoc')
+                .map(e => e.title))].sort();
+        },
+
+        // Adhoc expense rows for the selected category
+        get adhocCategoryRows() {
+            if (!this.adhocCategory) return [];
+            return this.repository.expenditures.filter(e =>
+                e.type.toLowerCase() === 'adhoc' && e.title === this.adhocCategory);
+        },
+
+        // Collected (adhoc payments with this title) and Spent (adhoc expenses with this title) - same rules as the dashboard
+        get adhocCategorySummary() {
+            const summary = { collected: 0, validated: 0, pending: 0, spent: 0, balance: 0 };
+            if (!this.adhocCategory || !this.residents) return summary;
+
+            const uniquePayments = new Map();
+            this.residents.forEach(r => { r.history.forEach(p => { if (p.id) uniquePayments.set(p.id, p); }); });
+            uniquePayments.forEach(p => {
+                if (!p.isMonthly && p.isPaidOrPendingValidation && (p.title || p.category || 'Other') === this.adhocCategory) {
+                    summary.collected += p.amount;
+                    // Same split as the dashboard: Paid = Validated, Pending Validation = Pending
+                    if (p.isPaidStrict) summary.validated += p.amount;
+                    else summary.pending += p.amount;
+                }
+            });
+
+            summary.spent = this.adhocCategoryRows.reduce((sum, e) => sum + e.amount, 0);
+            summary.balance = summary.collected - summary.spent;
+            return summary;
+        },
+
+        // Collection rows (Paid or Pending Validation) for the selected adhoc category, sorted by flat
+        get adhocCategoryPayments() {
+            if (!this.adhocCategory || !this.residents) return [];
+
+            const uniquePayments = new Map();
+            this.residents.forEach(r => { r.history.forEach(p => { if (p.id) uniquePayments.set(p.id, p); }); });
+            return Array.from(uniquePayments.values())
+                .filter(p => !p.isMonthly && p.isPaidOrPendingValidation && (p.title || p.category || 'Other') === this.adhocCategory)
+                .sort((a, b) => a.flatNo.localeCompare(b.flatNo, undefined, { numeric: true }));
         },
 
         get totalPendingDuesAll() {
