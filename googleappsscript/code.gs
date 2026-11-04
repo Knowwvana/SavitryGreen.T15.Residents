@@ -3,7 +3,8 @@ const ADMIN_SHEET_NAME = "Admins";
 
 // 'Settings' is handled separately via getSettingsData
 // NOTE: Admins sheet is EXCLUDED from DATA_SHEETS for security — passwords never sent to client
-const DATA_SHEETS = ["Flats", "Residents", PAYMENT_SHEET_NAME, "Expenditure"];
+const EXPENDITURE_DETAILS_SHEET_NAME = "ExpenditureDetails";
+const DATA_SHEETS = ["Flats", "Residents", PAYMENT_SHEET_NAME, "Expenditure", EXPENDITURE_DETAILS_SHEET_NAME];
 
 // =================================================================
 // 1. Response Helper
@@ -58,6 +59,10 @@ function doGet(e) {
       payments: result.payments,
       settings: result.settings,
       expenditure: result.expenditure,
+      // Breakdown lines; blank rows (no Category) are dropped
+      expenditureDetails: (result.expendituredetails || []).filter(function(r) {
+        return String(r.Category || '').trim() !== '';
+      }),
       flatList: allFlats,
       adminNames: adminNames
     });
@@ -88,6 +93,10 @@ function doPost(e) {
       return handleCreateExpense(ss, data);
     }
     
+    if (data.action === 'ADD_EXPENSE_DETAIL') {
+      return handleCreateExpenditureDetail(ss, data);
+    }
+
     if (data.action === 'ADMIN_LOGIN') {
       return handleAdminLogin(ss, data);
     }
@@ -133,17 +142,9 @@ function handleCreateExpense(ss, data) {
     expenseId = (lastRow > 1) ? (parseInt(sheet.getRange(lastRow, 1).getValue()) || 0) + 1 : 1;
   }
   
-  // Format date: convert "2026-05-12" to "12.May.2026" to match existing sheet format
-  var formattedDate = data.Date || '';
-  if (formattedDate && formattedDate.indexOf('-') > -1) {
-    try {
-      var parts = formattedDate.split('-');
-      var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-      var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      formattedDate = ('0' + d.getDate()).slice(-2) + '.' + months[d.getMonth()] + '.' + d.getFullYear();
-    } catch (e) { /* keep original */ }
-  }
-  
+  // Format date: "2026-05-12" -> "12.May.2026" (matches existing sheet format)
+  var formattedDate = formatExpenseDate(data.Date);
+
   // MAP FIELDS TO COLUMNS: ExpenseID | Title | Type | Amount | Date | Remarks
   var newRow = [
     expenseId,
@@ -156,6 +157,46 @@ function handleCreateExpense(ss, data) {
   
   sheet.appendRow(newRow);
   return createJSONResponse({ success: true, message: "Expense added successfully." });
+}
+
+// =================================================================
+// 3b-2. Create Expenditure Detail Handler (line-item breakdown of an adhoc expense)
+// Writes by header name, so the column order in the ExpenditureDetails sheet can change safely.
+// Expected headers: Category | Description | Amount | Date | Payment Method | PaymentBy | Remarks
+// =================================================================
+
+function handleCreateExpenditureDetail(ss, data) {
+  if (!data.Category || !data.Amount) {
+    return createJSONResponse({ success: false, message: "Missing required fields (Category, Amount)." });
+  }
+  var amount = parseFloat(data.Amount);
+  if (isNaN(amount) || amount <= 0) {
+    return createJSONResponse({ success: false, message: "Amount must be a positive number." });
+  }
+
+  var sheet = ss.getSheetByName(EXPENDITURE_DETAILS_SHEET_NAME);
+  if (!sheet) throw new Error("Sheet named '" + EXPENDITURE_DETAILS_SHEET_NAME + "' not found.");
+
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  // Keys are normalised header names: "Payment Method" -> "paymentmethod"
+  var values = {
+    category: String(data.Category).trim(),
+    description: data.Description || '',
+    amount: amount,
+    date: formatExpenseDate(data.Date),
+    paymentmethod: data.PaymentMethod || '',
+    paymentby: data.PaymentBy || '',
+    remarks: data.Remarks || ''
+  };
+
+  var newRow = headers.map(function(h) {
+    var key = String(h).replace(/\s/g, '').toLowerCase();
+    return values.hasOwnProperty(key) ? values[key] : '';
+  });
+
+  sheet.appendRow(newRow);
+  return createJSONResponse({ success: true, message: "Expenditure detail added successfully." });
 }
 
 // =================================================================
@@ -410,6 +451,20 @@ function handleUpdateResidentStatus(ss, data) {
 // =================================================================
 // 4. Helpers
 // =================================================================
+
+// Converts "2026-05-12" to "12.May.2026" (the format used in the Expenditure sheets). Other text is returned unchanged.
+function formatExpenseDate(isoDate) {
+  var formatted = isoDate || '';
+  if (formatted && String(formatted).indexOf('-') > -1) {
+    try {
+      var parts = String(formatted).split('-');
+      var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      formatted = ('0' + d.getDate()).slice(-2) + '.' + months[d.getMonth()] + '.' + d.getFullYear();
+    } catch (e) { /* keep original */ }
+  }
+  return formatted;
+}
 
 function getSheetData(ss, sheetName) {
   var sheet = ss.getSheetByName(sheetName);

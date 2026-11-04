@@ -74,6 +74,30 @@ document.addEventListener('alpine:init', () => {
             }
         }
 
+        // One line of the ExpenditureDetails sheet (breakdown of an adhoc expense)
+        class ExpenditureDetail {
+            constructor(data) {
+                this.category = safeString(data.Category);
+                this.description = safeString(data.Description);
+                this.amount = parseFloat(data.Amount || 0);
+                this.date = data.Date;
+                this.paymentMethod = safeString(data['Payment Method']);
+                this.paymentBy = safeString(data.PaymentBy);
+                this.remarks = safeString(data.Remarks);
+            }
+
+            get formattedDate() {
+                const d = new Date(this.date);
+                if (isNaN(d.getTime())) return safeString(this.date);
+                return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '.');
+            }
+
+            get timeValue() {
+                const t = new Date(this.date).getTime();
+                return isNaN(t) ? 0 : t;
+            }
+        }
+
         class Payment {
             constructor(data) {
                 this.id = (data.PaymentID && String(data.PaymentID).trim() !== "")
@@ -172,6 +196,7 @@ document.addEventListener('alpine:init', () => {
                 this.residents = [];
                 this.rawResidents = [];
                 this.expenditures = [];
+                this.expenditureDetails = [];
                 this.settings = new Settings({});
                 this.flatList = [];
                 this.adminNames = [];
@@ -190,6 +215,7 @@ document.addEventListener('alpine:init', () => {
                     this.adminNames = result.adminNames || [];
 
                     this.expenditures = (result.expenditure || []).map(e => new Expense(e));
+                    this.expenditureDetails = (result.expenditureDetails || []).map(d => new ExpenditureDetail(d));
                     const allPayments = (result.payments || []).map(p => new Payment(p));
                     const rawFlats = result.flats || [];
                     const rawResidents = result.residents || [];
@@ -334,6 +360,7 @@ document.addEventListener('alpine:init', () => {
         adhocDetailTab: 'collection', // Adhoc detail tab: 'collection' | 'expenditure'
         reportTab: 'monthly',      // Controls the main tabs (Monthly vs Defaulters)
         reportSubTab: 'unpaid',    // Controls the sub-tabs (Paid vs Unpaid)
+        monthlyDetailTab: 'collection', // Monthly report top tabs: 'collection' | 'expenditure'
         reportMonthKey: '', // Tracks the currently selected month
         // -------------------------------------
         isLoading: true,
@@ -1169,13 +1196,48 @@ document.addEventListener('alpine:init', () => {
             return summary;
         },
 
-        // Expenditure rows for the selected adhoc category, newest first (feeds the Expenditure Details tab)
+        // Monthly expenses (Type = Monthly) dated in the selected report month, newest first
+        get monthlyExpenditureList() {
+            const key = this.reportMonthKey;
+            if (!key) return [];
+            const monthKeyOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const timeOf = d => (isNaN(d.getTime()) ? 0 : d.getTime());
+            return this.repository.expenditures
+                .filter(e => e.type.toLowerCase() === 'monthly' && !isNaN(e.rawDateObj.getTime()) && monthKeyOf(e.rawDateObj) === key)
+                .sort((a, b) => timeOf(b.rawDateObj) - timeOf(a.rawDateObj));
+        },
+
+        // Flat rows for the Monthly Expenditure tab: each breakdown line (ExpenditureDetails, matched by category = expense title)
+        // with the expense title as its Category. An expense with no lines gets one row with its own total.
+        get monthlyExpenditureRows() {
+            const rows = [];
+            this.monthlyExpenditureList.forEach(e => {
+                const lines = this.repository.expenditureDetails
+                    .filter(d => d.category === e.title && d.amount > 0)
+                    .sort((a, b) => b.timeValue - a.timeValue);
+                if (lines.length === 0) {
+                    rows.push({ formattedDate: e.formattedDate, category: e.title, description: '—', paymentMethod: '', paymentBy: '', remarks: e.remarks, amount: e.amount });
+                } else {
+                    lines.forEach(d => rows.push({ formattedDate: d.formattedDate, category: e.title, description: d.description, paymentMethod: d.paymentMethod, paymentBy: d.paymentBy, remarks: d.remarks, amount: d.amount }));
+                }
+            });
+            return rows;
+        },
+
+        get monthlyExpenditureTotal() {
+            return this.monthlyExpenditureList.reduce((sum, e) => sum + e.amount, 0);
+        },
+
+        // Breakdown lines from the ExpenditureDetails sheet whose Category (column A) matches the selected adhoc category, newest first
         get adhocExpenditureList() {
-            return [...this.adhocCategoryRows].sort((a, b) => (b.rawDateObj - a.rawDateObj) || (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
+            if (!this.adhocCategory) return [];
+            return this.repository.expenditureDetails
+                .filter(d => d.category === this.adhocCategory && d.amount > 0)
+                .sort((a, b) => b.timeValue - a.timeValue);
         },
 
         get adhocExpenditureTotal() {
-            return this.adhocExpenditureList.reduce((sum, e) => sum + e.amount, 0);
+            return this.adhocExpenditureList.reduce((sum, d) => sum + d.amount, 0);
         },
 
         // Collection rows (Paid or Pending Validation) for the selected adhoc category, sorted by flat

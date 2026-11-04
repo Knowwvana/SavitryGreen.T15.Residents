@@ -32,6 +32,22 @@
             </div>
         </div>
 
+        <!-- Monthly top tabs: Collection | Expenditure -->
+        <div class="d-flex bg-white border-bottom">
+            <button type="button" class="flex-fill btn btn-sm rounded-0 border-end py-2" style="font-size: 0.85rem;"
+                :class="monthlyDetailTab === 'collection' ? 'border-bottom border-3 border-primary text-primary fw-bold bg-primary bg-opacity-10' : 'border-bottom border-3 border-transparent text-muted'"
+                @click="monthlyDetailTab = 'collection'">
+                <i class="bi bi-cash-coin me-1"></i>Collection
+            </button>
+            <button type="button" class="flex-fill btn btn-sm rounded-0 py-2" style="font-size: 0.85rem;"
+                :class="monthlyDetailTab === 'expenditure' ? 'border-bottom border-3 border-primary text-primary fw-bold bg-primary bg-opacity-10' : 'border-bottom border-3 border-transparent text-muted'"
+                @click="monthlyDetailTab = 'expenditure'">
+                <i class="bi bi-receipt me-1"></i>Expenditure
+            </button>
+        </div>
+
+        <!-- Collection tab: stats + Paid/Unpaid/Defaulters -->
+        <div x-show="monthlyDetailTab === 'collection'">
         <div class="px-3 py-3">
             <div class="card border-0 shadow-sm rounded-3 bg-white overflow-hidden">
                 <div class="card-body p-0">
@@ -106,9 +122,10 @@
                 Defaulters
             </button>
         </div>
+        </div>
     </div>
 
-    <div class="flex-grow-1 overflow-auto bg-light mt-3">
+    <div class="flex-grow-1 overflow-auto bg-light mt-3" x-show="monthlyDetailTab === 'collection'">
 
         <div class="d-flex bg-secondary bg-opacity-10 border-top border-bottom py-2 px-3 sticky-top shadow-sm align-items-center"
             style="top: 0; font-size: 0.65rem;"
@@ -225,6 +242,49 @@
             </div>
         </div>
     </div>
+
+    <!-- Expenditure tab: monthly expenses for the selected month, same grid style as Adhoc Expenditure Details -->
+    <div x-show="monthlyDetailTab === 'expenditure'" class="flex-grow-1 overflow-auto bg-light mt-3">
+        <div class="card border-0 shadow-sm rounded-3 bg-white mx-3 mb-3 overflow-hidden">
+            <div class="bg-danger bg-opacity-10 border-bottom py-2 px-3 d-flex flex-wrap align-items-center justify-content-start gap-2">
+                <i class="bi bi-receipt text-danger"></i>
+                <span class="text-dark fw-bold small text-uppercase" style="letter-spacing: 1px;">Monthly Expenditure</span>
+                <span class="text-dark fw-bold small"
+                    x-text="'(' + reportMonthDisplay + ', Amount: ₹' + monthlyExpenditureTotal.toLocaleString('en-IN') + ')'"></span>
+            </div>
+            <!-- Scrolls sideways on narrow phones so every column stays readable -->
+            <div style="overflow-x: auto;">
+            <div style="min-width: 780px;">
+            <div class="d-flex bg-secondary bg-opacity-10 border-bottom py-2 px-3" style="font-size: 0.65rem;">
+                <div class="fw-bold text-muted" style="width: 85px;">DATE</div>
+                <div class="fw-bold text-muted pe-2" style="width: 150px;">CATEGORY</div>
+                <div class="fw-bold text-muted" style="width: 180px;">DESCRIPTION</div>
+                <div class="fw-bold text-muted" style="width: 95px;">PAYMENT METHOD</div>
+                <div class="fw-bold text-muted" style="width: 90px;">PAYMENT BY</div>
+                <div class="fw-bold text-muted flex-grow-1">REMARKS</div>
+                <div class="fw-bold text-muted text-end" style="width: 90px;">AMOUNT</div>
+            </div>
+            <template x-for="(r, ri) in monthlyExpenditureRows" :key="ri">
+                <div class="d-flex align-items-center border-bottom py-2 px-3" style="font-size: 0.75rem;">
+                    <div class="text-dark" style="width: 85px; font-size: 0.7rem;" x-text="r.formattedDate"></div>
+                    <div class="fw-semibold text-dark pe-2" style="width: 150px;" x-text="r.category"></div>
+                    <div class="text-dark pe-2" style="width: 180px;" x-text="r.description || '—'"></div>
+                    <div class="text-muted pe-2" style="width: 95px; font-size: 0.7rem;" x-text="r.paymentMethod || '—'"></div>
+                    <div class="text-muted pe-2" style="width: 90px; font-size: 0.7rem;" x-text="r.paymentBy || '—'"></div>
+                    <div class="text-muted fst-italic flex-grow-1 pe-2" style="font-size: 0.7rem;" x-text="r.remarks || '—'"></div>
+                    <div class="text-end" style="width: 90px; font-size: 0.8rem; color: #d97706;" x-text="'₹' + r.amount.toLocaleString('en-IN')"></div>
+                </div>
+            </template>
+            <div x-show="monthlyExpenditureList.length > 0" class="d-flex align-items-center justify-content-between py-2 px-3 bg-light border-top">
+                <div class="fw-bold text-dark" style="font-size: 0.75rem;">Total Expenditure</div>
+                <div class="fw-bold text-end" style="font-size: 0.85rem; color: #d97706;"
+                    x-text="'₹' + monthlyExpenditureTotal.toLocaleString('en-IN')"></div>
+            </div>
+            </div>
+            </div>
+            <div x-show="monthlyExpenditureList.length === 0" class="p-4 text-center text-muted small">No expenditure recorded for this month.</div>
+        </div>
+    </div>
     </div>
 
     <div x-show="reportSection === 'adhoc'" class="flex-grow-1 overflow-auto bg-light p-3">
@@ -329,7 +389,7 @@
             </template>
             <div x-show="adhocCategoryPayments.length > 0" class="d-flex align-items-center justify-content-between py-2 px-3 bg-light border-top">
                 <div class="fw-bold text-dark" style="font-size: 0.75rem;"
-                    x-text="'Flats - ' + new Set(adhocCategoryPayments.map(p => p.flatNo)).size"></div>
+                    >Total Collection</div>
                 <div class="fw-bold text-success text-end" style="font-size: 0.85rem;"
                     x-text="'₹' + adhocCategoryPayments.reduce((sum, p) => sum + p.amount, 0).toLocaleString('en-IN')"></div>
             </div>
@@ -342,30 +402,35 @@
                 <i class="bi bi-receipt text-danger"></i>
                 <span class="text-dark fw-bold small text-uppercase" style="letter-spacing: 1px;">Expenditure Details</span>
                 <span class="text-dark fw-bold small"
-                    x-text="'(Entries: ' + adhocExpenditureList.length + ', Amount: ₹' + adhocExpenditureTotal.toLocaleString('en-IN') + ')'"></span>
+                    x-text="'(Amount: ₹' + adhocExpenditureTotal.toLocaleString('en-IN') + ')'"></span>
             </div>
+            <!-- Scrolls sideways on narrow phones so every column stays readable -->
+            <div style="overflow-x: auto;">
+            <div style="min-width: 680px;">
             <div class="d-flex bg-secondary bg-opacity-10 border-bottom py-2 px-3" style="font-size: 0.65rem;">
-                <div class="fw-bold text-muted" style="width: 80px;">DATE</div>
+                <div class="fw-bold text-muted" style="width: 85px;">DATE</div>
+                <div class="fw-bold text-muted" style="width: 180px;">DESCRIPTION</div>
+                <div class="fw-bold text-muted" style="width: 95px;">PAYMENT METHOD</div>
+                <div class="fw-bold text-muted" style="width: 90px;">PAYMENT BY</div>
                 <div class="fw-bold text-muted flex-grow-1">REMARKS</div>
                 <div class="fw-bold text-muted text-end" style="width: 90px;">AMOUNT</div>
             </div>
-            <template x-for="e in adhocExpenditureList" :key="e.id">
-                <div class="d-flex align-items-center border-bottom py-2 px-3">
-                    <div class="text-dark" style="width: 80px; font-size: 0.7rem;">
-                        <span x-text="e.formattedDate"></span>
-                    </div>
-                    <div class="flex-grow-1 pe-2" style="font-size: 0.75rem;">
-                        <div class="text-muted" style="font-size: 0.6rem;" x-text="'#' + e.id"></div>
-                        <div class="text-dark" x-text="e.remarks || '—'"></div>
-                    </div>
-                    <div class="fw-bold text-end" style="width: 90px; font-size: 0.85rem; color: #d97706;" x-text="'₹' + e.amount.toLocaleString('en-IN')"></div>
+            <template x-for="(d, i) in adhocExpenditureList" :key="i">
+                <div class="d-flex align-items-center border-bottom py-2 px-3" style="font-size: 0.75rem;">
+                    <div class="text-dark" style="width: 85px; font-size: 0.7rem;" x-text="d.formattedDate"></div>
+                    <div class="fw-semibold text-dark pe-2" style="width: 180px;" x-text="d.description || '—'"></div>
+                    <div class="text-muted pe-2" style="width: 95px; font-size: 0.7rem;" x-text="d.paymentMethod || '—'"></div>
+                    <div class="text-muted pe-2" style="width: 90px; font-size: 0.7rem;" x-text="d.paymentBy || '—'"></div>
+                    <div class="text-muted fst-italic flex-grow-1 pe-2" style="font-size: 0.7rem;" x-text="d.remarks || '—'"></div>
+                    <div class="fw-bold text-end" style="width: 90px; font-size: 0.85rem; color: #d97706;" x-text="'₹' + d.amount.toLocaleString('en-IN')"></div>
                 </div>
             </template>
             <div x-show="adhocExpenditureList.length > 0" class="d-flex align-items-center justify-content-between py-2 px-3 bg-light border-top">
-                <div class="fw-bold text-dark" style="font-size: 0.75rem;"
-                    x-text="'Entries - ' + adhocExpenditureList.length"></div>
+                <div class="fw-bold text-dark" style="font-size: 0.75rem;">Total Expenditure</div>
                 <div class="fw-bold text-end" style="font-size: 0.85rem; color: #d97706;"
                     x-text="'₹' + adhocExpenditureTotal.toLocaleString('en-IN')"></div>
+            </div>
+            </div>
             </div>
             <div x-show="adhocExpenditureList.length === 0" class="p-4 text-center text-muted small">No expenditure recorded for this category.</div>
         </div>
