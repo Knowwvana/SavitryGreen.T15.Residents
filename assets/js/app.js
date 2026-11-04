@@ -331,6 +331,7 @@ document.addEventListener('alpine:init', () => {
         // --- MISSING VARIABLES FOR REPORTS ---
         reportSection: 'monthly',  // Top-level report tab (Monthly Maintainence Reports vs Adhoc Reports)
         adhocCategory: '',         // Selected Adhoc expense title in the Adhoc Reports dropdown
+        adhocDetailTab: 'collection', // Adhoc detail tab: 'collection' | 'expenditure'
         reportTab: 'monthly',      // Controls the main tabs (Monthly vs Defaulters)
         reportSubTab: 'unpaid',    // Controls the sub-tabs (Paid vs Unpaid)
         reportMonthKey: '', // Tracks the currently selected month
@@ -1166,6 +1167,15 @@ document.addEventListener('alpine:init', () => {
             summary.spent = this.adhocCategoryRows.reduce((sum, e) => sum + e.amount, 0);
             summary.balance = summary.collected - summary.spent;
             return summary;
+        },
+
+        // Expenditure rows for the selected adhoc category, newest first (feeds the Expenditure Details tab)
+        get adhocExpenditureList() {
+            return [...this.adhocCategoryRows].sort((a, b) => (b.rawDateObj - a.rawDateObj) || (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
+        },
+
+        get adhocExpenditureTotal() {
+            return this.adhocExpenditureList.reduce((sum, e) => sum + e.amount, 0);
         },
 
         // Collection rows (Paid or Pending Validation) for the selected adhoc category, sorted by flat
